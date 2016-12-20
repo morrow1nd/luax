@@ -34,6 +34,7 @@ while expr then
 	continue;
 end
 
+
 //
 // expressions
 //
@@ -60,10 +61,34 @@ not b == a;
 10.56;
 'a string';
 "another string";
-{key : "value", 'key 2' : 56, key3: {}};
+{key : "value", 'key 2' : 56, key3: {}, key3 : function (a,b)return a+b; end};
 
--- function call expressions
+-- function call&define expressions
 func();
 func(a, b, c);
 func(nil);
-(func())();
+funcb(56, 'uu')(); -- funcb return a function
+function(a, b) return a - b; end
+function (a, b, c)
+	return a + b + c;
+end(1,2,3); -- call after define, return 6
+
+-- assignment expressions
+a, b = b, a;
+a, b = func();
+a = b, c; -- equal to `a = b`;
+
+-- prefix expressions
+a = -a;
+
+-- suffix expressions
+a["key 3"];
+a["key 3"][56];
+a[str + '.png'];
+a[func() / 2];
+a.key2;
+a.key2.key2;
+a.key2['username'];
+a.key2['opcode'](1, 2);
+func()["username"];
+
