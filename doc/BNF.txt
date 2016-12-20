@@ -9,7 +9,8 @@ stmt_sequence ->
 
 
 stmt ->
-		  if_stmt
+		  ';'
+		| if_stmt
 		| while_stmt
 		| for_stmt
 		| expr_stmt
