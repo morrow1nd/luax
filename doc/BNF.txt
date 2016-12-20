@@ -1,0 +1,117 @@
+compile_unit ->
+		  stmt_sequence
+
+
+stmt_sequence ->
+		  stmt_sequence stmt
+		| stmt
+		| ε
+
+
+stmt ->
+		  if_stmt
+		| while_stmt
+		| for_stmt
+		| expr_stmt
+
+
+if_stmt ->
+		  IF expr THEN stmt_sequence END
+		| IF expr THEN stmt_sequence ELSE stmt_sequence END
+
+while_stmt ->
+		  WHILE expr THEN stmt_sequence END
+
+for_stmt ->
+		  FOR expr ';' expr ';' expr THEN stmt_sequence END
+
+expr_stmt ->
+		  expr ';'
+
+
+expr_list ->
+		  expr
+		| expr ',' expr_list
+
+
+expr ->
+		  compare_expr logical_op compare_expr
+		| compare_expr
+
+compare_expr ->
+		  addtive_expr compare_op compare_expr
+		| addtive_expr
+
+addtive_expr -> 
+		  multiply_expr addtive_op addtive_expr
+		| multiply_expr
+
+multiply_expr ->
+		  un_expr multiply_op multiply_expr
+		| un_expr
+
+un_expr ->
+		  un_op single_expr
+		| single_expr '(' ')'
+		| single_expr '(' expr_list ')'
+		| single_expr '[' expr ']'
+		| single_expr
+
+single_expr ->
+		  '(' expr ')'
+		| NIL
+		| FALSE
+		| TRUE
+		| function_define
+		| immediate
+		| IDENTIFIER
+
+
+function_define ->
+		  FUNCTION '(' identifier_list ')' stmt_sequence END
+identifier_list ->
+		  IDENTIFIER
+		| IDENTIFIER ',' identifier_list
+
+
+immediate ->
+		  object_immediate
+		| STRING_IMMEDIATE
+		| NUMBER_IMMEDIATE
+object_immediate ->
+		  '{' '}'
+		| '{' object_item_list '}'
+object_immediate_item_list ->
+		  object_immediate_item ',' object_immediate_item_list
+		| object_immediate_item
+object_immediate_item ->
+		  IDENTIFIER ':' object_immediate_item_value
+		| STRING_IMMEDIATE ':' object_immediate_item_value
+		| NUMBER_IMMEDIATE ':' object_immediate_item_value
+object_immediate_item_value ->
+		  immediate
+
+
+logical_op ->
+		  AND
+		| OR
+
+compare_op ->
+		  '<'
+		| '>'
+		| '<='
+		| '>='
+		| '=='
+		| '!='
+
+addtive_op ->
+		  '+'
+		| '-'
+
+multiply_op ->
+		  '*'
+		| '/'
+
+un_op ->
+		  '-'
+		| NOT
