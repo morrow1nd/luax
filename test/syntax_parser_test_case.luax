@@ -1,0 +1,69 @@
+// The luax parser should be able to go through these tests.
+
+/* c-style comment */
+// cpp-style comment
+-- lua-style comment
+--[[ 
+	lua-style multi-line comment 
+]]
+
+
+-- var declare
+local foo;
+
+//
+// statement
+//
+
+-- if statement
+if expr then
+	stmt;
+end
+
+-- if_else statement
+if expr then
+	stmt;
+else
+	stmt;
+end
+
+-- while statement
+while expr then
+	stmt;
+	break;
+	continue;
+end
+
+//
+// expressions
+//
+
+-- arithmetic expressions
+a + b;
+a - 555;
+a + b * 56;
+a * (b + c);
+
+-- logical expressions
+a < b;
+a > b;
+a <= b;
+a >= b;
+a == b;
+a != b;
+a < b and c <d;
+a != b or b != c;
+not b == a;
+
+-- literal expressions
+123;
+10.56;
+'a string';
+"another string";
+{key : "value", 'key 2' : 56, key3: {}};
+
+-- function call expressions
+func();
+func(a, b, c);
+func(nil);
+(func())();
