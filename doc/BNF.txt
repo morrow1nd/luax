@@ -13,6 +13,10 @@ stmt ->
 		| while_stmt
 		| for_stmt
 		| expr_stmt
+		| BREAK ';'
+		| CONTINUE ';'
+		| RETURN ';'
+		| RETURN expr_list ';'
 
 
 if_stmt ->
@@ -30,12 +34,22 @@ expr_stmt ->
 
 
 expr_list ->
-		  expr
-		| expr ',' expr_list
+		  expr ',' expr_list
+		| expr
+prefix_expr_list ->
+		  prefix_expr ',' prefix_expr_list
+		| prefix_expr
 
 
 expr ->
-		  compare_expr logical_op compare_expr
+		  assign_expr
+
+assign_expr ->
+		  prefix_expr_list '=' expr_list
+		| logical_expr
+
+logical_expr ->
+		  compare_expr logical_op logical_expr
 		| compare_expr
 
 compare_expr ->
@@ -47,14 +61,15 @@ addtive_expr ->
 		| multiply_expr
 
 multiply_expr ->
-		  un_expr multiply_op multiply_expr
-		| un_expr
+		  prefix_expr multiply_op multiply_expr
+		| prefix_expr
 
-un_expr ->
-		  un_op single_expr
-		| single_expr '(' ')'
-		| single_expr '(' expr_list ')'
-		| single_expr '[' expr ']'
+prefix_expr ->
+		  prefix_op suffix_expr
+		| suffix_expr
+
+suffix_expr ->
+		  single_expr suffix_op
 		| single_expr
 
 single_expr ->
@@ -62,20 +77,23 @@ single_expr ->
 		| NIL
 		| FALSE
 		| TRUE
-		| function_define
 		| immediate
 		| IDENTIFIER
 
-
-function_define ->
-		  FUNCTION '(' identifier_list ')' stmt_sequence END
-identifier_list ->
-		  IDENTIFIER
-		| IDENTIFIER ',' identifier_list
+suffix_op ->
+		  '(' ')' suffix_op
+		| '(' ')'
+		| '(' expr_list ')' suffix_op
+		| '(' expr_list ')'
+		| '[' expr ']' suffix_op
+		| '[' expr ']'
+		| '.' IDENTIFIER suffix_op
+		| '.' IDENTIFIER
 
 
 immediate ->
 		  object_immediate
+		| function_define
 		| STRING_IMMEDIATE
 		| NUMBER_IMMEDIATE
 object_immediate ->
@@ -90,6 +108,13 @@ object_immediate_item ->
 		| NUMBER_IMMEDIATE ':' object_immediate_item_value
 object_immediate_item_value ->
 		  immediate
+
+function_define ->
+		  FUNCTION '(' identifier_list ')' stmt_sequence END
+identifier_list ->
+		  IDENTIFIER
+		| IDENTIFIER ',' identifier_list
+
 
 
 logical_op ->
@@ -112,6 +137,6 @@ multiply_op ->
 		  '*'
 		| '/'
 
-un_op ->
+prefix_op ->
 		  '-'
 		| NOT
