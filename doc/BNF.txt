@@ -1,11 +1,11 @@
 compile_unit ->
 		  stmt_sequence
 
-
 stmt_sequence ->
 		  stmt_sequence stmt
 		| stmt
 		| ε
+
 
 
 stmt ->
@@ -17,7 +17,6 @@ stmt ->
 		| CONTINUE ';'
 		| RETURN ';'
 		| RETURN expr_list ';'
-
 
 if_stmt ->
 		  IF expr THEN stmt_sequence END
@@ -33,12 +32,14 @@ expr_stmt ->
 		  expr ';'
 
 
+
 expr_list ->
 		  expr ',' expr_list
 		| expr
 prefix_expr_list ->
 		  prefix_expr ',' prefix_expr_list
 		| prefix_expr
+
 
 
 expr ->
@@ -48,8 +49,9 @@ assign_expr ->
 		  prefix_expr_list '=' expr_list
 		| logical_expr
 
-logical_expr ->
-		  compare_expr logical_op logical_expr
+logical_expr -> 
+		  NOT compare_expr
+		| compare_expr logical_op logical_expr
 		| compare_expr
 
 compare_expr ->
@@ -79,6 +81,7 @@ single_expr ->
 		| TRUE
 		| immediate
 		| IDENTIFIER
+
 
 suffix_op ->
 		  '(' ')' suffix_op
@@ -116,7 +119,6 @@ identifier_list ->
 		| IDENTIFIER ',' identifier_list
 
 
-
 logical_op ->
 		  AND
 		| OR
@@ -139,4 +141,3 @@ multiply_op ->
 
 prefix_op ->
 		  '-'
-		| NOT
