@@ -46,7 +46,7 @@ expr ->
 		  assign_expr
 
 assign_expr ->
-		  prefix_expr_list '=' expr_list
+		  prefix_expr_list assign_op expr_list
 		| logical_expr
 
 logical_expr -> 
@@ -118,6 +118,13 @@ identifier_list ->
 		  IDENTIFIER
 		| IDENTIFIER ',' identifier_list
 
+
+assign_op ->
+		  '='
+		| '+='
+		| '-='
+		| '*='
+		| '/='
 
 logical_op ->
 		  AND
