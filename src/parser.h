@@ -1,3 +1,5 @@
+#ifndef __LX_PARSER__H_
+#define __LX_PARSER__H_
 
 enum lx_token_type
 {
@@ -6,7 +8,6 @@ enum lx_token_type
     LX_TOKEN_RETURN,
     LX_TOKEN_IF,
     LX_TOKEN_THEN,
-    LX_TOKEN_END,
     LX_TOKEN_ELSE,
     LX_TOKEN_WHILE,
     LX_TOKEN_FOR,
@@ -32,42 +33,44 @@ enum lx_token_type
     LX_TOKEN_STRING_IMMEDIATE,
     LX_TOKEN_NUMBER_IMMEDIATE,
 
-    LX_TOKEN_END
+    LX_TOKEN_ERROR // error happened!
+    //LX_TOKEN_END
 };
 
 typedef struct
 {
     int type;
-    char * text;
+    char *text;
+    int text_len;
+    int linenum;
 } lx_token;
-
-lx_token * lx_token_create(int type, char * text)
-{
-    lx_token * ret = (lx_token *)lx_malloc(sizeof(lx_token));
-    ret.type = type;
-    ret.text = text;
-    return ret;
-}
-
-void lx_token_destory(lx_token * token)
-{
-    if(!token)
-        assert(false);
-    free(token->text);
-    free(token);
-}
 
 typedef struct
 {
+    int token_number;
+    lx_token **tokens;
 
+    int curr; // point to current token
+
+    int tokens_capacity;
+
+    int raw_source_code_length;
+    char *raw_source_code;
 } lx_token_scanner;
 
-lx_token_scanner * lx_scan_token(char * source_code, int source_code_length)
+typedef struct
 {
-    
-}
+    // config before parser
+    int tem;
+} lx_parser;
 
-lx_token * lx_token_next(lx_token_scanner * scanner)
-{
 
-}
+//
+// Recursive Descent Parser Interface
+//
+
+void lx_parser_init(lx_parser *parser, lx_token_scanner *scanner);
+int lx_parser_do();
+
+
+#endif // end of __LX_PARSER__H_
