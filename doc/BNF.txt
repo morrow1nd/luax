@@ -102,7 +102,7 @@ immediate ->
 		| NUMBER_IMMEDIATE
 object_immediate ->
 		  '{' '}'
-		| '{' object_item_list '}'
+		| '{' object_immediate_item_list '}'
 object_immediate_item_list ->
 		  object_immediate_item ',' object_immediate_item_list
 		| object_immediate_item
