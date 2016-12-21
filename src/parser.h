@@ -33,8 +33,13 @@ enum lx_token_type
     LX_TOKEN_STRING_IMMEDIATE,
     LX_TOKEN_NUMBER_IMMEDIATE,
 
-    LX_TOKEN_ERROR // error happened!
-    //LX_TOKEN_END
+    LX_TOKEN_ERROR, // error happened!
+    LX_TOKEN_END    // it can remove the check before dereferencing lx_token_next
+                    // without this, we may use this:
+                    //      if(lx_token_next(scanner) && lx_token_next(scanner)->type == LX_TOKEN_IF){
+                    //          ...
+                    //      }
+                    // but now, lx_token_next(scanner) would return LX_TOKEN_END when next one is out of range.
 };
 
 typedef struct
@@ -61,16 +66,13 @@ typedef struct
 typedef struct
 {
     // config before parser
-    int tem;
+    lx_token_scanner *scanner;
 } lx_parser;
 
 
 //
-// Recursive Descent Parser Interface
+// Interface to generate bytecode
 //
-
-void lx_parser_init(lx_parser *parser, lx_token_scanner *scanner);
-int lx_parser_do();
 
 
 #endif // end of __LX_PARSER__H_
