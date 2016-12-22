@@ -5,6 +5,21 @@
 #include "./parser_callback.h"
 
 
+// helper function
+char* lx_helper_dump_token(lx_token *token, char * outstr)
+{
+    char token_text[LX_CONFIG_IDENTIFIER_MAX_LENGTH + 1];
+    if(token->text_len > 0 && token->text_len < LX_CONFIG_IDENTIFIER_MAX_LENGTH){
+        memcpy(token_text, token->text, token->text_len);
+        token_text[token->text_len] = '\0';
+    }else{
+        token_text[0] = '\0';
+    }
+    sprintf(outstr, "T%d,%d,%s,L%d", token->type, token->text_len, token_text, token->linenum);
+    return outstr;
+}
+
+
 //
 // Token Scanner - internal use
 //
@@ -15,18 +30,20 @@ static lx_token* add_one_token(lx_token_scanner *s, int token_type, char *ptr, i
 {
     s->token_number ++;
     if(s->token_number > s->tokens_capacity){
-        lx_token **tem_tokens = (lx_token**)lx_malloc(sizeof(lx_token*) * (s->tokens_capacity / LX_CONFIG_TOKEN_GRAIN + 1));
-        memcpy(tem_tokens, s->tokens, s->tokens_capacity * sizeof(lx_token*));
-        if(s->tokens)
+        lx_token **tem_tokens = (lx_token**)lx_malloc(sizeof(lx_token*) * (s->tokens_capacity / LX_CONFIG_TOKEN_GRAIN + 1) * LX_CONFIG_TOKEN_GRAIN);
+        if (s->tokens) {
+            memcpy(tem_tokens, s->tokens, s->tokens_capacity * sizeof(lx_token*));
             lx_free(s->tokens);
+        }
         s->tokens = tem_tokens;
         s->tokens_capacity += LX_CONFIG_TOKEN_GRAIN;
     }
-    lx_token* t = s->tokens[s->token_number] = LX_NEW(lx_token);
+    lx_token* t = LX_NEW(lx_token);
     t->type = token_type;
     t->text = ptr;
     t->text_len = text_len;
     t->linenum = linenum;
+    s->tokens[s->token_number] = t;
     return t;
 }
 
@@ -61,6 +78,19 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
             assert(false);
             return NULL;
         }
+        if (memcmp(p, "--[[", 4) == 0) {
+            int i = 0;
+            for (; ; ++i) {
+                if (*(p + i) == '\n')
+                    ++linenum;
+                if (*(p + i) == ']' && *(p + i + 1) == ']') {
+                    ++i;
+                    break;
+                }
+            }
+            p += i + 1;
+            continue;
+        }
         if(memcmp("//", p, 2) == 0 || memcmp("--", p, 2) == 0){
             int i = 0;
             for (; *(p + i) != '\n'; ++i)
@@ -74,19 +104,6 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
                 if (*(p + i) == '\n')
                     ++linenum;
                 if (*(p + i) == '*' && *(p + i + 1) == '/') {
-                    ++i;
-                    break;
-                }
-            }
-            p += i + 1;
-            continue;
-        }
-        if(memcmp(p, "--[[", 4) == 0){
-            int i = 0;
-            for (; ; ++i) {
-                if (*(p + i) == '\n')
-                    ++linenum;
-                if (*(p + i) == ']' && *(p + i + 1) == ']') {
                     ++i;
                     break;
                 }
