@@ -66,7 +66,7 @@ typedef lx_syntax_node* par;
 
 LX_CALLBACK_DECLARE1(compile_unit, stmt_sequence);
 
-LX_CALLBACK_DECLARE2(stmt_sequence, stmt_sequence, stmt);
+LX_CALLBACK_DECLARE2(stmt_sequence, stmt, stmt_sequence);
 LX_CALLBACK_DECLARE1(stmt_sequence, stmt);
 LX_CALLBACK_DECLARE1(stmt_sequence, EMPTY_SYMBOL); // use EMPTY_SYMBOL to replace symbol:ε
 
