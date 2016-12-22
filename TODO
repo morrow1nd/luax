@@ -1,8 +1,8 @@
 2016/12/20
- + use nginx-like string rather traditional c-str.
+ + [ ] use nginx-like string rather traditional c-str.
 
 2016/12/21
- + support `for ; ; then end`. Here are two way to do it.
+ + [ ] support `for ; ; then end`. Here are two way to do it.
     1. for_stmt ->
           FOR expr ';' expr ';' expr THEN stmt_sequence END
           FOR ';' expr ';' expr THEN stmt_sequence END
@@ -10,9 +10,10 @@
     2. expr ->
               ε
             | ...
- + lost `local` statement...
- + use Stack Allocator in parser's frequently alloc&free. Stack allocator can be used at this situation just right.
+ + [ ] lost `local` statement...
+ + [ ] use Stack Allocator in parser's frequently alloc&free. Stack allocator can be used at this situation just right.
 
  2016/12/22
-  + support more feadom in object_immediate syntax.
-  
+  + [ ] support more feadom in object_immediate syntax.
+        + [ ] consider this situation: `aa = { aa : {} };`, should we support it?
+  + [ ] dynamic realloc in scan tokens: select one suitable LX_CONFIG_IDENTIFIER_MAX_LENGTH to fit big source code file and small source code file both.
