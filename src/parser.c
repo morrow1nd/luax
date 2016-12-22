@@ -309,6 +309,80 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
                 add_one_token(s, LX_TOKEN_IDENTIFIER, p, i, linenum);
                 p += i;
                 continue;
+            } else if(*p == '"'){
+                char * changed = p;
+                char * curr = p + 1;
+                while(*curr != '"'){
+                    if(*curr == '\\'){
+                        // we need to zhuanyi <-todo
+                        ++curr;
+                        switch(*curr){
+                        case 'n':
+                            *changed = '\n';
+                            break;
+                        case 't':
+                            *changed = '\t';
+                            break;
+                        case 'r':
+                            *changed = '\r';
+                            break;
+                        case '\\':
+                            *changed = '\\';
+                            break;
+                        case '"':
+                            *changed = '"';
+                            break;
+                        default:
+                            // todo: add error info: ...
+                            token_error(s, curr - 1, linenum);
+                            return s;
+                        }
+                    }else{
+                        *changed = *curr;
+                    }
+                    ++curr;
+                    ++changed;
+                }
+                *changed = '\0'; // no need to do this
+                add_one_token(s, LX_TOKEN_STRING_IMMEDIATE, p, changed - p, linenum);
+                p = curr + 1;
+            } else if(*p == '\''){
+                char * changed = p;
+                char * curr = p + 1;
+                while(*curr != '\''){
+                    if(*curr == '\\'){
+                        // we need to zhuanyi <-todo
+                        ++curr;
+                        switch(*curr){
+                        case 'n':
+                            *changed = '\n';
+                            break;
+                        case 't':
+                            *changed = '\t';
+                            break;
+                        case 'r':
+                            *changed = '\r';
+                            break;
+                        case '\\':
+                            *changed = '\\';
+                            break;
+                        case '\'':
+                            *changed = '\'';
+                            break;
+                        default:
+                            // todo: add error info: ...
+                            token_error(s, curr - 1, linenum);
+                            return s;
+                        }
+                    }else{
+                        *changed = *curr;
+                    }
+                    ++curr;
+                    ++changed;
+                }
+                *changed = '\0'; // no need to do this
+                add_one_token(s, LX_TOKEN_STRING_IMMEDIATE, p, changed - p, linenum);
+                p = curr + 1;
             } else {
                 token_error(s, p, linenum);
                 return s;

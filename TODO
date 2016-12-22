@@ -17,3 +17,6 @@
   + [ ] support more feadom in object_immediate syntax.
         + [ ] consider this situation: `aa = { aa : {} };`, should we support it?
   + [ ] dynamic realloc in scan tokens: select one suitable LX_CONFIG_IDENTIFIER_MAX_LENGTH to fit big source code file and small source code file both.
+
+2016/12/23
+ + [X] support 'a string' type string.
