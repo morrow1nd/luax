@@ -2,7 +2,7 @@ compile_unit ->
 		  stmt_sequence
 
 stmt_sequence ->
-		  stmt_sequence stmt
+		  stmt stmt_sequence
 		| stmt
 		| ε
 
