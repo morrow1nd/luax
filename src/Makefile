@@ -2,7 +2,7 @@
 CC= gcc
 CFLAGS= -Wall -pedantic
 
-OBJS= opcode.o parser.o
+OBJS= opcode.o parser.o parser_callback.o
 
 all: $(OBJS)
 

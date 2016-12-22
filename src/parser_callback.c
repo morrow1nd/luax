@@ -16,7 +16,7 @@ LX_CALLBACK_DECLARE1(stmt_sequence, stmt)
 }
 LX_CALLBACK_DECLARE1(stmt_sequence, EMPTY_SYMBOL) // use EMPTY_SYMBOL to replace symbol:ε
 {
-    debuglog("stmt_sequence  ->  ε");
+    debuglog("stmt_sequence  ->  EMPTY_SYMBOL");
 }
 
 LX_CALLBACK_DECLARE1(stmt, EOS) // EOS: end of statement

@@ -50,6 +50,8 @@ typedef struct
     int linenum;
 } lx_token;
 
+char* lx_helper_dump_token(lx_token *token, char * outstr);
+
 typedef struct
 {
     int token_number;

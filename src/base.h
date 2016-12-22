@@ -8,15 +8,17 @@
 #include <stdbool.h> // bool, false, true
 #include <assert.h> // assert
 
+
+#include "./config.h"
+
+
 #if(LX_DEBUG)
-# include <stdio.h> // printf
+# include <stdio.h> // printf, sprintf
 #endif
 
-void debug(const char * info)
-{
-    #if(LX_DEBUG)
-    printf("%s", info);
-    #endif
-}
+
+void debug(const char * info);
+// log out one line
+void debuglog(const char * one_line);
 
 #endif // end of __LX_BASE__H_

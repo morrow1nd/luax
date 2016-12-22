@@ -28,6 +28,12 @@ static lx_token lx_token_end;
 
 static lx_token* add_one_token(lx_token_scanner *s, int token_type, char *ptr, int text_len, int linenum)
 {
+#if(LX_DEBUG)
+    if(token_type < 255)
+        printf("add_one_token: %c, L%d\n", token_type, linenum);
+    else
+        printf("add_one_token: %d, L%d\n", token_type, linenum);
+#endif
     s->token_number ++;
     if(s->token_number > s->tokens_capacity){
         lx_token **tem_tokens = (lx_token**)lx_malloc(sizeof(lx_token*) * (s->tokens_capacity / LX_CONFIG_TOKEN_GRAIN + 1) * LX_CONFIG_TOKEN_GRAIN);
@@ -43,7 +49,7 @@ static lx_token* add_one_token(lx_token_scanner *s, int token_type, char *ptr, i
     t->text = ptr;
     t->text_len = text_len;
     t->linenum = linenum;
-    s->tokens[s->token_number] = t;
+    s->tokens[s->token_number - 1] = t;
     return t;
 }
 
@@ -62,6 +68,7 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
     s->tokens_capacity = 0;
     s->token_number = 0;
     s->tokens = NULL;
+    s->curr = -1;
 
     lx_token_end.linenum = -1;
     lx_token_end.text = source_code + (int)source_code_length;
@@ -313,7 +320,6 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
         ++p;
     }
     // scan all source code successful
-    s->curr = -1;
     return s;
 }
 lx_token* lx_token_nextN(lx_token_scanner *s, int n)
