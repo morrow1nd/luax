@@ -343,7 +343,7 @@ int lx_token_scanner_move_forward(lx_token_scanner *s, int step)
 #define CURR(_parser) (lx_token_nextN(_parser->scanner, 0))
 #define NEXT(_parser) (lx_token_next(_parser->scanner))
 #define NEXT_TYPE_EQUAL(_parser, _type) (NEXT(_parser)->type == _type)
-#define GOTO_NEXT(_parser) (lx_token_move_forward(_parser->scanner, 1))
+#define GOTO_NEXT(_parser) (lx_token_scanner_move_forward(_parser->scanner, 1))
 #define NEW_SYNTAX_NODE(_node) lx_syntax_node * _node = LX_NEW(lx_syntax_node)
 #define NEW_SYNTAX_NODE_T(_node, _token) \
 lx_syntax_node * _node = LX_NEW(lx_syntax_node);\
@@ -404,7 +404,7 @@ static int compile_unit(lx_parser *p, lx_syntax_node *self)
     NEW_SYNTAX_NODE(stmt_sequence_node);
     if (stmt_sequence(p, stmt_sequence_node) == 0) {
         LX_CALLBACK_CALL1(compile_unit, stmt_sequence,
-            self, stmt_sequence);
+            self, stmt_sequence_node);
         return 0;
     }
     FREE_SYNTAX_NODE(stmt_sequence_node);
@@ -1205,7 +1205,7 @@ static int object_immediate_item(lx_parser *p, lx_syntax_node *self)
             NEW_SYNTAX_NODE_T(colon_node, CURR(p));
             NEW_SYNTAX_NODE(object_immediate_item_value_node);
             if (object_immediate_item_value(p, object_immediate_item_value_node) == 0) {
-                LX_CALLBACK_CALL3(object_immediate_item, IDENTIFIER, COLON, object_immediate_item_value_node, 
+                LX_CALLBACK_CALL3(object_immediate_item, IDENTIFIER, COLON, object_immediate_item_value, 
                     self, identifier_node, colon_node, object_immediate_item_value_node);
                 return 0;
             }
@@ -1223,7 +1223,7 @@ static int object_immediate_item(lx_parser *p, lx_syntax_node *self)
            NEW_SYNTAX_NODE_T(colon_node, CURR(p));
            NEW_SYNTAX_NODE(object_immediate_item_value_node);
            if (object_immediate_item_value(p, object_immediate_item_value_node) == 0) {
-               LX_CALLBACK_CALL3(object_immediate_item, STRING_IMMEDIATE, COLON, object_immediate_item_value_node,
+               LX_CALLBACK_CALL3(object_immediate_item, STRING_IMMEDIATE, COLON, object_immediate_item_value,
                    self, string_immediate_node, colon_node, object_immediate_item_value_node);
                return 0;
            }
@@ -1241,7 +1241,7 @@ static int object_immediate_item(lx_parser *p, lx_syntax_node *self)
             NEW_SYNTAX_NODE_T(colon_node, CURR(p));
             NEW_SYNTAX_NODE(object_immediate_item_value_node);
             if (object_immediate_item_value(p, object_immediate_item_value_node) == 0) {
-                LX_CALLBACK_CALL3(object_immediate_item, NUMBER_IMMEDIATE, COLON, object_immediate_item_value_node,
+                LX_CALLBACK_CALL3(object_immediate_item, NUMBER_IMMEDIATE, COLON, object_immediate_item_value,
                     self, number_immediate_node, colon_node, object_immediate_item_value_node);
                 return 0;
             }
@@ -1315,7 +1315,8 @@ static int identifier_list(lx_parser *p, lx_syntax_node *self)
             NEW_SYNTAX_NODE_T(comma_node, CURR(p));
             NEW_SYNTAX_NODE(identifier_list_node);
             if (identifier_list(p, identifier_list_node) == 0) {
-                LX_CALLBACK_CALL3(identifier_list, IDENTIFIER, COMMA, identifier_list, self, identifier_node, comma_node, identifier_list_node);
+                LX_CALLBACK_CALL3(identifier_list, IDENTIFIER, COMMA, identifier_list,
+                    self, identifier_node, comma_node, identifier_list_node);
                 return 0;
             }
             FREE_SYNTAX_NODE(identifier_list_node);
@@ -1334,31 +1335,31 @@ static int assign_op(lx_parser *p, lx_syntax_node *self)
     if (NEXT_TYPE_EQUAL(p, '=')) {
         GOTO_NEXT(p);
         NEW_SYNTAX_NODE_T(eql_node, CURR(p));
-        LX_CALLBACK_CALL1(compare_op, EQL, self, eql_node);
+        LX_CALLBACK_CALL1(assign_op, EQL, self, eql_node);
         return 0;
     }
     if (NEXT_TYPE_EQUAL(p, LX_TOKEN_ADD_EQL)) {
         GOTO_NEXT(p);
         NEW_SYNTAX_NODE_T(add_eql_node, CURR(p));
-        LX_CALLBACK_CALL1(compare_op, ADD_EQL, self, add_eql_node);
+        LX_CALLBACK_CALL1(assign_op, ADD_EQL, self, add_eql_node);
         return 0;
     }
     if (NEXT_TYPE_EQUAL(p, LX_TOKEN_SUB_EQL)) {
         GOTO_NEXT(p);
         NEW_SYNTAX_NODE_T(sub_eql_node, CURR(p));
-        LX_CALLBACK_CALL1(compare_op, SUB_EQL, self, sub_eql_node);
+        LX_CALLBACK_CALL1(assign_op, SUB_EQL, self, sub_eql_node);
         return 0;
     }
     if (NEXT_TYPE_EQUAL(p, LX_TOKEN_MUL_EQL)) {
         GOTO_NEXT(p);
         NEW_SYNTAX_NODE_T(mul_eql_node, CURR(p));
-        LX_CALLBACK_CALL1(compare_op, MUL_EQL, self, mul_eql_node);
+        LX_CALLBACK_CALL1(assign_op, MUL_EQL, self, mul_eql_node);
         return 0;
     }
     if (NEXT_TYPE_EQUAL(p, LX_TOKEN_DIV_EQL)) {
         GOTO_NEXT(p);
         NEW_SYNTAX_NODE_T(div_eql_node, CURR(p));
-        LX_CALLBACK_CALL1(compare_op, DIV_EQL, self, div_eql_node);
+        LX_CALLBACK_CALL1(assign_op, DIV_EQL, self, div_eql_node);
         return 0;
     }
     return -1;
@@ -1369,13 +1370,13 @@ static int logical_op(lx_parser *p, lx_syntax_node *self)
     if (NEXT_TYPE_EQUAL(p, LX_TOKEN_AND)) {
         GOTO_NEXT(p);
         NEW_SYNTAX_NODE_T(and_node, CURR(p));
-        LX_CALLBACK_CALL1(compare_op, AND, self, and_node);
+        LX_CALLBACK_CALL1(logical_op, AND, self, and_node);
         return 0;
     }
     if (NEXT_TYPE_EQUAL(p, LX_TOKEN_OR)) {
         GOTO_NEXT(p);
         NEW_SYNTAX_NODE_T(or_node, CURR(p));
-        LX_CALLBACK_CALL1(compare_op, OR, self, or_node);
+        LX_CALLBACK_CALL1(logical_op, OR, self, or_node);
         return 0;
     }
     return -1;
