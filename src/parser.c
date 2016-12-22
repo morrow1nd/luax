@@ -30,28 +30,28 @@ static lx_token* add_one_token(lx_token_scanner *s, int token_type, char *ptr, i
     return t;
 }
 
-static token_error(lx_token_scanner *s, char *ptr, int linenum)
+static lx_token* token_error(lx_token_scanner *s, char *ptr, int linenum)
 {
-    add_one_token(s, LX_TOKEN_ERROR, ptr, 1, linenum);
+    return add_one_token(s, LX_TOKEN_ERROR, ptr, 1, linenum);
 }
 
-lx_token_scanner* lx_scan_token(const char *source_code, const int source_code_length)
+lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
 {
     lx_token_scanner * s = LX_NEW(lx_token_scanner);
     if(!s)
         return NULL;
     s->raw_source_code = source_code;
-    s->raw_source_code_length = source_code_length;
+    s->raw_source_code_length = (int)source_code_length;
     s->tokens_capacity = 0;
     s->token_number = 0;
     s->tokens = NULL;
 
     lx_token_end.linenum = -1;
-    lx_token_end.text = source_code + source_code_length;
+    lx_token_end.text = source_code + (int)source_code_length;
     lx_token_end.text_len = 0;
     lx_token_end.type = LX_TOKEN_END;
 
-    const char *p = source_code;
+    char *p = source_code;
 
     int linenum = 1;
     char vartem[LX_CONFIG_IDENTIFIER_MAX_LENGTH];
@@ -268,7 +268,7 @@ lx_token_scanner* lx_scan_token(const char *source_code, const int source_code_l
             break;
         default: {
             if (isdigit(*p)) {
-                const char * pp = p;
+                char * pp = p;
                 float data = strtod(p, &pp);
                 if ((pp - p) == 0) {
                     token_error(s, p, linenum);
@@ -299,6 +299,13 @@ lx_token_scanner* lx_scan_token(const char *source_code, const int source_code_l
     s->curr = -1;
     return s;
 }
+lx_token* lx_token_nextN(lx_token_scanner *s, int n)
+{
+    if (s->curr >= s->token_number - n)
+        return &lx_token_end;
+    else
+        return s->tokens[s->curr + n];
+}
 lx_token* lx_token_next(lx_token_scanner *s)
 {
     //if (s->curr >= s->token_number - 1)
@@ -306,13 +313,6 @@ lx_token* lx_token_next(lx_token_scanner *s)
     //else
     //return s->tokens[s->curr + 1];
     return lx_token_nextN(s, 1);
-}
-lx_token* lx_token_nextN(lx_token_scanner *s, int n)
-{
-    if (s->curr >= s->token_number - n)
-        return &lx_token_end;
-    else
-        return s->tokens[s->curr + n];
 }
 int lx_token_scanner_get_curr_state(lx_token_scanner *s)
 {
@@ -350,6 +350,48 @@ lx_syntax_node * _node = LX_NEW(lx_syntax_node);\
 _node->token = _token
 
 #define FREE_SYNTAX_NODE(_node) lx_free(_node)
+
+//
+// forward declaration
+//
+
+static int compile_unit(lx_parser *p, lx_syntax_node *self);
+static int stmt_sequence(lx_parser *p, lx_syntax_node *self);
+static int stmt(lx_parser *p, lx_syntax_node *self);
+static int if_stmt(lx_parser *p, lx_syntax_node *self);
+static int while_stmt(lx_parser *p, lx_syntax_node *self);
+static int for_stmt(lx_parser *p, lx_syntax_node *self);
+static int expr_stmt(lx_parser *p, lx_syntax_node *self);
+static int expr_list(lx_parser *p, lx_syntax_node *self);
+static int prefix_expr_list(lx_parser *p, lx_syntax_node *self);
+
+static int expr(lx_parser *p, lx_syntax_node *self);
+static int assign_expr(lx_parser *p, lx_syntax_node *self);
+static int logical_expr(lx_parser *p, lx_syntax_node *self);
+static int compare_expr(lx_parser *p, lx_syntax_node *self);
+static int addtive_expr(lx_parser *p, lx_syntax_node *self);
+static int multiply_expr(lx_parser *p, lx_syntax_node *self);
+static int prefix_expr(lx_parser *p, lx_syntax_node *self);
+static int suffix_expr(lx_parser *p, lx_syntax_node *self);
+static int single_expr(lx_parser *p, lx_syntax_node *self);
+static int suffix_op(lx_parser *p, lx_syntax_node *self);
+
+static int immediate(lx_parser *p, lx_syntax_node *self);
+static int object_immediate(lx_parser *p, lx_syntax_node *self);
+static int object_immediate_item_list(lx_parser *p, lx_syntax_node *self);
+static int object_immediate_item(lx_parser *p, lx_syntax_node *self);
+static int object_immediate_item_value(lx_parser *p, lx_syntax_node *self);
+
+static int function_define(lx_parser *p, lx_syntax_node *self);
+static int identifier_list(lx_parser *p, lx_syntax_node *self);
+
+static int assign_op(lx_parser *p, lx_syntax_node *self);
+static int logical_op(lx_parser *p, lx_syntax_node *self);
+static int compare_op(lx_parser *p, lx_syntax_node *self);
+static int addtive_op(lx_parser * p, lx_syntax_node * self);
+static int multiply_op(lx_parser *p, lx_syntax_node* self);
+static int prefix_op(lx_parser * p, lx_syntax_node *self);
+
 
 int lx_parser_begin(lx_parser * p, lx_parser *parser)
 {
@@ -507,7 +549,7 @@ static int if_stmt(lx_parser *p, lx_syntax_node *self)
                     if (NEXT_TYPE_EQUAL(p, LX_TOKEN_END)) {
                         GOTO_NEXT(p);
                         NEW_SYNTAX_NODE_T(end_node, CURR(p));
-                        LX_CALLBACK_CALL5(IF, expr, THEN, stmt_sequence, END,
+                        LX_CALLBACK_CALL5(if_stmt, IF, expr, THEN, stmt_sequence, END,
                             self, if_node, expr_node, then_node, stmt_sequence_node, end_node);
                         return 0;
                     }
@@ -519,7 +561,7 @@ static int if_stmt(lx_parser *p, lx_syntax_node *self)
                             if (NEXT_TYPE_EQUAL(p, LX_TOKEN_END)) {
                                 GOTO_NEXT(p);
                                 NEW_SYNTAX_NODE_T(end_node, CURR(p));
-                                LX_CALLBACK_CALL7(IF, expr, THEN, stmt_sequence, ELSE, stmt_sequence, END,
+                                LX_CALLBACK_CALL7(if_stmt, IF, expr, THEN, stmt_sequence, ELSE, stmt_sequence, END,
                                     self, if_node, expr_node, then_node, stmt_sequence_node, else_node, stmt_sequence_node2, end_node);
                                 return 0;
                             }
@@ -557,7 +599,7 @@ static int while_stmt(lx_parser *p, lx_syntax_node *self)
                     if (NEXT_TYPE_EQUAL(p, LX_TOKEN_END)) {
                         GOTO_NEXT(p);
                         NEW_SYNTAX_NODE_T(end_node, CURR(p));
-                        LX_CALLBACK_CALL5(WHILE, expr, THEN, stmt_sequence, END,
+                        LX_CALLBACK_CALL5(while_stmt, WHILE, expr, THEN, stmt_sequence, END,
                             self, while_node, expr_node, then_node, stmt_sequence_node, end_node);
                         return 0;
                     }
@@ -601,8 +643,8 @@ static int for_stmt(lx_parser *p, lx_syntax_node *self)
                                     if (NEXT_TYPE_EQUAL(p, LX_TOKEN_END)) {
                                         GOTO_NEXT(p);
                                         NEW_SYNTAX_NODE_T(end_node, CURR(p));
-                                        LX_CALLBACK_CALL9(FOR, expr, EOS, expr, EOS, expr, THEN, stmt_sequence, END,
-                                            self, expr_node, eos_node, expr_node2, eos_node2, expr_node3, then_node, stmt_sequence_node, end_node);
+                                        LX_CALLBACK_CALL9(for_stmt, FOR, expr, EOS, expr, EOS, expr, THEN, stmt_sequence, END,
+                                            self, for_node, expr_node, eos_node, expr_node2, eos_node2, expr_node3, then_node, stmt_sequence_node, end_node);
                                         return 0;
                                     }
                                 }
@@ -1000,7 +1042,7 @@ static int suffix_op(lx_parser *p, lx_syntax_node *self)
                 NEW_SYNTAX_NODE(suffix_op_node);
                 if (suffix_op(p, suffix_op_node) == 0) {
                     LX_CALLBACK_CALL4(suffix_op, SL, expr_list, SR, suffix_op,
-                        self, suffix_op_node, sl_node, expr_list_node, sr_node, suffix_op_node);
+                        self, sl_node, expr_list_node, sr_node, suffix_op_node);
                     return 0;
                 }
                 FREE_SYNTAX_NODE(suffix_op_node);
