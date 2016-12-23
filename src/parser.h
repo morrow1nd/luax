@@ -12,6 +12,7 @@ enum lx_token_type
     LX_TOKEN_WHILE,
     LX_TOKEN_FOR,
     LX_TOKEN_FUNCTION,
+    LX_TOKEN_END,
 
     LX_TOKEN_NOT,           // not
     LX_TOKEN_AND,           // and
@@ -34,7 +35,7 @@ enum lx_token_type
     LX_TOKEN_NUMBER_IMMEDIATE,
 
     LX_TOKEN_ERROR, // error happened!
-    LX_TOKEN_END    // it can remove the check before dereferencing lx_token_next
+    LX_TOKEN_NO_MORE// it can remove the check before dereferencing lx_token_next
                     // without this, we may use this:
                     //      if(lx_token_next(scanner) && lx_token_next(scanner)->type == LX_TOKEN_IF){
                     //          ...

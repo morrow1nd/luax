@@ -24,7 +24,7 @@ char* lx_helper_dump_token(lx_token *token, char * outstr)
 // Token Scanner - internal use
 //
 
-static lx_token lx_token_end;
+static lx_token lx_token_no_more;
 
 static lx_token* add_one_token(lx_token_scanner *s, int token_type, char *ptr, int text_len, int linenum)
 {
@@ -70,10 +70,10 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
     s->tokens = NULL;
     s->curr = -1;
 
-    lx_token_end.linenum = -1;
-    lx_token_end.text = source_code + (int)source_code_length;
-    lx_token_end.text_len = 0;
-    lx_token_end.type = LX_TOKEN_END;
+    lx_token_no_more.linenum = -1;
+    lx_token_no_more.text = source_code + (int)source_code_length;
+    lx_token_no_more.text_len = 0;
+    lx_token_no_more.type = LX_TOKEN_NO_MORE;
 
     char *p = source_code;
 
@@ -87,7 +87,7 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
         }
         if (memcmp(p, "--[[", 4) == 0) {
             int i = 0;
-            for (; ; ++i) {
+            for (; p + i < source_code + source_code_length; ++i) {
                 if (*(p + i) == '\n')
                     ++linenum;
                 if (*(p + i) == ']' && *(p + i + 1) == ']') {
@@ -100,14 +100,14 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
         }
         if(memcmp("//", p, 2) == 0 || memcmp("--", p, 2) == 0){
             int i = 0;
-            for (; *(p + i) != '\n'; ++i)
+            for (; p + i < source_code + source_code_length && *(p + i) != '\n'; ++i)
                 ;
             p += i;
             continue;
         }
         if (memcmp(p, "/*", 2) == 0) {
             int i = 0;
-            for (; ; ++i) {
+            for (; p + i < source_code + source_code_length; ++i) {
                 if (*(p + i) == '\n')
                     ++linenum;
                 if (*(p + i) == '*' && *(p + i + 1) == '/') {
@@ -161,6 +161,11 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
         if (memcmp(p, "function", 8) == 0) {
             add_one_token(s, LX_TOKEN_FUNCTION, p, 8, linenum);
             p += 8;
+            continue;
+        }
+        if (memcmp(p, "end", 3) == 0) {
+            add_one_token(s, LX_TOKEN_END, p, 3, linenum);
+            p += 3;
             continue;
         }
         if (memcmp(p, "not", 3) == 0) {
@@ -290,6 +295,12 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
         case ':':
             type = ':';
             break;
+        case ',':
+            type = ',';
+            break;
+        case '.':
+            type = '.';
+            break;
         default: {
             if (isdigit(*p)) {
                 char * pp = p;
@@ -401,7 +412,7 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
 lx_token* lx_token_nextN(lx_token_scanner *s, int n)
 {
     if (s->curr >= s->token_number - n)
-        return &lx_token_end;
+        return &lx_token_no_more;
     else
         return s->tokens[s->curr + n];
 }

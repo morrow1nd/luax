@@ -22,38 +22,47 @@ LX_CALLBACK_DECLARE1(stmt_sequence, EMPTY_SYMBOL) // use EMPTY_SYMBOL to replace
 LX_CALLBACK_DECLARE1(stmt, EOS) // EOS: end of statement
 {
     debuglog("stmt  ->  EOS");
+    debuglog("================== new statement ================== empty statement");
 }
 LX_CALLBACK_DECLARE1(stmt, if_stmt)
 {
     debuglog("stmt  ->  if_stmt");
+    debuglog("================== new statement ================== if");
 }
 LX_CALLBACK_DECLARE1(stmt, while_stmt)
 {
     debuglog("stmt  ->  while_stmt");
+    debuglog("================== new statement ================== while");
 }
 LX_CALLBACK_DECLARE1(stmt, for_stmt)
 {
     debuglog("stmt  ->  for_stmt");
+    debuglog("================== new statement ================== for");
 }
 LX_CALLBACK_DECLARE1(stmt, expr_stmt)
 {
     debuglog("stmt  ->  expr_stmt");
+    debuglog("================== new statement ================== expr_stmt");
 }
 LX_CALLBACK_DECLARE2(stmt, BREAK, EOS)
 {
     debuglog("stmt  ->  BREAK EOS");
+    debuglog("================== new statement ================== break;");
 }
 LX_CALLBACK_DECLARE2(stmt, CONTINUE, EOS)
 {
     debuglog("stmt  ->  CONTINUE EOS");
+    debuglog("================== new statement ================== continue;");
 }
 LX_CALLBACK_DECLARE2(stmt, RETURN, EOS)
 {
     debuglog("stmt  ->  RETURN EOS");
+    debuglog("================== new statement ================== return;");
 }
 LX_CALLBACK_DECLARE3(stmt, RETURN, expr_list, EOS)
 {
     debuglog("stmt  ->  RETURN expr_list EOS");
+    debuglog("================== new statement ================== return expr_list;");
 }
 
 LX_CALLBACK_DECLARE5(if_stmt, IF, expr, THEN, stmt_sequence, END)
