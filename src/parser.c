@@ -30,7 +30,7 @@ static lx_token* add_one_token(lx_token_scanner *s, int token_type, char *ptr, i
 {
 #if(LX_DEBUG)
     if(token_type < 255)
-        printf("add_one_token: %c, L%d\n", token_type, linenum);
+        printf("add_one_token: %d[%c] L%d\n", token_type, token_type, linenum);
     else
         printf("add_one_token: %d, L%d\n", token_type, linenum);
 #endif
@@ -346,6 +346,7 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
                 *changed = '\0'; // no need to do this
                 add_one_token(s, LX_TOKEN_STRING_IMMEDIATE, p, changed - p, linenum);
                 p = curr + 1;
+                continue;
             } else if(*p == '\''){
                 char * changed = p;
                 char * curr = p + 1;
@@ -383,6 +384,7 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
                 *changed = '\0'; // no need to do this
                 add_one_token(s, LX_TOKEN_STRING_IMMEDIATE, p, changed - p, linenum);
                 p = curr + 1;
+                continue;
             } else {
                 token_error(s, p, linenum);
                 return s;
