@@ -1,5 +1,6 @@
-
-    **警告**：最后更新于2016年12月24日，落后于[英文版](../../README.md)
+<div class="out-div" style="font-size: 16px;line-height: 40px;display: inline-block;height: 40px;padding-left: 50px;padding-right: 50px;text-align: center;border-radius: 5px;margin-left: 32px;vertical-align: top;background-color: #fff6bf;">
+    <span><b>警告</b>：最后更新于2016年12月24日，落后于<a href="../../README.md" style="text-decoration: none">英文版</a></span>
+</div>
 
 ![Open Source Love](https://badges.frapsoft.com/os/mit/mit.svg?v=102)
 
