@@ -64,6 +64,16 @@ LX_CALLBACK_DECLARE3(stmt, RETURN, expr_list, EOS)
     debuglog("stmt  ->  RETURN expr_list EOS");
     debuglog("================== new statement ================== return expr_list;");
 }
+LX_CALLBACK_DECLARE3(stmt, LOCAL, identifier_list, EOS)
+{
+    debuglog("stmt  ->  LOCAL identifier_list EOS");
+    debuglog("================== new statement ================== local identifier_list;");
+}
+LX_CALLBACK_DECLARE5(stmt, LOCAL, identifier_list, EQL, expr_list, EOS)
+{
+    debuglog("stmt  ->  LOCAL identifier_list EQL expr_list EOS");
+    debuglog("================== new statement ================== local identifier_list = expr_list;");
+}
 
 LX_CALLBACK_DECLARE5(if_stmt, IF, expr, THEN, stmt_sequence, END)
 {

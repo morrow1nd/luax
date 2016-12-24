@@ -79,6 +79,8 @@ LX_CALLBACK_DECLARE2(stmt, BREAK, EOS);
 LX_CALLBACK_DECLARE2(stmt, CONTINUE, EOS);
 LX_CALLBACK_DECLARE2(stmt, RETURN, EOS);
 LX_CALLBACK_DECLARE3(stmt, RETURN, expr_list, EOS);
+LX_CALLBACK_DECLARE3(stmt, LOCAL, identifier_list, EOS);
+LX_CALLBACK_DECLARE5(stmt, LOCAL, identifier_list, EQL, expr_list, EOS);
 
 LX_CALLBACK_DECLARE5(if_stmt, IF, expr, THEN, stmt_sequence, END);
 LX_CALLBACK_DECLARE7(if_stmt, IF, expr, THEN, stmt_sequence, ELSE, stmt_sequence, END);

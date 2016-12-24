@@ -168,6 +168,11 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
             p += 3;
             continue;
         }
+        if (memcmp(p, "local", 5) == 0) {
+            add_one_token(s, LX_TOKEN_LOCAL, p, 5, linenum);
+            p += 5;
+            continue;
+        }
         if (memcmp(p, "not", 3) == 0) {
             add_one_token(s, LX_TOKEN_NOT, p, 3, linenum);
             p += 3;
@@ -636,6 +641,38 @@ static int stmt(lx_parser *p, lx_syntax_node *self)
         }
         FREE_SYNTAX_NODE(expr_list_node);
         FREE_SYNTAX_NODE(return_node);
+    }
+    if (NEXT_TYPE_EQUAL(p, LX_TOKEN_LOCAL)) {
+        GOTO_NEXT(p);
+        NEW_SYNTAX_NODE_T(local_node, CURR(p));
+        NEW_SYNTAX_NODE(identifier_list_node);
+        if (identifier_list(p, identifier_list_node) == 0) {
+            if (NEXT_TYPE_EQUAL(p, ';')) {
+                GOTO_NEXT(p);
+                NEW_SYNTAX_NODE_T(eos_node, CURR(p));
+                LX_CALLBACK_CALL3(stmt, LOCAL, identifier_list, EOS,
+                    self, local_node, identifier_list_node, eos_node);
+                return 0;
+            }
+            if (NEXT_TYPE_EQUAL(p, '=')) {
+                GOTO_NEXT(p);
+                NEW_SYNTAX_NODE_T(eql_node, CURR(p));
+                NEW_SYNTAX_NODE(expr_list_node);
+                if (expr_list(p, expr_list_node) == 0) {
+                    if (NEXT_TYPE_EQUAL(p, ';')) {
+                        GOTO_NEXT(p);
+                        NEW_SYNTAX_NODE_T(eos_node, CURR(p));
+                        LX_CALLBACK_CALL5(stmt, LOCAL, identifier_list, EQL, expr_list, EOS,
+                            self, local_node, identifier_list_node, eql_node, expr_list_node, eos_node);
+                        return 0;
+                    }
+                }
+                FREE_SYNTAX_NODE(expr_list_node);
+                FREE_SYNTAX_NODE(eql_node);
+            }
+        }
+        FREE_SYNTAX_NODE(identifier_list_node);
+        FREE_SYNTAX_NODE(local_node);
     }
 
     lx_token_scanner_recover_state(p->scanner, backup_state);

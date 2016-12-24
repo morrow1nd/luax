@@ -7,9 +7,15 @@
 	lua-style multi-line comment 
 ]]
 
+-- identifier
+_begin_with_;
+_5555;
+_55au57au__uau;
 
 -- var declare
 local foo;
+local aa, bb;
+local tem, aa = 56, 123;
 
 
 --[[

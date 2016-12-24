@@ -18,6 +18,8 @@ stmt ->
 		| CONTINUE ';'
 		| RETURN ';'
 		| RETURN expr_list ';'
+		| LOCAL identifier_list ';'
+		| LOCAL identifier_list '=' expr_list ';'
 
 if_stmt ->
 		  IF expr THEN stmt_sequence END

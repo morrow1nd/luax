@@ -13,6 +13,7 @@ enum lx_token_type
     LX_TOKEN_FOR,
     LX_TOKEN_FUNCTION,
     LX_TOKEN_END,
+    LX_TOKEN_LOCAL,
 
     LX_TOKEN_NOT,           // not
     LX_TOKEN_AND,           // and
@@ -40,7 +41,7 @@ enum lx_token_type
                     //      if(lx_token_next(scanner) && lx_token_next(scanner)->type == LX_TOKEN_IF){
                     //          ...
                     //      }
-                    // but now, lx_token_next(scanner) would return LX_TOKEN_END when next one is out of range.
+                    // but now, lx_token_next(scanner) would return LX_TOKEN_NO_MORE when next one is out of range.
 };
 
 typedef struct
