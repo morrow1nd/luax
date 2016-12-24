@@ -21,3 +21,14 @@ void debuglog_l(int linenum, const char * one_line)
     printf("%d: %s\n", linenum, one_line);
 #endif
 }
+
+void debuglog_luax_str(int text_len, char * ptr)
+{
+#if(LX_DEBUG)
+    assert(text_len >= 0 && "debuglog_luax_str: argument text_len must >= 0");
+    char backup = *(ptr + text_len);
+    *(ptr + text_len) = '\0';
+    printf("%s\n", ptr);
+    *(ptr + text_len) = backup;
+#endif
+}

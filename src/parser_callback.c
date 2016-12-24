@@ -212,6 +212,7 @@ LX_CALLBACK_DECLARE1(single_expr, immediate)
 }
 LX_CALLBACK_DECLARE1(single_expr, IDENTIFIER)
 {
+    debuglog_luax_str(_1->token->text_len, _1->token->text);
     debuglog("single_expr  ->  IDENTIFIER");
 }
 
@@ -260,10 +261,12 @@ LX_CALLBACK_DECLARE1(immediate, function_define)
 }
 LX_CALLBACK_DECLARE1(immediate, STRING_IMMEDIATE)
 {
+    debuglog_luax_str(_1->token->text_len, _1->token->text);
     debuglog("immediate  ->  STRING_IMMEDIATE");
 }
 LX_CALLBACK_DECLARE1(immediate, NUMBER_IMMEDIATE)
 {
+    debuglog_luax_str(_1->token->text_len, _1->token->text);
     debuglog("immediate  ->  NUMBER_IMMEDIATE");
 }
 
@@ -314,6 +317,7 @@ LX_CALLBACK_DECLARE3(identifier_list, IDENTIFIER, COMMA, identifier_list)
 }
 LX_CALLBACK_DECLARE1(identifier_list, IDENTIFIER)
 {
+    debuglog_luax_str(_1->token->text_len, _1->token->text);
     debuglog("identifier_list  ->  IDENTIFIER");
 }
 
