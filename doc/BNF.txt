@@ -13,13 +13,13 @@ stmt ->
 		| if_stmt
 		| while_stmt
 		| for_stmt
-		| expr_stmt
 		| BREAK ';'
 		| CONTINUE ';'
 		| RETURN ';'
 		| RETURN expr_list ';'
 		| LOCAL identifier_list ';'
 		| LOCAL identifier_list '=' expr_list ';'
+		| expr_stmt
 
 if_stmt ->
 		  IF expr THEN stmt_sequence END

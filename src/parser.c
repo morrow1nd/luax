@@ -583,14 +583,6 @@ static int stmt(lx_parser *p, lx_syntax_node *self)
     }
     FREE_SYNTAX_NODE(for_stmt_node);
 
-    NEW_SYNTAX_NODE(expr_stmt_node);
-    if (expr_stmt(p, expr_stmt_node) == 0) {
-        LX_CALLBACK_CALL1(stmt, expr_stmt,
-            self, expr_stmt_node);
-        return 0;
-    }
-    FREE_SYNTAX_NODE(expr_stmt_node);
-
     if (NEXT_TYPE_EQUAL(p, LX_TOKEN_BREAK)) {
         GOTO_NEXT(p);
         NEW_SYNTAX_NODE_T(break_node, CURR(p));
@@ -674,6 +666,14 @@ static int stmt(lx_parser *p, lx_syntax_node *self)
         FREE_SYNTAX_NODE(identifier_list_node);
         FREE_SYNTAX_NODE(local_node);
     }
+
+    NEW_SYNTAX_NODE(expr_stmt_node);
+    if (expr_stmt(p, expr_stmt_node) == 0) {
+        LX_CALLBACK_CALL1(stmt, expr_stmt,
+            self, expr_stmt_node);
+        return 0;
+    }
+    FREE_SYNTAX_NODE(expr_stmt_node);
 
     lx_token_scanner_recover_state(p->scanner, backup_state);
     return -1;
