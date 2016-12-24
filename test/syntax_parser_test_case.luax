@@ -11,6 +11,7 @@
 _begin_with_;
 _5555;
 _55au57au__uau;
+Ateaa_test12;
 
 -- var declare
 local foo;
@@ -40,6 +41,9 @@ a != b or b != c;
 not b == a;
 
 -- literal expressions
+nil;
+false;
+true;
 123;
 10.56;
 "a string\n\t\\\"you can use this\"\nthis string is end";
@@ -122,6 +126,7 @@ for local i = 0; i < 100; i += 1 then
 	local j = 56;
 	while j < func(i) then
 		j += func_test(i, j);
+		aaa[j] = function(a, b) return a * b + j; end;
 		if sqrt(j) == 0.2 then
 			continue;
 		end
