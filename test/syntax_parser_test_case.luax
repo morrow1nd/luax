@@ -60,20 +60,6 @@ function (a, b, c)
 	return a + b + c;
 end(1,2,3); -- call after define, return 6
 
--- assignment expressions
-a, b = b, a;
-a, b = func();
-a = b, c; -- equal to `a = b`;
-a += expr;
-a *= 1 + 5;
-a -= 1 * 5;
-a += 1 == 1;
-func() += b; -- function func would be called twice
-
--- prefix expressions
-a = -a;
-a = - 5 + 6; -- a == 1, rather then -11
-
 -- suffix expressions
 a["key 3"];
 a["key 3"][56];
@@ -87,6 +73,25 @@ func()["username"];
 
 (func())();
 (func())[56][(1 + 2) * a]
+
+
+-- assignment expressions
+a, b = b, a;
+a, b = func();
+a = b, c; -- equal to `a = b`;
+a += expr;
+a *= 1 + 5;
+a -= 1 * 5;
+a += 1 == 1;
+aaa = tab[a];
+tab['key'] = 123;
+func()['key2'] = tab['key3'] + 456;
+func() += b; -- function func would be called twice
+
+
+-- prefix expressions
+a = -a;
+a = - 5 + 6; -- a == 1, rather then -11
 
 
 --[[
