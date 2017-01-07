@@ -1,6 +1,9 @@
 #ifndef __LX_PARSER__H_
 #define __LX_PARSER__H_
 
+#include "./base.h"
+#include "./mem.h"
+
 enum lx_token_type
 {
     LX_TOKEN_BREAK = 256,
@@ -71,6 +74,7 @@ typedef struct
 {
     // config before parser
     lx_token_scanner *scanner;
+    lx_stack_allocator * stack_allocator;
 } lx_parser;
 
 

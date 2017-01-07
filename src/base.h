@@ -15,7 +15,7 @@
 #if(LX_DEBUG)
 # include <stdio.h> // printf, sprintf
 #endif
-
+# include <stdio.h>
 
 void debug(const char * info);
 // log out one line

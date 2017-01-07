@@ -22,7 +22,7 @@ LX_CALLBACK_DECLARE1(stmt_sequence, EMPTY_SYMBOL) // use EMPTY_SYMBOL to replace
 LX_CALLBACK_DECLARE1(stmt, EOS) // EOS: end of statement
 {
     debuglog("stmt  ->  EOS");
-    debuglog("================== new statement ================== empty statement");
+    debuglog_l(_1->token->linenum, "================== new statement ================== empty statement");
 }
 LX_CALLBACK_DECLARE1(stmt, if_stmt)
 {
@@ -47,56 +47,56 @@ LX_CALLBACK_DECLARE1(stmt, expr_stmt)
 LX_CALLBACK_DECLARE2(stmt, BREAK, EOS)
 {
     debuglog("stmt  ->  BREAK EOS");
-    debuglog("================== new statement ================== break;");
+    debuglog_l(_1->token->linenum, "================== new statement ================== break;");
 }
 LX_CALLBACK_DECLARE2(stmt, CONTINUE, EOS)
 {
     debuglog("stmt  ->  CONTINUE EOS");
-    debuglog("================== new statement ================== continue;");
+    debuglog_l(_1->token->linenum, "================== new statement ================== continue;");
 }
 LX_CALLBACK_DECLARE2(stmt, RETURN, EOS)
 {
     debuglog("stmt  ->  RETURN EOS");
-    debuglog("================== new statement ================== return;");
+    debuglog_l(_1->token->linenum, "================== new statement ================== return;");
 }
 LX_CALLBACK_DECLARE3(stmt, RETURN, expr_list, EOS)
 {
     debuglog("stmt  ->  RETURN expr_list EOS");
-    debuglog("================== new statement ================== return expr_list;");
+    debuglog_l(_1->token->linenum, "================== new statement ================== return expr_list;");
 }
 LX_CALLBACK_DECLARE3(stmt, LOCAL, identifier_list, EOS)
 {
     debuglog("stmt  ->  LOCAL identifier_list EOS");
-    debuglog("================== new statement ================== local identifier_list;");
+    debuglog_l(_1->token->linenum, "================== new statement ================== local identifier_list;");
 }
 LX_CALLBACK_DECLARE5(stmt, LOCAL, identifier_list, EQL, expr_list, EOS)
 {
     debuglog("stmt  ->  LOCAL identifier_list EQL expr_list EOS");
-    debuglog("================== new statement ================== local identifier_list = expr_list;");
+    debuglog_l(_1->token->linenum, "================== new statement ================== local identifier_list = expr_list;");
 }
 
 LX_CALLBACK_DECLARE5(if_stmt, IF, expr, THEN, stmt_sequence, END)
 {
-    debuglog("if_stmt  ->  IF expr THEN stmt_sequence END");
+    debuglog_l(_1->token->linenum, "if_stmt  ->  IF expr THEN stmt_sequence END");
 }
 LX_CALLBACK_DECLARE7(if_stmt, IF, expr, THEN, stmt_sequence, ELSE, stmt_sequence, END)
 {
-    debuglog("if_stmt  ->  IF expr THEN stmt_sequence ELSE stmt_sequence END");
+    debuglog_l(_1->token->linenum, "if_stmt  ->  IF expr THEN stmt_sequence ELSE stmt_sequence END");
 }
 
 LX_CALLBACK_DECLARE5(while_stmt, WHILE, expr, THEN, stmt_sequence, END)
 {
-    debuglog("if_stmt  ->  WHILE expr THEN stmt_sequence END");
+    debuglog_l(_1->token->linenum, "while_stmt  ->  WHILE expr THEN stmt_sequence END");
 }
 
 LX_CALLBACK_DECLARE9(for_stmt, FOR, expr, EOS, expr, EOS, expr, THEN, stmt_sequence, END)
 {
-    debuglog("if_stmt  ->  FOR expr EOS expr EOS expr THEN stmt_sequence END");
+    debuglog_l(_1->token->linenum, "for_stmt  ->  FOR expr EOS expr EOS expr THEN stmt_sequence END");
 }
 
 LX_CALLBACK_DECLARE2(expr_stmt, expr, EOS)
 {
-    debuglog("expr_stmt  ->  expr EOS");
+    debuglog_l(_2->token->linenum, "expr_stmt  ->  expr EOS");
 }
 
 
@@ -313,6 +313,7 @@ LX_CALLBACK_DECLARE6(function_define, FUNCTION, SL, identifier_list, SR, stmt_se
 }
 LX_CALLBACK_DECLARE3(identifier_list, IDENTIFIER, COMMA, identifier_list)
 {
+    debuglog_luax_str(_1->token->text_len, _1->token->text);
     debuglog("identifier_list  ->  IDENTIFIER COMMA identifier_list");
 }
 LX_CALLBACK_DECLARE1(identifier_list, IDENTIFIER)

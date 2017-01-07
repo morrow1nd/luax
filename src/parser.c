@@ -455,16 +455,26 @@ int lx_token_scanner_move_forward(lx_token_scanner *s, int step)
 // Recursive Descent Parser
 //
 
+
 #define CURR(_parser) (lx_token_nextN(_parser->scanner, 0))
 #define NEXT(_parser) (lx_token_next(_parser->scanner))
 #define NEXT_TYPE_EQUAL(_parser, _type) (NEXT(_parser)->type == _type)
 #define GOTO_NEXT(_parser) (lx_token_scanner_move_forward(_parser->scanner, 1))
+
+#if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
+#define NEW_SYNTAX_NODE(_node) lx_syntax_node * _node = (lx_syntax_node*)lx_stack_allocator_alloc(p->stack_allocator, sizeof(lx_syntax_node))
+#else
 #define NEW_SYNTAX_NODE(_node) lx_syntax_node * _node = LX_NEW(lx_syntax_node)
+#endif
 #define NEW_SYNTAX_NODE_T(_node, _token) \
-lx_syntax_node * _node = LX_NEW(lx_syntax_node);\
+NEW_SYNTAX_NODE(_node);\
 _node->token = _token
 
+#if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
+#define FREE_SYNTAX_NODE(_node) lx_stack_allocator_free(p->stack_allocator, _node)
+#else
 #define FREE_SYNTAX_NODE(_node) lx_free(_node)
+#endif
 
 //
 // forward declaration

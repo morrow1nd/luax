@@ -3,6 +3,10 @@
  name | argument | argument value range | description | example
 ------|----------|----------------------|-------------|---------
 push | $immediate or $identifier | -- | push the value of argument to stack | `push num`
+pop | -- | -- | -- | 
+get | -- | -- | -- | 
+set | -- | -- | -- | 
+adjust | -- | -- | -- | 
 call | -- | -- | pop a object from the stack, and call it | `call`
 ret | -- | -- | return this function | `ret`
 ____|____|____|____|____
