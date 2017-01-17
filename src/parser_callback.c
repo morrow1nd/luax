@@ -2,6 +2,15 @@
 #include "./base.h"
 #include "./mem.h"
 
+
+#if(!LX_PARSER_DEBUG_LOG)
+# define debug(msg)
+# define debuglog(msg)
+# define debuglog_l(l, msg)
+# define debuglog_luax_str(l, msg)
+#endif
+
+
 LX_CALLBACK_DECLARE1(compile_unit, stmt_sequence)
 {
     debuglog("compile_unit  ->  stmt_sequence");
@@ -180,6 +189,7 @@ LX_CALLBACK_DECLARE3(expr_list, expr, COMMA, expr_list)
 {
     debuglog("expr_list  ->  expr COMMA expr_list");
 
+    FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
 }

@@ -1,7 +1,7 @@
 
 include_directories (${PROJECT_SOURCE_DIR}/src)
 
- set(CMAKE_C_FLAGS "-g -Wall")
+ set(CMAKE_C_FLAGS "-Wall")
 
 add_executable (stack_allocator_test stack_allocator_test.c)
 target_link_libraries (stack_allocator_test libluax)

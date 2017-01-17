@@ -27,7 +27,7 @@ static lx_token lx_token_no_more;
 
 static lx_token* add_one_token(lx_token_scanner *s, int token_type, char *ptr, int text_len, int linenum)
 {
-#if(LX_DEBUG)
+#if(LX_PARSER_DEBUG_LOG)
     if(token_type < 255)
         printf("add_one_token: %d[%c] L%d\n", token_type, token_type, linenum);
     else
@@ -57,10 +57,9 @@ static lx_token* token_error(lx_token_scanner *s, char *ptr, int linenum)
     return add_one_token(s, LX_TOKEN_ERROR, ptr, 1, linenum);
 }
 
-
 void lx_delete_token_scanner(lx_token_scanner * s)
 {
-    // lx_free(s->raw_source_code);
+    lx_free(s->raw_source_code);
     for (int i = 0; i < s->token_number; ++i) {
         lx_free(s->tokens[i]);
     }
@@ -466,13 +465,7 @@ int lx_token_scanner_move_forward(lx_token_scanner *s, int step)
     return 0;
 }
 
-
-
-//
-// Recursive Descent Parser
-//
-
-
+// helper macro
 #define CURR(_parser) (lx_token_nextN(_parser->scanner, 0))
 #define NEXT(_parser) (lx_token_next(_parser->scanner))
 #define NEXT_TYPE_EQUAL(_parser, _type) (NEXT(_parser)->type == _type)
@@ -480,9 +473,10 @@ int lx_token_scanner_move_forward(lx_token_scanner *s, int step)
 
 
 //
-// forward declaration
+// Recursive Descent Parser
 //
 
+// forward declaration
 static int compile_unit(lx_parser *p, lx_syntax_node *self);
 static int stmt_sequence(lx_parser *p, lx_syntax_node *self);
 static int stmt(lx_parser *p, lx_syntax_node *self);
@@ -542,12 +536,12 @@ lx_parser* lx_genBytecode(const char* _source_code, const int source_code_length
     p->scanner = scanner;
     NEW_SYNTAX_NODE(compile_unit_node);
     int ret = compile_unit(p, compile_unit_node);
+    FREE_SYNTAX_NODE(compile_unit_node);
     if(ret != 0){
         lx_delete_parser(p);
         debuglog("compile_unit didn't return 0");
         return NULL;
     }
-    FREE_SYNTAX_NODE(compile_unit_node);
     return p;
 }
 void lx_delete_parser(lx_parser* p)
