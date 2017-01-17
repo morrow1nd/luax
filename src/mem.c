@@ -1,12 +1,16 @@
 #include "./mem.h"
 
+#if(LX_PRINT_MALLOC_INFO)
+int lx_call_lx_malloc_number = 0;
+int lx_call_lx_free_number = 0;
+#endif
+
 void * lx_malloc(size_t len)
 {
 #if(LX_PRINT_MALLOC_INFO)
-    static int call_lx_malloc_number = 0;
-    ++call_lx_malloc_number;
+    ++lx_call_lx_malloc_number;
     char * ret = malloc(len);
-    printf("lx_malloc:%d %p size:%d\n", call_lx_malloc_number, ret, len);
+    printf("lx_malloc:%d %p size:%d\n", lx_call_lx_malloc_number, ret, len);
     return ret;
 #endif
     return malloc(len);
@@ -14,47 +18,59 @@ void * lx_malloc(size_t len)
 void lx_free(void * ptr)
 {
 #if(LX_PRINT_MALLOC_INFO)
-    static int call_lx_free_number = 0;
-    ++call_lx_free_number;
-    printf("lx_free:%d %p\n", call_lx_free_number, ptr);
+    ++lx_call_lx_free_number;
+    printf("lx_free:%d %p\n", lx_call_lx_free_number, ptr);
 #endif
     free(ptr);
 }
 
 
 typedef struct lx_stack_allocator_block {
-    char *buff;
     size_t block_size;
 
-    size_t backup_curr;
+    size_t curr;
     struct lx_stack_allocator_block *prev;
+    struct lx_stack_allocator_block *next;
 } lx_stack_allocator_block;
 static lx_stack_allocator_block* __new_block(size_t block_size)
 {
-    lx_stack_allocator_block* block = LX_NEW(lx_stack_allocator_block);
-    block->block_size = block_size;
-    block->buff = lx_malloc(block_size);
-    block->prev = NULL;
-    block->backup_curr = 0;
-    return block;
+    char * buf = lx_malloc(sizeof(lx_stack_allocator_block) + block_size);
+    lx_stack_allocator_block * b = (lx_stack_allocator_block *)buf;
+    b->block_size = block_size;
+    b->prev = NULL;
+    b->next = NULL;
+    b->curr = 0;
+
+    return b;
 }
+static void __delete_block(lx_stack_allocator_block* ptr)
+{
+    lx_free(ptr);
+}
+
 
 lx_stack_allocator* lx_stack_allocator_create(size_t expected_capacity)
 {
     lx_stack_allocator *salloc = LX_NEW(lx_stack_allocator);
     salloc->block = __new_block(expected_capacity);
-    salloc->curr = 0;
+    salloc->auto_remove_unused_block = false;
     return salloc;
 }
 void lx_stack_allocator_delete(lx_stack_allocator *sallocator)
 {
-    lx_stack_allocator_block* prev;
-    for (lx_stack_allocator_block* b = sallocator->block; b != NULL; ) {
-        prev = b->prev;
-        lx_free(b->buff);
-        lx_free(b);
-        b = prev;
+    lx_stack_allocator_block* curr = sallocator->block;
+    for (lx_stack_allocator_block* next = curr->prev; next != NULL; ) {
+        curr = next->prev;
+        lx_free(next);
+        next = curr;
     }
+    curr = sallocator->block;
+    for (lx_stack_allocator_block* next = curr->next; next != NULL; ) {
+        curr = next->next;
+        lx_free(next);
+        next = curr;
+    }
+    lx_free(sallocator->block);
     lx_free(sallocator);
 }
 
@@ -62,40 +78,52 @@ const int LX_STACK_ALLOCATOR_PREFIX_SIZE = 8;
 
 void * lx_stack_allocator_alloc(lx_stack_allocator *sallocator, size_t size)
 {
-    // check whether there is enough area
+    // enarge this area
     if ((size / 8) * 8 != size) {
         size = (size / 8 + 1) * 8;
     }
-    if (sallocator->curr + size > sallocator->block->block_size) {
+    // check whether there is enough area
+    if (sallocator->block->curr + size > sallocator->block->block_size) {
         // we need to add a new block
-        size_t newblock_size = sallocator->block->block_size;
-        while (newblock_size - LX_STACK_ALLOCATOR_PREFIX_SIZE < size) {
-            newblock_size *= 2;
+        if (sallocator->block->next != NULL && sallocator->block->next->block_size >= size) {
+            ;
+        } else {
+            size_t newblock_size = sallocator->block->block_size;
+            while (newblock_size - LX_STACK_ALLOCATOR_PREFIX_SIZE < size) {
+                newblock_size *= 2;
+            }
+            lx_stack_allocator_block *newblock = __new_block(newblock_size);
+            newblock->prev = sallocator->block;
+            sallocator->block->next = newblock;
         }
-        lx_stack_allocator_block *newblock = __new_block(newblock_size);
-        newblock->prev = sallocator->block;
-        sallocator->block->backup_curr = sallocator->curr;
-        sallocator->block = newblock;
-        sallocator->curr = 0;
+        sallocator->block = sallocator->block->next;
     }
-    *(size_t *)(sallocator->block->buff + sallocator->curr) = size;
-    sallocator->curr += size + LX_STACK_ALLOCATOR_PREFIX_SIZE;
-    return sallocator->block->buff + sallocator->curr - size;
+    *(size_t *)(sallocator->block + sizeof(lx_stack_allocator_block) + sallocator->block->curr) = size;
+    sallocator->block->curr += size + LX_STACK_ALLOCATOR_PREFIX_SIZE;
+    return sallocator->block + sizeof(lx_stack_allocator_block) + sallocator->block->curr - size;
 }
 void lx_stack_allocator_free(lx_stack_allocator *sallocator, void *ptr)
 {
-    if (sallocator->curr == 0) {
-        // we need to free this block first
-        lx_stack_allocator_block* prev = sallocator->block->prev;
-        lx_free(sallocator->block->buff);
-        lx_free(sallocator->block);
-        sallocator->block = prev;
-        sallocator->curr = sallocator->block->backup_curr;
+    if (sallocator->block->curr == 0) {
+        if (sallocator->auto_remove_unused_block == true) {
+            // we need to free this block first
+            lx_stack_allocator_block* i = NULL;
+            for (lx_stack_allocator_block* next = sallocator->block->next; next != NULL; ) {
+                i = next->next;
+                __delete_block(next);
+                next = i;
+            }
+            i = sallocator->block->prev;
+            __delete_block(sallocator->block);
+            sallocator->block = i;
+        } else {
+            sallocator->block = sallocator->block->prev;
+        }
     }
     size_t size = *(size_t*)((char*)ptr - LX_STACK_ALLOCATOR_PREFIX_SIZE);
-    if (sallocator->curr - size - LX_STACK_ALLOCATOR_PREFIX_SIZE < 0) {
+    if (sallocator->block->curr - size - LX_STACK_ALLOCATOR_PREFIX_SIZE < 0) {
         assert(false && "stack_allocator_free error here!");
         return;
     }
-    sallocator->curr -= size + LX_STACK_ALLOCATOR_PREFIX_SIZE;
+    sallocator->block->curr -= size + LX_STACK_ALLOCATOR_PREFIX_SIZE;
 }

@@ -29,6 +29,7 @@ typedef struct
 typedef void ret;
 typedef lx_syntax_node* par;
 
+struct lx_parser;
 
 #define LX_CALLBACK_FUNCTION_NAME1(self_name, _1_name)           lx_callback_function__##self_name##__to__##_1_name
 #define LX_CALLBACK_FUNCTION_NAME2(self_name, _1_name, _2_name)           lx_callback_function__##self_name##__to__##_1_name##__##_2_name
@@ -40,24 +41,24 @@ typedef lx_syntax_node* par;
 #define LX_CALLBACK_FUNCTION_NAME9(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name, _8_name, _9_name)           lx_callback_function__##self_name##__to__##_1_name##__##_2_name##__##_3_name##__##_4_name##__##_5_name##__##_6_name##__##_7_name##__##_8_name##__##_9_name
 
 
-#define LX_CALLBACK_DECLARE1(self_name, _1_name)           ret LX_CALLBACK_FUNCTION_NAME1(self_name, _1_name)(par _self, par _1)
-#define LX_CALLBACK_DECLARE2(self_name, _1_name, _2_name)           ret LX_CALLBACK_FUNCTION_NAME2(self_name, _1_name, _2_name)(par _self, par _1, par _2)
-#define LX_CALLBACK_DECLARE3(self_name, _1_name, _2_name, _3_name)           ret LX_CALLBACK_FUNCTION_NAME3(self_name, _1_name, _2_name, _3_name)(par _self, par _1, par _2, par _3)
-#define LX_CALLBACK_DECLARE4(self_name, _1_name, _2_name, _3_name, _4_name)           ret LX_CALLBACK_FUNCTION_NAME4(self_name, _1_name, _2_name, _3_name, _4_name)(par _self, par _1, par _2, par _3, par _4)
-#define LX_CALLBACK_DECLARE5(self_name, _1_name, _2_name, _3_name, _4_name, _5_name)           ret LX_CALLBACK_FUNCTION_NAME5(self_name, _1_name, _2_name, _3_name, _4_name, _5_name)(par _self, par _1, par _2, par _3, par _4, par _5)
-#define LX_CALLBACK_DECLARE6(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name)           ret LX_CALLBACK_FUNCTION_NAME6(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name)(par _self, par _1, par _2, par _3, par _4, par _5, par _6)
-#define LX_CALLBACK_DECLARE7(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name)           ret LX_CALLBACK_FUNCTION_NAME7(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name)(par _self, par _1, par _2, par _3, par _4, par _5, par _6, par _7)
-#define LX_CALLBACK_DECLARE9(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name, _8_name, _9_name)           ret LX_CALLBACK_FUNCTION_NAME9(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name, _8_name, _9_name)(par _self, par _1, par _2, par _3, par _4, par _5, par _6, par _7, par _8, par _9)
+#define LX_CALLBACK_DECLARE1(self_name, _1_name)           ret LX_CALLBACK_FUNCTION_NAME1(self_name, _1_name)(lx_parser * p, par _self, par _1)
+#define LX_CALLBACK_DECLARE2(self_name, _1_name, _2_name)           ret LX_CALLBACK_FUNCTION_NAME2(self_name, _1_name, _2_name)(lx_parser * p, par _self, par _1, par _2)
+#define LX_CALLBACK_DECLARE3(self_name, _1_name, _2_name, _3_name)           ret LX_CALLBACK_FUNCTION_NAME3(self_name, _1_name, _2_name, _3_name)(lx_parser * p, par _self, par _1, par _2, par _3)
+#define LX_CALLBACK_DECLARE4(self_name, _1_name, _2_name, _3_name, _4_name)           ret LX_CALLBACK_FUNCTION_NAME4(self_name, _1_name, _2_name, _3_name, _4_name)(lx_parser * p, par _self, par _1, par _2, par _3, par _4)
+#define LX_CALLBACK_DECLARE5(self_name, _1_name, _2_name, _3_name, _4_name, _5_name)           ret LX_CALLBACK_FUNCTION_NAME5(self_name, _1_name, _2_name, _3_name, _4_name, _5_name)(lx_parser * p, par _self, par _1, par _2, par _3, par _4, par _5)
+#define LX_CALLBACK_DECLARE6(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name)           ret LX_CALLBACK_FUNCTION_NAME6(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name)(lx_parser * p, par _self, par _1, par _2, par _3, par _4, par _5, par _6)
+#define LX_CALLBACK_DECLARE7(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name)           ret LX_CALLBACK_FUNCTION_NAME7(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name)(lx_parser * p, par _self, par _1, par _2, par _3, par _4, par _5, par _6, par _7)
+#define LX_CALLBACK_DECLARE9(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name, _8_name, _9_name)           ret LX_CALLBACK_FUNCTION_NAME9(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name, _8_name, _9_name)(lx_parser * p, par _self, par _1, par _2, par _3, par _4, par _5, par _6, par _7, par _8, par _9)
 
 
-#define LX_CALLBACK_CALL1(self_name, _1_name, ...)           LX_CALLBACK_FUNCTION_NAME1(self_name, _1_name)(__VA_ARGS__)
-#define LX_CALLBACK_CALL2(self_name, _1_name, _2_name, ...)           LX_CALLBACK_FUNCTION_NAME2(self_name, _1_name, _2_name)(__VA_ARGS__)
-#define LX_CALLBACK_CALL3(self_name, _1_name, _2_name, _3_name, ...)           LX_CALLBACK_FUNCTION_NAME3(self_name, _1_name, _2_name, _3_name)(__VA_ARGS__)
-#define LX_CALLBACK_CALL4(self_name, _1_name, _2_name, _3_name, _4_name, ...)           LX_CALLBACK_FUNCTION_NAME4(self_name, _1_name, _2_name, _3_name, _4_name)(__VA_ARGS__)
-#define LX_CALLBACK_CALL5(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, ...)           LX_CALLBACK_FUNCTION_NAME5(self_name, _1_name, _2_name, _3_name, _4_name, _5_name)(__VA_ARGS__)
-#define LX_CALLBACK_CALL6(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, ...)           LX_CALLBACK_FUNCTION_NAME6(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name)(__VA_ARGS__)
-#define LX_CALLBACK_CALL7(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name, ...)           LX_CALLBACK_FUNCTION_NAME7(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name)(__VA_ARGS__)
-#define LX_CALLBACK_CALL9(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name, _8_name, _9_name, ...)           LX_CALLBACK_FUNCTION_NAME9(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name, _8_name, _9_name)(__VA_ARGS__)
+#define LX_CALLBACK_CALL1(self_name, _1_name, ...)           LX_CALLBACK_FUNCTION_NAME1(self_name, _1_name)(p, __VA_ARGS__)
+#define LX_CALLBACK_CALL2(self_name, _1_name, _2_name, ...)           LX_CALLBACK_FUNCTION_NAME2(self_name, _1_name, _2_name)(p, __VA_ARGS__)
+#define LX_CALLBACK_CALL3(self_name, _1_name, _2_name, _3_name, ...)           LX_CALLBACK_FUNCTION_NAME3(self_name, _1_name, _2_name, _3_name)(p, __VA_ARGS__)
+#define LX_CALLBACK_CALL4(self_name, _1_name, _2_name, _3_name, _4_name, ...)           LX_CALLBACK_FUNCTION_NAME4(self_name, _1_name, _2_name, _3_name, _4_name)(p, __VA_ARGS__)
+#define LX_CALLBACK_CALL5(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, ...)           LX_CALLBACK_FUNCTION_NAME5(self_name, _1_name, _2_name, _3_name, _4_name, _5_name)(p, __VA_ARGS__)
+#define LX_CALLBACK_CALL6(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, ...)           LX_CALLBACK_FUNCTION_NAME6(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name)(p, __VA_ARGS__)
+#define LX_CALLBACK_CALL7(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name, ...)           LX_CALLBACK_FUNCTION_NAME7(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name)(p, __VA_ARGS__)
+#define LX_CALLBACK_CALL9(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name, _8_name, _9_name, ...)           LX_CALLBACK_FUNCTION_NAME9(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name, _8_name, _9_name)(p, __VA_ARGS__)
 
 
 //

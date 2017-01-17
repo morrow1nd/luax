@@ -10,7 +10,9 @@ void lx_free(void * ptr);
 struct lx_stack_allocator_block;
 
 typedef struct {
-    size_t curr;
+    // removing happens in calling lx_stack_allocator_free()
+    bool auto_remove_unused_block;
+
     struct lx_stack_allocator_block *block;
 } lx_stack_allocator;
 

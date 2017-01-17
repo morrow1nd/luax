@@ -1,7 +1,6 @@
 ﻿#include "./parser.h"
 #include "./base.h"
 #include "./mem.h"
-#include "./config.h"
 #include "./parser_callback.h"
 
 
@@ -58,6 +57,17 @@ static lx_token* token_error(lx_token_scanner *s, char *ptr, int linenum)
     return add_one_token(s, LX_TOKEN_ERROR, ptr, 1, linenum);
 }
 
+
+void lx_delete_token_scanner(lx_token_scanner * s)
+{
+    // lx_free(s->raw_source_code);
+    for (int i = 0; i < s->token_number; ++i) {
+        lx_free(s->tokens[i]);
+    }
+    lx_free(s->tokens);
+    lx_free(s);
+}
+
 lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
 {
     lx_token_scanner * s = LX_NEW(lx_token_scanner);
@@ -70,6 +80,7 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
     s->tokens = NULL;
     s->curr = -1;
 
+    // init global variable lx_token_no_more
     lx_token_no_more.linenum = -1;
     lx_token_no_more.text = source_code + (int)source_code_length;
     lx_token_no_more.text_len = 0;
@@ -78,7 +89,7 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
     char *p = source_code;
 
     int linenum = 1;
-    char vartem[LX_CONFIG_IDENTIFIER_MAX_LENGTH];
+    //char vartem[LX_CONFIG_IDENTIFIER_MAX_LENGTH];
     while(p - source_code < source_code_length){
         // find one token
         if (*p == '\0') {
@@ -309,7 +320,7 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
         default: {
             if (isdigit(*p)) {
                 char * pp = p;
-                float data = strtod(p, &pp);
+                double data = strtod(p, &pp);
                 if ((pp - p) == 0) {
                     token_error(s, p, linenum);
                     return s;
@@ -437,16 +448,22 @@ int lx_token_scanner_get_curr_state(lx_token_scanner *s)
  * return: the state before apply this new state.
  */
 int lx_token_scanner_recover_state(lx_token_scanner *s, int new_state) {
-    if (new_state < -1)
+    if (new_state < -1){
         assert(false && "new_statem must >= -1");
+        return -1;
+    }
     s->curr = new_state;
+    return 0;
 }
 
 int lx_token_scanner_move_forward(lx_token_scanner *s, int step)
 {
-    if (s->curr + step < -1 || s->curr + step >= s->token_number)
+    if (s->curr + step < -1 || s->curr + step >= s->token_number){
         assert(false && "you must keep s->curr in the right range");
+        return -1;
+    }
     s->curr += step;
+    return 0;
 }
 
 
@@ -461,20 +478,6 @@ int lx_token_scanner_move_forward(lx_token_scanner *s, int step)
 #define NEXT_TYPE_EQUAL(_parser, _type) (NEXT(_parser)->type == _type)
 #define GOTO_NEXT(_parser) (lx_token_scanner_move_forward(_parser->scanner, 1))
 
-#if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
-#define NEW_SYNTAX_NODE(_node) lx_syntax_node * _node = (lx_syntax_node*)lx_stack_allocator_alloc(p->stack_allocator, sizeof(lx_syntax_node))
-#else
-#define NEW_SYNTAX_NODE(_node) lx_syntax_node * _node = LX_NEW(lx_syntax_node)
-#endif
-#define NEW_SYNTAX_NODE_T(_node, _token) \
-NEW_SYNTAX_NODE(_node);\
-_node->token = _token
-
-#if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
-#define FREE_SYNTAX_NODE(_node) lx_stack_allocator_free(p->stack_allocator, _node)
-#else
-#define FREE_SYNTAX_NODE(_node) lx_free(_node)
-#endif
 
 //
 // forward declaration
@@ -518,9 +521,36 @@ static int multiply_op(lx_parser *p, lx_syntax_node* self);
 static int prefix_op(lx_parser * p, lx_syntax_node *self);
 
 
-int lx_parser_begin(lx_parser * p, lx_parser *parser)
+static int lx_parser_begin(lx_parser * p, lx_parser *parser)
 {
 
+}
+
+lx_parser* lx_genBytecode(char* source_code, const int source_code_length)
+{
+    lx_token_scanner* scanner = lx_scan_token(source_code, source_code_length);
+    if(scanner == NULL){
+        printf("lx_scan_token return NULL\n");
+        return NULL;
+    }
+    lx_parser* p = LX_NEW(lx_parser);
+    p->stack_allocator = lx_stack_allocator_create(1024 * 4);
+    p->scanner = scanner;
+    NEW_SYNTAX_NODE(compile_unit_node);
+    int ret = compile_unit(p, compile_unit_node);
+    if(ret != 0){
+        lx_delete_parser(p);
+        debuglog("compile_unit didn't return 0");
+        return NULL;
+    }
+    FREE_SYNTAX_NODE(compile_unit_node);
+    return p;
+}
+void lx_delete_parser(lx_parser* p)
+{
+    lx_stack_allocator_delete(p->stack_allocator);
+    lx_delete_token_scanner(p->scanner);
+    lx_free(p);
 }
 
 

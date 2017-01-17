@@ -10,6 +10,7 @@
 
 
 #include "./config.h"
+#include "./gen_config.h.in"
 
 
 #if(LX_DEBUG)

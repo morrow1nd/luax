@@ -70,7 +70,7 @@ typedef struct
     char *raw_source_code;
 } lx_token_scanner;
 
-typedef struct
+typedef struct lx_parser
 {
     // config before parser
     lx_token_scanner *scanner;
@@ -78,9 +78,33 @@ typedef struct
 } lx_parser;
 
 
+// helper macro for create/delete syntax_node
+
+#if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
+#define NEW_SYNTAX_NODE(_node) lx_syntax_node * _node = (lx_syntax_node*)lx_stack_allocator_alloc(p->stack_allocator, sizeof(lx_syntax_node))
+#else
+#define NEW_SYNTAX_NODE(_node) lx_syntax_node * _node = LX_NEW(lx_syntax_node)
+#endif
+#define NEW_SYNTAX_NODE_T(_node, _token) \
+    NEW_SYNTAX_NODE(_node); \
+    _node->token = _token
+
+#if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
+#define FREE_SYNTAX_NODE(_node) lx_stack_allocator_free(p->stack_allocator, _node)
+#else
+#define FREE_SYNTAX_NODE(_node) lx_free(_node)
+#endif
+
+
 //
 // Interface to generate bytecode
 //
+
+lx_parser* lx_genBytecode(char* source_code, const int source_code_length);
+void lx_delete_parser(lx_parser* p);
+
+// or
+//bytecode* lx_genBytecode__(const char* source_code, const int source_code_length);
 
 
 #endif // end of __LX_PARSER__H_

@@ -17,9 +17,6 @@ void debuglog(const char * one_line)
 
 void debuglog_l(int linenum, const char * one_line)
 {
-    if(linenum == 92){ // todo tem code
-        printf("success\n");
-    }
 #if(LX_DEBUG)
     printf("L%d: %s\n", linenum, one_line);
 #endif

@@ -1,6 +1,8 @@
 
 build/
 .*
+src/gen_config.h.in
+*.stackdump
 
 # Object files
 *.o
