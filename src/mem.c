@@ -10,7 +10,7 @@ void * lx_malloc(size_t len)
 #if(LX_PRINT_MALLOC_INFO)
     ++lx_call_lx_malloc_number;
     char * ret = malloc(len);
-    printf("lx_malloc:%d %p size:%d\n", lx_call_lx_malloc_number, ret, len);
+    printf("lx_malloc:%d %p size:%d\n", lx_call_lx_malloc_number, ret, (int)len);
     return ret;
 #endif
     return malloc(len);
@@ -94,19 +94,23 @@ void * lx_stack_allocator_alloc(lx_stack_allocator *sallocator, size_t size)
             }
             lx_stack_allocator_block *newblock = __new_block(newblock_size);
             newblock->prev = sallocator->block;
+            if (sallocator->block->next) {
+                newblock->next = sallocator->block->next;
+                sallocator->block->next->prev = newblock;
+            }
             sallocator->block->next = newblock;
         }
         sallocator->block = sallocator->block->next;
     }
-    *(size_t *)(sallocator->block + sizeof(lx_stack_allocator_block) + sallocator->block->curr) = size;
+    *(size_t *)((char*)(sallocator->block) + sizeof(lx_stack_allocator_block) + sallocator->block->curr) = size;
     sallocator->block->curr += size + LX_STACK_ALLOCATOR_PREFIX_SIZE;
-    return sallocator->block + sizeof(lx_stack_allocator_block) + sallocator->block->curr - size;
+    return (char*)(sallocator->block) + sizeof(lx_stack_allocator_block) + sallocator->block->curr - size;
 }
 void lx_stack_allocator_free(lx_stack_allocator *sallocator, void *ptr)
 {
     if (sallocator->block->curr == 0) {
         if (sallocator->auto_remove_unused_block == true) {
-            // we need to free this block first
+            // we need to free all these blocks after curr block
             lx_stack_allocator_block* i = NULL;
             for (lx_stack_allocator_block* next = sallocator->block->next; next != NULL; ) {
                 i = next->next;
@@ -116,6 +120,7 @@ void lx_stack_allocator_free(lx_stack_allocator *sallocator, void *ptr)
             i = sallocator->block->prev;
             __delete_block(sallocator->block);
             sallocator->block = i;
+            sallocator->block->next = NULL;
         } else {
             sallocator->block = sallocator->block->prev;
         }

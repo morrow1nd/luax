@@ -526,8 +526,12 @@ static int lx_parser_begin(lx_parser * p, lx_parser *parser)
 
 }
 
-lx_parser* lx_genBytecode(char* source_code, const int source_code_length)
+lx_parser* lx_genBytecode(const char* _source_code, const int source_code_length)
 {
+    char * source_code = (char*)lx_malloc(source_code_length + 1);
+    memcpy(source_code, _source_code, source_code_length);
+    *(source_code + source_code_length) = '\0';
+
     lx_token_scanner* scanner = lx_scan_token(source_code, source_code_length);
     if(scanner == NULL){
         printf("lx_scan_token return NULL\n");

@@ -100,7 +100,7 @@ typedef struct lx_parser
 // Interface to generate bytecode
 //
 
-lx_parser* lx_genBytecode(char* source_code, const int source_code_length);
+lx_parser* lx_genBytecode(const char* source_code, const int source_code_length);
 void lx_delete_parser(lx_parser* p);
 
 // or

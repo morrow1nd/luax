@@ -25,7 +25,7 @@ int main(int argc, char * argv[])
     int filelength = ftell(fp);
     printf("filelength:%d\n", filelength);
 
-    char* data = (char*)malloc(filelength);
+    char* data = (char*)lx_malloc(filelength + 1);
     fseek(fp, 0, SEEK_SET);
     if ((ret = fread(data, 1, filelength, fp)) <= 0) {
         printf("Error: can't read file:%s\n", filepath);
@@ -35,6 +35,7 @@ int main(int argc, char * argv[])
     fclose(fp);
 
     lx_parser * p = lx_genBytecode(data, ret);
+    lx_free(data);
     if(p != NULL){
         printf("success\n");
     }

@@ -186,6 +186,8 @@ LX_CALLBACK_DECLARE3(expr_list, expr, COMMA, expr_list)
 LX_CALLBACK_DECLARE1(expr_list, expr)
 {
     debuglog("expr_list  ->  expr");
+
+    FREE_SYNTAX_NODE(_1);
 }
 LX_CALLBACK_DECLARE3(prefix_expr_list, prefix_expr, COMMA, prefix_expr_list)
 {
@@ -422,6 +424,7 @@ LX_CALLBACK_DECLARE2(suffix_op, DOT, IDENTIFIER)
 {
     debuglog("suffix_op  ->  DOT IDENTIFIER");
 
+    FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
 }
 
@@ -655,5 +658,6 @@ LX_CALLBACK_DECLARE1(multiply_op, DIV)
 LX_CALLBACK_DECLARE1(prefix_op, SUB)
 {
     debuglog("prefix_op  ->  SUB");
+    
     FREE_SYNTAX_NODE(_1);
 }

@@ -2,7 +2,7 @@
 #define __LX_CONFIG__H_
 
 // used to control debug info output
-#define LX_DEBUG 0
+#define LX_DEBUG 1
 #define LX_PRINT_MALLOC_INFO 1
 
 #define LX_USING_STACK_ALLOCATOR_IN_PARSER 0
