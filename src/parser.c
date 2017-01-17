@@ -1156,7 +1156,7 @@ static int single_expr(lx_parser *p, lx_syntax_node *self)
                 GOTO_NEXT(p);
                 NEW_SYNTAX_NODE_T(sr_node, CURR(p));
                 LX_CALLBACK_CALL3(single_expr, SL, expr, SR,
-                    self, sl_node, expr_node, sl_node);
+                    self, sl_node, expr_node, sr_node);
                 return 0;
             }
         }
