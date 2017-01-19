@@ -3,6 +3,7 @@
 
 #include "./base.h"
 #include "./mem.h"
+#include "./opcode.h"
 
 enum lx_token_type
 {
@@ -75,6 +76,7 @@ typedef struct lx_parser
     // config before parser
     lx_token_scanner *scanner;
     lx_stack_allocator * stack_allocator;
+    lx_opcodes* opcodes;
 } lx_parser;
 
 

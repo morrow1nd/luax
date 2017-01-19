@@ -31,10 +31,11 @@ typedef struct lx_syntax_node
 /* helper function for init lx_syntax_node */
 void lx_syntax_node_init(lx_syntax_node* n);
 
+// generate the final bytecode
+lx_opcodes* genBytecode(lx_syntax_node* root);
 
 typedef void ret;
 typedef lx_syntax_node* par;
-
 struct lx_parser;
 
 #define LX_CALLBACK_FUNCTION_NAME1(self_name, _1_name)           lx_callback_function__##self_name##__to__##_1_name

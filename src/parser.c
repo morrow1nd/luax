@@ -18,6 +18,15 @@ char* lx_helper_dump_token(lx_token *token, char * outstr)
     return outstr;
 }
 
+void lx_helper_dump_bytecode(lx_opcodes* ops)
+{
+    printf("============ dump bytecode ===============\n");
+    for(int i = 0; i < ops->size; ++i){
+        printf("%s\n", lx_opcode_type_to_string(ops->arr[i]->type));
+    }
+    printf("=========== dump end =====================\n");
+}
+
 
 //
 // Token Scanner - internal use
@@ -538,12 +547,14 @@ lx_parser* lx_genBytecode(const char* _source_code, const int source_code_length
     p->scanner = scanner;
     NEW_SYNTAX_NODE(compile_unit_node);
     int ret = compile_unit(p, compile_unit_node);
-    FREE_SYNTAX_NODE(compile_unit_node);
     if(ret != 0){
+        FREE_SYNTAX_NODE(compile_unit_node);
         lx_delete_parser(p);
         debuglog("compile_unit didn't return 0");
         return NULL;
     }
+    p->opcodes = genBytecode(compile_unit_node);
+    FREE_SYNTAX_NODE(compile_unit_node);
     return p;
 }
 void lx_delete_parser(lx_parser* p)

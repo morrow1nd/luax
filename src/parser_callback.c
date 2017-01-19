@@ -118,6 +118,27 @@ static void append(lx_syntax_node* _self, lx_opcode* op)
     }
 }
 
+lx_opcodes* genBytecode(lx_syntax_node* root)
+{
+    lx_opcodes* opcodes = LX_NEW(lx_opcode);
+    opcodes->capacity = 0;
+    opcodes->size = 0;
+    opcodes->arr = NULL;
+    for (struct opcode_w* n = root->opcodes->front; n != NULL; n = n->next){
+        if (opcodes->size == opcodes->capacity) {
+            // enarge it
+            lx_opcode** arr = (lx_opcode**)lx_malloc(sizeof(lx_opcode*) * ((opcodes->capacity / 1024 + 1) * 1024));
+            if (opcodes->arr != NULL) {
+                memcpy(arr, opcodes->arr, opcodes->capacity);
+                lx_free(opcodes->arr);
+            }
+            opcodes->arr = arr;
+        }
+        opcodes->arr[opcodes->size] = n->real_opcode;
+        opcodes->size++;
+    }
+    return opcodes;
+}
 
 //
 // Callback function
@@ -777,113 +798,113 @@ LX_CALLBACK_DECLARE1(identifier_list, IDENTIFIER)
 LX_CALLBACK_DECLARE1(assign_op, EQL)
 {
     debuglog("assign_op  ->  EQL");
-
+    append(_self, __new_op(OP_ASSIGN));
     FREE_SYNTAX_NODE(_1);
 }
 LX_CALLBACK_DECLARE1(assign_op, ADD_EQL)
 {
     debuglog("assign_op  ->  ADD_EQL");
-
+    append(_self, __new_op(OP_ADD_ASSIGN));
     FREE_SYNTAX_NODE(_1);
 }
 LX_CALLBACK_DECLARE1(assign_op, SUB_EQL)
 {
     debuglog("assign_op  ->  SUB_EQL");
-
+    append(_self, __new_op(OP_SUB_ASSIGN));
     FREE_SYNTAX_NODE(_1);
 }
 LX_CALLBACK_DECLARE1(assign_op, MUL_EQL)
 {
     debuglog("assign_op  ->  MUL_EQL");
-
+    append(_self, __new_op(OP_MUL_ASSIGN));
     FREE_SYNTAX_NODE(_1);
 }
 LX_CALLBACK_DECLARE1(assign_op, DIV_EQL)
 {
     debuglog("assign_op  ->  DIV_EQL");
-
+    append(_self, __new_op(OP_DIV_ASSIGN));
     FREE_SYNTAX_NODE(_1);
 }
 
 LX_CALLBACK_DECLARE1(logical_op, AND)
 {
     debuglog("logical_op  ->  AND");
-
+    append(_self, __new_op(OP_AND));
     FREE_SYNTAX_NODE(_1);
 }
 LX_CALLBACK_DECLARE1(logical_op, OR)
 {
     debuglog("logical_op  ->  OR");
-
+    append(_self, __new_op(OP_OR));
     FREE_SYNTAX_NODE(_1);
 }
 
 LX_CALLBACK_DECLARE1(compare_op, LESS)
 {
     debuglog("compare_op  ->  LESS");
-
+    append(_self, __new_op(OP_LESS));
     FREE_SYNTAX_NODE(_1);
 }
 LX_CALLBACK_DECLARE1(compare_op, GREATER)
 {
     debuglog("compare_op  ->  GREATER");
-
+    append(_self, __new_op(OP_GREATER));
     FREE_SYNTAX_NODE(_1);
 }
 LX_CALLBACK_DECLARE1(compare_op, LESS_EQL)
 {
     debuglog("compare_op  ->  LESS_EQL");
-
+    append(_self, __new_op(OP_LESS_EQL));
     FREE_SYNTAX_NODE(_1);
 }
 LX_CALLBACK_DECLARE1(compare_op, GREATER_EQL)
 {
     debuglog("compare_op  ->  GREATER_EQL");
-
+    append(_self, __new_op(OP_GREATER_EQL));
     FREE_SYNTAX_NODE(_1);
 }
 LX_CALLBACK_DECLARE1(compare_op, EQL_EQL)
 {
     debuglog("compare_op  ->  EQL_EQL");
-
+    append(_self, __new_op(OP_EQL_EQL));
     FREE_SYNTAX_NODE(_1);
 }
 LX_CALLBACK_DECLARE1(compare_op, NOT_EQL)
 {
     debuglog("compare_op  ->  NOT_EQL");
-
+    append(_self, __new_op(OP_NOT_EQL));
     FREE_SYNTAX_NODE(_1);
 }
 
 LX_CALLBACK_DECLARE1(addtive_op, ADD)
 {
     debuglog("addtive_op  ->  ADD");
-
+    append(_self, __new_op(OP_ADD));
     FREE_SYNTAX_NODE(_1);
 }
 LX_CALLBACK_DECLARE1(addtive_op, SUB)
 {
     debuglog("addtive_op  ->  SUB");
-
+    append(_self, __new_op(OP_SUB));
     FREE_SYNTAX_NODE(_1);
 }
 
 LX_CALLBACK_DECLARE1(multiply_op, MUL)
 {
     debuglog("multiply_op  ->  MUL");
-
+    append(_self, __new_op(OP_MUL));
     FREE_SYNTAX_NODE(_1);
 }
 LX_CALLBACK_DECLARE1(multiply_op, DIV)
 {
     debuglog("multiply_op  ->  DIV");
-
+    append(_self, __new_op(OP_DIV));
     FREE_SYNTAX_NODE(_1);
 }
 
 LX_CALLBACK_DECLARE1(prefix_op, SUB)
 {
     debuglog("prefix_op  ->  SUB");
-    
+    append(_self, __new_op(OP_SUB));
     FREE_SYNTAX_NODE(_1);
 }

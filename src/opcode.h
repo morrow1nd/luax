@@ -60,6 +60,8 @@ enum LX_OPCODE_TYPE {
 
 bool lx_opcode_is_label(unsigned char type);
 
+const char* lx_opcode_type_to_string(unsigned char type);
+
 
 typedef struct lx_opcode {
     unsigned char type;
@@ -74,6 +76,13 @@ typedef struct lx_opcode_x {
         float fnumber;
     };
 } lx_opcode_x;
+
+
+typedef struct lx_opcodes {
+    int size;
+    int capacity;
+    lx_opcode** arr;
+} lx_opcodes;
 
 
 #endif
