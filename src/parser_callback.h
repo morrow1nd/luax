@@ -18,13 +18,19 @@ enum lx_syntax_node_tag
     lx_syntax_node_tag__end
 };
 
-typedef struct
+struct opcode_list;
+
+typedef struct lx_syntax_node
 {
     const lx_token * token;
     struct lx_syntax_node * next;
     enum lx_syntax_node_tag tag;
-    //VMCodeTem * vmcode;
+    struct opcode_list * opcodes;
 } lx_syntax_node;
+
+/* helper function for init lx_syntax_node */
+void lx_syntax_node_init(lx_syntax_node* n);
+
 
 typedef void ret;
 typedef lx_syntax_node* par;

@@ -81,9 +81,9 @@ typedef struct lx_parser
 // helper macro for create/delete syntax_node
 
 #if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
-#define NEW_SYNTAX_NODE(_node) lx_syntax_node * _node = (lx_syntax_node*)lx_stack_allocator_alloc(p->stack_allocator, sizeof(lx_syntax_node))
+#define NEW_SYNTAX_NODE(_node) lx_syntax_node * _node = (lx_syntax_node*)lx_stack_allocator_alloc(p->stack_allocator, sizeof(lx_syntax_node)); lx_syntax_node_init(_node)
 #else
-#define NEW_SYNTAX_NODE(_node) lx_syntax_node * _node = LX_NEW(lx_syntax_node)
+#define NEW_SYNTAX_NODE(_node) lx_syntax_node * _node = LX_NEW(lx_syntax_node); lx_syntax_node_init(_node)
 #endif
 #define NEW_SYNTAX_NODE_T(_node, _token) \
     NEW_SYNTAX_NODE(_node); \

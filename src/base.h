@@ -1,7 +1,7 @@
 #ifndef __LX_BASE__H_
 #define __LX_BASE__H_
 
-#include <stdlib.h> // malloc, free, strtod
+#include <stdlib.h> // malloc, free, strtod, strtof
 #include <string.h> // memset, memcmp, memcpy
 #include <stddef.h> // size_t, NULL
 #include <ctype.h> // isdigit, isalpha, isalnum
