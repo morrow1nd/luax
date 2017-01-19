@@ -1,0 +1,92 @@
+
+local tem, tem2 = 56, 123;
+
+func(a, b, c);
+func(nil);
+funcb(56, 'uu')(); -- funcb return a function
+func = function(a, b) 
+    return a - b; 
+end;
+-- function (a, b, c)
+--     return a + b + c;
+-- end(1,2,3); -- call after define, return 6
+
+-- assignment expressions
+a, b = b, a;
+a, b = func();
+a = b, c; -- equal to `a = b`;
+a += expr;
+a *= 1 + 5;
+a -= 1 * 5;
+a += 1 == 1;
+func() += b; -- function func would be called twice
+
+-- prefix expressions
+a = -a;
+a = - 5 + 6; -- a == 1, rather then -11
+
+-- suffix expressions
+a["key 3"];
+a["key 3"][56];
+a[str + '.png'];
+a[func() / 2];
+a.key2;
+a.key2.key2;
+a.key2['username'];
+a.key2['opcode'](1, 2);
+func()["username"];
+
+(func())();
+(func())[56][(1 + 2) * a]
+
+
+--[[
+    statement
+--]]
+
+-- empty statement
+;
+
+-- if statement
+if expr then
+    stmt;
+end
+
+-- if_else statement
+if expr then
+    stmt;
+else
+    stmt;
+end
+
+-- while statement
+while expr then
+    stmt;
+    break;
+    continue;
+end
+
+-- for statement
+for   i = 5; i < 700; i = i + 1 then
+    -- empty
+end
+
+-- complex statement
+show('begin');
+for   i = 0; i < 100; i += 1 then
+      j = 56;
+    while j < func(i) then
+        j += func_test(i, j);
+        if sqrt(j) == 0.2 then
+            continue;
+        end
+        if sqrt(j) == 0.5 then
+            break;
+        end
+    end
+    show(i);
+    if sqrt(i) > 0.5 then
+        break;
+    end
+end
+show('--end--');

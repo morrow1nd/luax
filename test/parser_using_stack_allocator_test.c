@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define LX_PRINT_MALLOC_INFO 1
+#if(LX_PRINT_MALLOC_INFO)
 extern int lx_call_lx_malloc_number;
 extern int lx_call_lx_free_number;
+#endif
 
 #include "luax.h"
 
@@ -13,7 +14,7 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
 
 int main(int argc, char * argv[])
 {
-    char * const filepath = TEST_BINARY_DIR ".tem_test_case.luax";
+    char * const filepath = TEST_BINARY_DIR "parser_using_stack_allocator_test.luax";
     FILE * fp = NULL;
     fp = fopen(filepath, "r");
     if (!fp) {
@@ -42,8 +43,14 @@ int main(int argc, char * argv[])
     lx_delete_parser(p);
 
     printf("----- program end -------\n");
+#if(LX_PRINT_MALLOC_INFO)
     printf("- Curr call_lx_malloc_times:%d\n", lx_call_lx_malloc_number);
     printf("- Curr call_lx_free_times:%d\n", lx_call_lx_free_number);
-
+#else
+    printf("Please set LX_PRINT_MALLOC_INFO to 1\n");
+#endif
+#ifdef _WIN32
+    system("pause");
+#endif
     return 0;
 }

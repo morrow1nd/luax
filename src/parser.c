@@ -532,7 +532,9 @@ lx_parser* lx_genBytecode(const char* _source_code, const int source_code_length
         return NULL;
     }
     lx_parser* p = LX_NEW(lx_parser);
+#if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
     p->stack_allocator = lx_stack_allocator_create(1024 * 4);
+#endif
     p->scanner = scanner;
     NEW_SYNTAX_NODE(compile_unit_node);
     int ret = compile_unit(p, compile_unit_node);
@@ -546,7 +548,9 @@ lx_parser* lx_genBytecode(const char* _source_code, const int source_code_length
 }
 void lx_delete_parser(lx_parser* p)
 {
+#if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
     lx_stack_allocator_delete(p->stack_allocator);
+#endif
     lx_delete_token_scanner(p->scanner);
     lx_free(p);
 }
