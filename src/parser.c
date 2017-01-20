@@ -20,9 +20,12 @@ char* lx_helper_dump_token(lx_token *token, char * outstr)
 
 void lx_helper_dump_bytecode(lx_opcodes* ops)
 {
+    char tem[1024];
     printf("============ dump bytecode ===============\n");
     for(int i = 0; i < ops->size; ++i){
-        printf("%s\n", lx_opcode_type_to_string(ops->arr[i]->type));
+        if(! lx_opcode_is_label(ops->arr[i]->type))
+            printf("\t");
+        printf("%s\n", lx_opcode_to_string(ops->arr[i], tem));
     }
     printf("=========== dump end =====================\n");
 }
@@ -551,6 +554,9 @@ lx_parser* lx_genBytecode(const char* _source_code, const int source_code_length
         FREE_SYNTAX_NODE(compile_unit_node);
         lx_delete_parser(p);
         debuglog("compile_unit didn't return 0");
+        // todo:
+        lx_token* curr = lx_token_nextN(p->scanner, 0);
+        printf("Parsr Error: parser failed at L%d: text_len:%d type:%d %s\n", curr->linenum, curr->text_len, curr->type, curr->text);
         return NULL;
     }
     p->opcodes = genBytecode(compile_unit_node);

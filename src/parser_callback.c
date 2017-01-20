@@ -86,9 +86,10 @@ static void move(lx_syntax_node* _self, lx_syntax_node* _1)
         _self->opcodes = __new_opcodes();
     }
     _self->opcodes->label_size += _1->opcodes->label_size;
-    if (_self->opcodes->back == NULL) {
-        _self->opcodes->back = _1->opcodes->back;
+    if (_self->opcodes->back != NULL) {
+        _self->opcodes->back->next = _1->opcodes->front;
     }
+    _self->opcodes->back = _1->opcodes->back;
     if(_self->opcodes->front == NULL)
         _self->opcodes->front = _1->opcodes->front;
 }
@@ -103,24 +104,29 @@ static void move3(lx_syntax_node* _self, lx_syntax_node* _1, lx_syntax_node* _2,
     move(_self, _2);
     move(_self, _3);
 }
-static void append(lx_syntax_node* _self, lx_opcode* op)
+static void append(lx_syntax_node* _self, struct opcode_w* op)
 {
     if(_self->opcodes == NULL)
         _self->opcodes = __new_opcodes();
-    if(lx_opcode_is_label(op->type))
+    if(lx_opcode_is_label(op->real_opcode->type))
         _self->opcodes->label_size ++;
     if (_self->opcodes->back == NULL) {
-        _self->opcodes->back = __wrapper_lx_opcode(op);
+        _self->opcodes->back = op;
         _self->opcodes->front = _self->opcodes->back;
     } else {
-        _self->opcodes->back->next = __wrapper_lx_opcode(op);
+        _self->opcodes->back->next = op;
         _self->opcodes->back = _self->opcodes->back->next;
     }
+}
+static void append_with_opinfo(lx_syntax_node* _self, struct opcode_w* op, int op_extra_info)
+{
+    op->real_opcode->extra_info = op_extra_info;
+    append(_self, op);
 }
 
 lx_opcodes* genBytecode(lx_syntax_node* root)
 {
-    lx_opcodes* opcodes = LX_NEW(lx_opcode);
+    lx_opcodes* opcodes = LX_NEW(lx_opcodes);
     opcodes->capacity = 0;
     opcodes->size = 0;
     opcodes->arr = NULL;
@@ -203,9 +209,7 @@ LX_CALLBACK_DECLARE1(stmt, expr_stmt)
 {
     debuglog("stmt  ->  expr_stmt");
     debuglog("================== new statement ================== expr_stmt");
-    append(_self, __new_op(OP_TAG));
     move(_self, _1);
-    append(_self, __new_op(OP_POP_TO_TAG));
     FREE_SYNTAX_NODE(_1);
 }
 LX_CALLBACK_DECLARE2(stmt, BREAK, EOS)
@@ -228,7 +232,7 @@ LX_CALLBACK_DECLARE2(stmt, RETURN, EOS)
 {
     debuglog("stmt  ->  RETURN EOS");
     debuglog_l(_1->token->linenum, "================== new statement ================== return;");
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_return_stmt);
     append(_self, __new_op(OP_RETURN));
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
@@ -237,7 +241,7 @@ LX_CALLBACK_DECLARE3(stmt, RETURN, expr_list, EOS)
 {
     debuglog("stmt  ->  RETURN expr_list EOS");
     debuglog_l(_1->token->linenum, "================== new statement ================== return expr_list;");
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_return_stmt);
     move(_self, _2);
     append(_self, __new_op(OP_RETURN));
     FREE_SYNTAX_NODE(_3);
@@ -248,7 +252,7 @@ LX_CALLBACK_DECLARE3(stmt, LOCAL, identifier_list, EOS)
 {
     debuglog("stmt  ->  LOCAL identifier_list EOS");
     debuglog_l(_1->token->linenum, "================== new statement ================== local identifier_list;");
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_local_declare);
     for(lx_syntax_node* n = _2->next; n != NULL; n = n->next)
         append(_self, __new_op_x(OP_PUSHC_STR, n));
     append(_self, __new_op(OP_LOCAL));
@@ -260,10 +264,10 @@ LX_CALLBACK_DECLARE5(stmt, LOCAL, identifier_list, EQL, expr_list, EOS)
 {
     debuglog("stmt  ->  LOCAL identifier_list EQL expr_list EOS");
     debuglog_l(_1->token->linenum, "================== new statement ================== local identifier_list = expr_list;");
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_local_declare);
     for (lx_syntax_node* n = _2->next; n != NULL; n = n->next)
         append(_self, __new_op_x(OP_PUSHC_STR, n));
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_local_declare_with_init);
     move(_self, _4);
     append(_self, __new_op(OP_LOCAL_INIT));
     FREE_SYNTAX_NODE(_5);
@@ -320,7 +324,7 @@ LX_CALLBACK_DECLARE5(while_stmt, WHILE, expr, THEN, stmt_sequence, END)
     append(_self, __new_op(OP_PUSH_ENV));
     move(_self, _4);
     append(_self, __new_op(OP_POP_ENV));
-    append(_self, __new_op(OP_JMP, -(_4->opcodes->label_size + 1)));
+    append(_self, __new_op_i(OP_JMP, -(_4->opcodes->label_size + 1)));
     append(_self, __new_op(OP_LABEL_WHILE_END));
     FREE_SYNTAX_NODE(_5);
     FREE_SYNTAX_NODE(_4);
@@ -357,7 +361,7 @@ LX_CALLBACK_DECLARE9(for_stmt, FOR, expr, EOS, expr, EOS, expr, THEN, stmt_seque
 LX_CALLBACK_DECLARE2(expr_stmt, expr, EOS)
 {
     debuglog_l(_2->token->linenum, "expr_stmt  ->  expr EOS");
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_expr_stmt);
     move(_self, _1);
     append(_self, __new_op(OP_POP_TO_TAG));
     FREE_SYNTAX_NODE(_2);
@@ -405,9 +409,9 @@ LX_CALLBACK_DECLARE1(expr, assign_expr)
 LX_CALLBACK_DECLARE3(assign_expr, prefix_expr_list, assign_op, expr_list)
 {
     debuglog("assign_expr  ->  prefix_expr_list assign_op expr_list");
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_assign_stmt_lvalue);
     move(_self, _1);
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_assign_stmt_rvalue);
     move2(_self, _3, _2);
     FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2);
@@ -424,7 +428,7 @@ LX_CALLBACK_DECLARE2(logical_expr, NOT, compare_expr)
 {
     debuglog("logical_expr  ->  NOT compare_expr");
     move(_self, _2);
-    append(_self, __new_op(OP_INVERST));
+    append(_self, __new_op(OP_NOT));
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
 }
@@ -461,7 +465,7 @@ LX_CALLBACK_DECLARE1(compare_expr, addtive_expr)
 LX_CALLBACK_DECLARE3(addtive_expr, multiply_expr, addtive_op, addtive_expr)
 {
     debuglog("addtive_expr  ->  multiply_expr addtive_op addtive_expr");
-    move(_self, _1, _3, _2);
+    move3(_self, _1, _3, _2);
     FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
@@ -476,7 +480,7 @@ LX_CALLBACK_DECLARE1(addtive_expr, multiply_expr)
 LX_CALLBACK_DECLARE3(multiply_expr, prefix_expr, multiply_op, multiply_expr)
 {
     debuglog("multiply_expr  ->  prefix_expr multiply_op multiply_expr");
-    move(_self, _1, _3, _2);
+    move3(_self, _1, _3, _2);
     FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
@@ -491,7 +495,7 @@ LX_CALLBACK_DECLARE1(multiply_expr, prefix_expr)
 LX_CALLBACK_DECLARE2(prefix_expr, prefix_op, suffix_expr)
 {
     debuglog("prefix_expr  ->  prefix_op suffix_expr");
-    move(_self, _2); // no need to care prefix_op
+    move2(_self, _2, _1);
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
 }
@@ -560,7 +564,7 @@ LX_CALLBACK_DECLARE1(single_expr, IDENTIFIER)
 LX_CALLBACK_DECLARE3(suffix_op, SL, SR, suffix_op)
 {
     debuglog("suffix_op  ->  SL SR suffix_op");
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_function_call_argc_empty);
     append(_self, __new_op(OP_CALL));
     move(_self, _3);
     FREE_SYNTAX_NODE(_3);
@@ -570,7 +574,7 @@ LX_CALLBACK_DECLARE3(suffix_op, SL, SR, suffix_op)
 LX_CALLBACK_DECLARE2(suffix_op, SL, SR)
 {
     debuglog("suffix_op  ->  SL SR");
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_function_call_argc_empty);
     append(_self, __new_op(OP_CALL));
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
@@ -578,7 +582,7 @@ LX_CALLBACK_DECLARE2(suffix_op, SL, SR)
 LX_CALLBACK_DECLARE4(suffix_op, SL, expr_list, SR, suffix_op)
 {
     debuglog("suffix_op  ->  SL expr_list SR suffix_op");
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_function_call_argc);
     move(_self, _2);
     append(_self, __new_op(OP_CALL));
     move(_self, _4);
@@ -590,7 +594,7 @@ LX_CALLBACK_DECLARE4(suffix_op, SL, expr_list, SR, suffix_op)
 LX_CALLBACK_DECLARE3(suffix_op, SL, expr_list, SR)
 {
     debuglog("suffix_op  ->  SL expr_list SR");
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_function_call_argc);
     move(_self, _2);
     append(_self, __new_op(OP_CALL));
     FREE_SYNTAX_NODE(_3);
@@ -600,7 +604,7 @@ LX_CALLBACK_DECLARE3(suffix_op, SL, expr_list, SR)
 LX_CALLBACK_DECLARE4(suffix_op, ML, expr, MR, suffix_op)
 {
     debuglog("suffix_op  ->  ML expr MR suffix_op");
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_table_index_ML_expr_MR);
     move(_self, _2);
     append(_self, __new_op(OP_TABLE_KEY));
     move(_self, _4);
@@ -612,7 +616,7 @@ LX_CALLBACK_DECLARE4(suffix_op, ML, expr, MR, suffix_op)
 LX_CALLBACK_DECLARE3(suffix_op, ML, expr, MR)
 {
     debuglog("suffix_op  ->  ML expr MR");
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_table_index_ML_expr_MR);
     move(_self, _2);
     append(_self, __new_op(OP_TABLE_KEY));
     FREE_SYNTAX_NODE(_3);
@@ -662,7 +666,7 @@ LX_CALLBACK_DECLARE1(immediate, NUMBER_IMMEDIATE)
     debuglog("immediate  ->  NUMBER_IMMEDIATE");
     float f = 0.0f;
     {
-        lx_token* t = _1->token;
+        const lx_token* t = _1->token;
         char backup = *(t->text + t->text_len);
         *(t->text + t->text_len) = '\0';
         char *end;
@@ -687,7 +691,7 @@ LX_CALLBACK_DECLARE2(object_immediate, BL, BR)
 LX_CALLBACK_DECLARE3(object_immediate, BL, object_immediate_item_list, BR)
 {
     debuglog("object_immediate  ->  BL object_immediate_item_list BR");
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_immediate_table);
     move(_self, _2);
     append(_self, __new_op(OP_PUSHC_TABLE));
     FREE_SYNTAX_NODE(_3);
@@ -698,7 +702,7 @@ LX_CALLBACK_DECLARE3(object_immediate, BL, object_immediate_item_list, BR)
 LX_CALLBACK_DECLARE3(object_immediate_item_list, object_immediate_item, COMMA, object_immediate_item_list)
 {
     debuglog("object_immediate_item_list  ->  object_immediate_item COMMA object_immediate_item_list");
-    move(_self, _1, _3);
+    move2(_self, _1, _3);
     FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
@@ -732,7 +736,7 @@ LX_CALLBACK_DECLARE3(object_immediate_item, NUMBER_IMMEDIATE, COLON, object_imme
     debuglog("object_immediate_item  ->  NUMBER_IMMEDIATE COLON object_immediate_item_value");
     float f = 0.0f;
     {
-        lx_token* t = _1->token;
+        const lx_token* t = _1->token;
         char backup = *(t->text + t->text_len);
         *(t->text + t->text_len) = '\0';
         char *end;
@@ -766,7 +770,7 @@ LX_CALLBACK_DECLARE6(function_define, FUNCTION, SL, identifier_list, SR, stmt_se
         append(_self, __new_op_x(OP_PUSHC_STR, n));
         // todo: i should free these n
     }
-    append(_self, __new_op(OP_TAG));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_function_define_argc_end);
     move(_self, _5);
     append(_self, __new_op(OP_FUNC_DEF_END));
     append(_self, __new_op(OP_PUSHC_FUNC));
@@ -905,6 +909,6 @@ LX_CALLBACK_DECLARE1(multiply_op, DIV)
 LX_CALLBACK_DECLARE1(prefix_op, SUB)
 {
     debuglog("prefix_op  ->  SUB");
-    append(_self, __new_op(OP_SUB));
+    append(_self, __new_op(OP_INVERST));
     FREE_SYNTAX_NODE(_1);
 }

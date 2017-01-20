@@ -57,6 +57,7 @@ typedef struct
 } lx_token;
 
 char* lx_helper_dump_token(lx_token *token, char * outstr);
+void lx_helper_dump_bytecode(lx_opcodes* ops);
 
 typedef struct
 {
