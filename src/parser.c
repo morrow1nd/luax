@@ -2,6 +2,7 @@
 #include "./base.h"
 #include "./mem.h"
 #include "./parser_callback.h"
+#include "./opcode.h"
 
 
 // helper function
@@ -21,13 +22,24 @@ char* lx_helper_dump_token(lx_token *token, char * outstr)
 void lx_helper_dump_bytecode(lx_opcodes* ops)
 {
     char tem[1024];
-    printf("============ dump bytecode ===============\n");
+    char tem2[1024];
+    printf("============ show readable bytecode ===============\n");
     for(int i = 0; i < ops->size; ++i){
+        tem[0] = '\0';
         if(! lx_opcode_is_label(ops->arr[i]->type))
-            printf("\t");
-        printf("%s\n", lx_opcode_to_string(ops->arr[i], tem));
+            sprintf(tem, "    "); // use 4 spaces to replace \t
+        sprintf(tem + strlen(tem), "%s", lx_opcode_to_string(ops->arr[i], tem2));
+        if(ops->arr[i]->extra_info != -1){
+            if(strlen(tem) < 40){
+                memset((char*)tem + strlen(tem), ' ', 40 - strlen(tem));
+                tem[40] = '\0';
+            }
+            printf("%s; %s\n", tem, lx_opcode_expr_info_to_string(ops->arr[i]->extra_info));
+        }else{
+            printf("%s\n", tem);
+        }
     }
-    printf("=========== dump end =====================\n");
+    printf("=========== readable bytecode end =====================\n");
 }
 
 

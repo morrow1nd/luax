@@ -33,7 +33,7 @@ true;
 10.56;
 "a string\n\t\\\"you can use this\"\nthis string is end";
 '"another string"\'hi\rtab\n\\n <-here';
-{key : "value", 'key 2' : 56, key3: {}, key3 : function (a,b)return a+b; end};
+{'key' : "value", 'key 2' : 56, 'key3': {}, 'key4' : function (a,b)return a+b; end};
 
 -- function call&define expressions
 func();

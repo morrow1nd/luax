@@ -51,6 +51,7 @@ static struct opcode_w* __new_op(enum LX_OPCODE_TYPE type)
 {
     lx_opcode* op = LX_NEW(lx_opcode);
     op->type = (unsigned char)type;
+    op->extra_info = -1;
     return __wrapper_lx_opcode(op);
 }
 static struct opcode_w* __new_op_x(enum LX_OPCODE_TYPE type, lx_syntax_node* node)
@@ -59,6 +60,7 @@ static struct opcode_w* __new_op_x(enum LX_OPCODE_TYPE type, lx_syntax_node* nod
     op_x->text = node->token->text;
     op_x->text_len = node->token->text_len;
     op_x->_.type = (unsigned char)type;
+    op_x->_.extra_info = -1;
     return __wrapper_lx_opcode((lx_opcode*)op_x);
 }
 static struct opcode_w* __new_op_i(enum LX_OPCODE_TYPE type, int i)
@@ -66,6 +68,7 @@ static struct opcode_w* __new_op_i(enum LX_OPCODE_TYPE type, int i)
     lx_opcode_x* op_x = LX_NEW(lx_opcode_x);
     op_x->inumber = i;
     op_x->_.type = (unsigned char)type;
+    op_x->_.extra_info = -1;
     return __wrapper_lx_opcode((lx_opcode*)op_x);
 }
 static struct opcode_w* __new_op_f(enum LX_OPCODE_TYPE type, float f)
@@ -73,6 +76,7 @@ static struct opcode_w* __new_op_f(enum LX_OPCODE_TYPE type, float f)
     lx_opcode_x* op_x = LX_NEW(lx_opcode_x);
     op_x->fnumber = f;
     op_x->_.type = (unsigned char)type;
+    op_x->_.extra_info = -1;
     return __wrapper_lx_opcode((lx_opcode*)op_x);
 }
 

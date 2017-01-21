@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "luax.h"
+
 #if(LX_PRINT_MALLOC_INFO)
 extern int lx_call_lx_malloc_number;
 extern int lx_call_lx_free_number;
 #endif
-
-#include "luax.h"
 
 
 void lx_delete_token_scanner(lx_token_scanner * s);

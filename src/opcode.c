@@ -127,5 +127,23 @@ const char* lx_opcode_to_string(lx_opcode_x* op, char* str)
     default:
         assert(false);
     }
-    return "error";
+    return "lx_opcode_to_string error";
+}
+
+const char* lx_opcode_expr_info_to_string(int type)
+{
+    switch ((enum LX_OP_EXTRA_INFO)type) {
+    case OPINFO_tag_for_expr_stmt: return "expr_stmt";
+    case OPINFO_tag_for_function_define_argc_end: return "func define argc";
+    case OPINFO_tag_for_function_call_argc: return "func call argc";
+    case OPINFO_tag_for_function_call_argc_empty: return "func call argc(empty)";
+    case OPINFO_tag_for_assign_stmt_lvalue: return "assign_stmt lvalue";
+    case OPINFO_tag_for_assign_stmt_rvalue: return "assign_stmt rvalue";
+    case OPINFO_tag_for_return_stmt: return "return stmt";
+    case OPINFO_tag_for_immediate_table: return "immediate table";
+    case OPINFO_tag_for_local_declare: return "local declare";
+    case OPINFO_tag_for_local_declare_with_init: return "local declare(init part)";
+    case OPINFO_tag_for_table_index_ML_expr_MR: return "`tab[expr]`: label for table index";
+    default: assert(false); return "lx_opcode_expr_info_to_string error";
+    }
 }
