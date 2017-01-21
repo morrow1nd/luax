@@ -284,8 +284,10 @@ LX_CALLBACK_DECLARE5(stmt, LOCAL, identifier_list, EQL, expr_list, EOS)
 LX_CALLBACK_DECLARE5(if_stmt, IF, expr, THEN, stmt_sequence, END)
 {
     debuglog_l(_1->token->linenum, "if_stmt  ->  IF expr THEN stmt_sequence END");
+    int stmt_sequence_label_size = _4->opcodes ? _4->opcodes->label_size : 0;
+
     move(_self, _2);
-    append(_self, __new_op_i(OP_JZ, _4->opcodes->label_size + 1));
+    append(_self, __new_op_i(OP_JZ, stmt_sequence_label_size + 1));
     append(_self, __new_op(OP_PUSH_ENV));
     move(_self, _4);
     append(_self, __new_op(OP_POP_ENV));
@@ -299,12 +301,15 @@ LX_CALLBACK_DECLARE5(if_stmt, IF, expr, THEN, stmt_sequence, END)
 LX_CALLBACK_DECLARE7(if_stmt, IF, expr, THEN, stmt_sequence, ELSE, stmt_sequence, END)
 {
     debuglog_l(_1->token->linenum, "if_stmt  ->  IF expr THEN stmt_sequence ELSE stmt_sequence END");
+    int stmt_sequence_label_size = _4->opcodes ? _4->opcodes->label_size : 0;
+    int else_stmt_sequence_label_size = _6->opcodes ? _6->opcodes->label_size : 0;
+
     move(_self, _2);
-    append(_self, __new_op_i(OP_JZ, _4->opcodes->label_size + 1));
+    append(_self, __new_op_i(OP_JZ, stmt_sequence_label_size + 1));
     append(_self, __new_op(OP_PUSH_ENV));
     move(_self, _4);
     append(_self, __new_op(OP_POP_ENV));
-    append(_self, __new_op_i(OP_JMP, _6->opcodes->label_size + 2));
+    append(_self, __new_op_i(OP_JMP, else_stmt_sequence_label_size + 2));
     append(_self, __new_op(OP_LABEL));
     append(_self, __new_op(OP_PUSH_ENV));
     move(_self, _6);
@@ -322,13 +327,15 @@ LX_CALLBACK_DECLARE7(if_stmt, IF, expr, THEN, stmt_sequence, ELSE, stmt_sequence
 LX_CALLBACK_DECLARE5(while_stmt, WHILE, expr, THEN, stmt_sequence, END)
 {
     debuglog_l(_1->token->linenum, "while_stmt  ->  WHILE expr THEN stmt_sequence END");
+    int stmt_sequence_label_size = _4->opcodes ? _4->opcodes->label_size : 0;
+
     append(_self, __new_op(OP_LABEL_WHILE_BEGIN));
     move(_self, _2);
-    append(_self, __new_op_i(OP_JZ, _4->opcodes->label_size + 1));
+    append(_self, __new_op_i(OP_JZ, stmt_sequence_label_size + 1));
     append(_self, __new_op(OP_PUSH_ENV));
     move(_self, _4);
     append(_self, __new_op(OP_POP_ENV));
-    append(_self, __new_op_i(OP_JMP, -(_4->opcodes->label_size + 1)));
+    append(_self, __new_op_i(OP_JMP, -(stmt_sequence_label_size + 1)));
     append(_self, __new_op(OP_LABEL_WHILE_END));
     FREE_SYNTAX_NODE(_5);
     FREE_SYNTAX_NODE(_4);
@@ -340,16 +347,18 @@ LX_CALLBACK_DECLARE5(while_stmt, WHILE, expr, THEN, stmt_sequence, END)
 LX_CALLBACK_DECLARE9(for_stmt, FOR, expr, EOS, expr, EOS, expr, THEN, stmt_sequence, END)
 {
     debuglog_l(_1->token->linenum, "for_stmt  ->  FOR expr EOS expr EOS expr THEN stmt_sequence END");
+    int stmt_sequence_label_size = _8->opcodes ? _8->opcodes->label_size : 0;
+
     move(_self, _2);
-    append(_self, __new_op(OP_LABEL));
+    append(_self, __new_op(OP_LABEL_FOR_BODY));
     move(_self, _4);
-    append(_self, __new_op_i(OP_JZ, _8->opcodes->label_size + 2));
+    append(_self, __new_op_i(OP_JZ, stmt_sequence_label_size + 2));
     append(_self, __new_op(OP_PUSH_ENV));
     move(_self, _8);
     append(_self, __new_op(OP_POP_ENV));
     append(_self, __new_op(OP_LABEL_FOR_BEGIN));
     move(_self, _6);
-    append(_self, __new_op_i(OP_JMP, -(_8->opcodes->label_size + 2)));
+    append(_self, __new_op_i(OP_JMP, -(stmt_sequence_label_size + 2)));
     append(_self, __new_op(OP_LABEL_FOR_END));
     FREE_SYNTAX_NODE(_9);
     FREE_SYNTAX_NODE(_8);
@@ -630,7 +639,7 @@ LX_CALLBACK_DECLARE3(suffix_op, ML, expr, MR)
 LX_CALLBACK_DECLARE3(suffix_op, DOT, IDENTIFIER, suffix_op)
 {
     debuglog("suffix_op  ->  DOT IDENTIFIER suffix_op");
-    append(_self, __new_op_x(OP_TABLE_KEY, _2));
+    append(_self, __new_op_x(OP_TABLE_KEY_IMM, _2));
     move(_self, _3);
     FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2);
@@ -639,7 +648,7 @@ LX_CALLBACK_DECLARE3(suffix_op, DOT, IDENTIFIER, suffix_op)
 LX_CALLBACK_DECLARE2(suffix_op, DOT, IDENTIFIER)
 {
     debuglog("suffix_op  ->  DOT IDENTIFIER");
-    append(_self, __new_op_x(OP_TABLE_KEY, _2));
+    append(_self, __new_op_x(OP_TABLE_KEY_IMM, _2));
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
 }

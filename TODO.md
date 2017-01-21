@@ -74,4 +74,8 @@ stmt  ->  expr_stmt
 ```
         We can see that it try to use `assign_expr -> prefix_expr_list assign_op expr_list`, only when it comes to `assign_op`, can it finds that it's wrong, so it try to use second rule:`assign_expr -> logical_expr`. Before this, some callback funcitons have been called, this means it generates side-effect.
 
+2017/01/20
  + [ ] remove prefix_op in BNF and code.
+2017/01/21
+ + [ ] `func() += b;` 
+ + [ ] support `for local i = 0; ....`

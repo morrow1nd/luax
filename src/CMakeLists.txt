@@ -8,6 +8,7 @@ set (SRC_LIST
     opcode.c
     parser.c
     parser_callback.c
+    vm.c
 )
 set (HEADER_LIST
     luax.h
@@ -17,6 +18,7 @@ set (HEADER_LIST
     opcode.h
     parser.h
     parser_callback.h
+    vm.h
 )
 # !! parser_callback.h?
 

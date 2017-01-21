@@ -13,6 +13,7 @@ const char* lx_opcode_type_to_string(unsigned char type)
     case OP_LABEL: return "label:";
     case OP_LABEL_WHILE_BEGIN: return "label_while_begin:";
     case OP_LABEL_WHILE_END: return "label_while_end:";
+    case OP_LABEL_FOR_BODY: return "label_for_body:";
     case OP_LABEL_FOR_BEGIN: return "label_for_begin:";
     case OP_LABEL_FOR_END: return "label_for_end:";
 
@@ -36,6 +37,7 @@ const char* lx_opcode_type_to_string(unsigned char type)
     case OP_PUSHC_TRUE: return "pushc_true";
     case OP_G_TABLE_KEY: return "g_table_key";
     case OP_TABLE_KEY: return "table_key";
+    case OP_TABLE_KEY_IMM: return "table_key_imm";
     case OP_PUSHC_EMPTY_TABLE: return "pushc_empty_table";
     case OP_PUSHC_STR: return "pushc_str";
     case OP_PUSHC_NUMBER: return "pushc_number";
@@ -75,6 +77,7 @@ const char* lx_opcode_to_string(lx_opcode_x* op, char* str)
     case OP_LABEL: return "label:";
     case OP_LABEL_WHILE_BEGIN: return "label_while_begin:";
     case OP_LABEL_WHILE_END: return "label_while_end:";
+    case OP_LABEL_FOR_BODY: return "label_for_body:";
     case OP_LABEL_FOR_BEGIN: return "label_for_begin:";
     case OP_LABEL_FOR_END: return "label_for_end:";
 
@@ -97,7 +100,8 @@ const char* lx_opcode_to_string(lx_opcode_x* op, char* str)
     case OP_PUSHC_FALSE: return "pushc_false";
     case OP_PUSHC_TRUE: return "pushc_true";
     case OP_G_TABLE_KEY: strcpy(str, "g_table_key "); memcpy(str + 12, op->text, op->text_len); *(str + 12 + op->text_len) = '\0'; return str;
-    case OP_TABLE_KEY: strcpy(str, "table_key "); memcpy(str + 10, op->text, op->text_len); *(str + 10 + op->text_len) = '\0'; return str;
+    case OP_TABLE_KEY: return "table_key";
+    case OP_TABLE_KEY_IMM: strcpy(str, "table_key_imm "); memcpy(str + 14, op->text, op->text_len); *(str + 14 + op->text_len) = '\0'; return str;
     case OP_PUSHC_EMPTY_TABLE: return "pushc_empty_table";
     case OP_PUSHC_STR: strcpy(str, "pushc_str "); memcpy(str + 10, op->text, op->text_len); *(str + 10 + op->text_len) = '\0'; return str;
     case OP_PUSHC_NUMBER: sprintf(str, "pushc_number %f", op->fnumber); return str;

@@ -28,7 +28,7 @@ void lx_helper_dump_bytecode(lx_opcodes* ops)
         tem[0] = '\0';
         if(! lx_opcode_is_label(ops->arr[i]->type))
             sprintf(tem, "    "); // use 4 spaces to replace \t
-        sprintf(tem + strlen(tem), "%s", lx_opcode_to_string(ops->arr[i], tem2));
+        sprintf(tem + strlen(tem), "%s", lx_opcode_to_string((lx_opcode_x*)(ops->arr[i]), tem2));
         if(ops->arr[i]->extra_info != -1){
             if(strlen(tem) < 40){
                 memset((char*)tem + strlen(tem), ' ', 40 - strlen(tem));
@@ -562,12 +562,16 @@ lx_parser* lx_genBytecode(const char* _source_code, const int source_code_length
     p->scanner = scanner;
     NEW_SYNTAX_NODE(compile_unit_node);
     int ret = compile_unit(p, compile_unit_node);
+    if(p->scanner->curr != p->scanner->token_number - 1){
+        lx_token* curr = lx_token_nextN(p->scanner, 1);
+        printf("Parser unfinished: stop at L%d: text_len:%d type:%d %s\n", curr->linenum, curr->text_len, curr->type, curr->text);
+    }
     if(ret != 0){
         FREE_SYNTAX_NODE(compile_unit_node);
         lx_delete_parser(p);
         debuglog("compile_unit didn't return 0");
         // todo:
-        lx_token* curr = lx_token_nextN(p->scanner, 0);
+        lx_token* curr = lx_token_nextN(p->scanner, 1);
         printf("Parsr Error: parser failed at L%d: text_len:%d type:%d %s\n", curr->linenum, curr->text_len, curr->type, curr->text);
         return NULL;
     }
