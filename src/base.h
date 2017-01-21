@@ -16,12 +16,14 @@
 #if(LX_DEBUG)
 # include <stdio.h> // printf, sprintf
 #endif
-# include <stdio.h>
+# include <stdio.h> // todo:remove this
+
 
 void debug(const char * info);
 // log out one line
 void debuglog(const char * one_line);
 void debuglog_l(int linenum, const char * one_line);
 void debuglog_luax_str(int text_len, char * ptr);
+
 
 #endif // end of __LX_BASE__H_
