@@ -385,7 +385,8 @@ LX_CALLBACK_DECLARE2(expr_stmt, expr, EOS)
 LX_CALLBACK_DECLARE3(expr_list, expr, COMMA, expr_list)
 {
     debuglog("expr_list  ->  expr COMMA expr_list");
-    move2(_self, _1, _3);
+    // move2(_self, _1, _3);
+    move2(_self, _3, _1);
     FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
@@ -399,7 +400,8 @@ LX_CALLBACK_DECLARE1(expr_list, expr)
 LX_CALLBACK_DECLARE3(prefix_expr_list, prefix_expr, COMMA, prefix_expr_list)
 {
     debuglog("prefix_expr_list  ->  prefix_expr COMMA prefix_expr_list");
-    move2(_self, _1, _3);
+    // move2(_self, _1, _3);
+    move2(_self, _3, _1);
     FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
@@ -715,7 +717,8 @@ LX_CALLBACK_DECLARE3(object_immediate, BL, object_immediate_item_list, BR)
 LX_CALLBACK_DECLARE3(object_immediate_item_list, object_immediate_item, COMMA, object_immediate_item_list)
 {
     debuglog("object_immediate_item_list  ->  object_immediate_item COMMA object_immediate_item_list");
-    move2(_self, _1, _3);
+    // move2(_self, _1, _3);
+    move2(_self, _3, _1);
     FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
@@ -798,8 +801,14 @@ LX_CALLBACK_DECLARE3(identifier_list, IDENTIFIER, COMMA, identifier_list)
 {
     debuglog_luax_str(_1->token->text_len, _1->token->text);
     debuglog("identifier_list  ->  IDENTIFIER COMMA identifier_list");
-    _self->next = _1;
-    _self->next->next = _3->next;
+    //_self->next = _1;
+    //_self->next->next = _3->next;
+    lx_syntax_node* end_of__3;
+    for(end_of__3 = _3; end_of__3->next != NULL; end_of__3 = end_of__3->next)
+        ;
+    end_of__3->next = _1;
+    _self->next = _3->next;
+
     //FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2); // todo: this is wrong when it comes to using stack allocator ///// begin with here !!!
     //FREE_SYNTAX_NODE(_1);
