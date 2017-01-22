@@ -49,14 +49,14 @@ static void __delete_block(lx_stack_allocator_block* ptr)
 }
 
 
-lx_stack_allocator* lx_stack_allocator_create(size_t expected_capacity)
+lx_stack_allocator* lx_create_stack_allocator(size_t expected_capacity)
 {
     lx_stack_allocator *salloc = LX_NEW(lx_stack_allocator);
     salloc->block = __new_block(expected_capacity);
     salloc->auto_remove_unused_block = false;
     return salloc;
 }
-void lx_stack_allocator_delete(lx_stack_allocator *sallocator)
+void lx_delete_stack_allocator(lx_stack_allocator *sallocator)
 {
     lx_stack_allocator_block* curr = sallocator->block;
     for (lx_stack_allocator_block* next = curr->prev; next != NULL; ) {

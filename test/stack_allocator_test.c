@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 #endif
 
     printf("This is test for stack_allocator\n");
-    lx_stack_allocator* allocator = lx_stack_allocator_create(25);
+    lx_stack_allocator* allocator = lx_create_stack_allocator(25);
 
     char * p[5];
     for(int i = 0; i < 5; ++i){
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     //     return -3;
     // }
 
-    lx_stack_allocator_delete(allocator);
+    lx_delete_stack_allocator(allocator);
 
     return 0;
 }

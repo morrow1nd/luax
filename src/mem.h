@@ -16,8 +16,8 @@ typedef struct {
     struct lx_stack_allocator_block *block;
 } lx_stack_allocator;
 
-lx_stack_allocator* lx_stack_allocator_create(size_t expected_capacity);
-void lx_stack_allocator_delete(lx_stack_allocator *sallocator);
+lx_stack_allocator* lx_create_stack_allocator(size_t expected_capacity);
+void lx_delete_stack_allocator(lx_stack_allocator *sallocator);
 
 void* lx_stack_allocator_alloc(lx_stack_allocator *sallocator, size_t size);
 void lx_stack_allocator_free(lx_stack_allocator *sallocator, void *ptr);

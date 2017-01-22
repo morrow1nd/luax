@@ -1,7 +1,7 @@
 -- var declare
 local foo;
 local aa, bb;
-local tem, aa = 56, 123;
+local tem, aa = 1, 2, 3;
 
 
 --[[
@@ -47,6 +47,7 @@ end(1,2,3); -- call after define, return 6
 
 -- suffix expressions
 a["key 3"];
+mula[func(1,2)]; -- using the first return value of func
 a["key 3"][56];
 a[str + '.png'];
 a[func() / 2];
@@ -63,6 +64,8 @@ func()();
 
 -- assignment expressions
 a, b = b, a;
+a, b = 1, 2, 3;
+a, b, c = 1, 2;
 a, b = func();
 a = b, c; -- equal to `a = b`;
 a += expr;

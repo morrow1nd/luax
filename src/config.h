@@ -4,7 +4,7 @@
 /* used to control debug info output */
 #define LX_DEBUG 1
 /* print parser debug log to stdout(only function when LX_DEBUG is set to 1) */
-#define LX_PARSER_DEBUG_LOG 1
+#define LX_PARSER_DEBUG_LOG 0
 /* show lx_malloc, lx_free calling info */
 #define LX_PRINT_MALLOC_INFO 0
 
@@ -16,5 +16,7 @@
 #define LX_CONFIG_IDENTIFIER_MAX_LENGTH (1024 * 4 - 1)
 
 
+/* temperary config to simplily coding */
+#define LX_CONFIG_LOCAL_INIT_MAX_SIZE 32
 
 #endif // end of __LX_CONFIG__H_

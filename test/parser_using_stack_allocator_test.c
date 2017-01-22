@@ -9,9 +9,6 @@ extern int lx_call_lx_free_number;
 #endif
 
 
-void lx_delete_token_scanner(lx_token_scanner * s);
-lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length);
-
 int main(int argc, char * argv[])
 {
     char * const filepath = TEST_BINARY_DIR "parser_using_stack_allocator_test.luax";

@@ -4,3 +4,4 @@
 #include "opcode.h"
 #include "parser.h"
 #include "parser_callback.h"
+#include "vm.h"
