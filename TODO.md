@@ -79,3 +79,7 @@ stmt  ->  expr_stmt
 2017/01/21
  + [ ] `func() += b;` 
  + [ ] support `for local i = 0; ....`
+
+2017/01/23
+ + [ ] support `for in...`
+ 

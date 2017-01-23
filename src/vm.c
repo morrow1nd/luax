@@ -18,8 +18,16 @@ const lx_object LX_OBJECT_false =
     .type = LX_OBJECT_BOOL,
     .fnumber = 0.0f
 };
+const lx_object LX_OBJECT_tag = 
+{
+    .type = LX_OBJECT_TAG,
+    .fnumber = 0.0f
+};
 const lx_object_table_key LX_OBJECT_TABLE_key_nil_to_nil = 
 {
+    .base = {
+        .type = LX_OBJECT_TABLE_KEY
+    },
     .key = NULL,
     .value = (lx_object*)&LX_OBJECT_nil
 };
@@ -39,30 +47,56 @@ static int aaa(lx_vm* vm, char* str)
 
 }
 
-int _op_add_assign(lx_object_table_key* lvalue, lx_object* rvalue)
+static int _op_add_assign(lx_object_table_key* lvalue, lx_object* rvalue)
 {
     lx_object* l = lvalue->value;
-    // todo
+    // todo: be careful, value could be a table_key
     l->fnumber += rvalue->fnumber;
 }
-int _op_sub_assign(lx_object_table_key* lvalue, lx_object* rvalue)
+static int _op_sub_assign(lx_object_table_key* lvalue, lx_object* rvalue)
 {
     lx_object* l = lvalue->value;
     // todo
     l->fnumber -= rvalue->fnumber;
 }
-int _op_mul_assign(lx_object_table_key* lvalue, lx_object* rvalue)
+static int _op_mul_assign(lx_object_table_key* lvalue, lx_object* rvalue)
 {
     lx_object* l = lvalue->value;
     // todo
     l->fnumber *= rvalue->fnumber;
 }
-int _op_div_assign(lx_object_table_key* lvalue, lx_object* rvalue)
+static int _op_div_assign(lx_object_table_key* lvalue, lx_object* rvalue)
 {
     lx_object* l = lvalue->value;
     // todo
     l->fnumber /= rvalue->fnumber;
 }
+static int _op_call(lx_vm* vm, lx_object* obj)
+{
+    if(obj->type == LX_OBJECT_TABLE_KEY)
+        obj = ((lx_object_table_key*)obj)->value;
+    if (obj->type == LX_OBJECT_FUNCTION) {
+        lx_object_function* obj_func = (lx_object_function*)obj;
+        if (obj_func->func_opcodes) {
+            _vm_run(vm, obj_func->func_opcodes); // todo: check it!
+        } else if (obj_func->func_ptr) {
+            obj_func->func_ptr(vm->stack, obj); // todo: check it!
+        } else {
+            //todo
+            printf("error: lx_object_function no callable ptr");
+            assert(false);
+        }
+        return 0;
+    }
+    if (obj->type == LX_OBJECT_TABLE) {
+        //todo
+        return 0;
+    }
+    //todo
+    printf("error: _op_call: obj is not callable");
+    assert(false);
+}
+
 
 static int _vm_run(lx_vm* vm, lx_object_function* func_obj)
 {
@@ -105,7 +139,17 @@ static int _vm_run(lx_vm* vm, lx_object_function* func_obj)
             continue;
         }
         case OP_CALL: {
-            // todo
+            int tagi = stack->curr;
+            while (tagi >= 0 && stack->arr[tagi]->type != LX_OBJECT_TAG) {
+                tagi--;
+            }
+            if (tagi <= 0) {
+                //todo
+                printf("VM ERROR: call error");
+                assert(false);
+            }
+            tagi--; // now tagi points to the called object
+            _op_call(vm, stack->arr[tagi]);
             continue;
         }
         case OP_RETURN: {
@@ -153,7 +197,7 @@ static int _vm_run(lx_vm* vm, lx_object_function* func_obj)
         }
 
         case OP_TAG:{
-            lx_vm_stack_push(stack, _new_object(LX_OBJECT_TAG));
+            lx_vm_stack_push(stack, &LX_OBJECT_tag);
             continue;
         }
         case OP_POP_TO_TAG: {
@@ -266,6 +310,14 @@ static int _vm_run(lx_vm* vm, lx_object_function* func_obj)
                 printf("erro; out of range");
                 assert(false);
             }
+            if (tab->base.type == LX_OBJECT_TABLE_KEY) {
+                tab = ((lx_object_table_key*)tab)->value;
+            }
+            if (tab->base.type != LX_OBJECT_TABLE) {
+                //todo
+                printf("error: table_key_imm should pop a table from the stack");
+                assert(false);
+            }
             lx_opcode_x* op = (lx_opcode_x*)ops->arr[i];
             lx_object_string key;
             key.base.type = LX_OBJECT_STRING;
@@ -286,6 +338,7 @@ static int _vm_run(lx_vm* vm, lx_object_function* func_obj)
             o_str->text = op->text;
             o_str->text_len = op->text_len;
             o_str->base.type = LX_OBJECT_STRING;
+            lx_vm_stack_push(stack, o_str);
             continue;
         }
         case OP_PUSHC_NUMBER: {
@@ -317,7 +370,10 @@ static int _vm_run(lx_vm* vm, lx_object_function* func_obj)
             int left_key_begin = opi - 1;
             while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
                 if(stack->arr[rvalue_begin]->type != LX_OBJECT_TAG){
-                    ((lx_object_table_key *)(stack->arr[opi]))->value = stack->arr[rvalue_begin];
+                    if(stack->arr[rvalue_begin]->type == LX_OBJECT_TABLE_KEY)
+                        ((lx_object_table_key *)(stack->arr[opi]))->value = ((lx_object_table_key*)stack->arr[rvalue_begin])->value;
+                    else
+                        ((lx_object_table_key *)(stack->arr[opi]))->value = stack->arr[rvalue_begin];
                     rvalue_begin--;
                 }else
                     ((lx_object_table_key *)(stack->arr[opi]))->value = &LX_OBJECT_nil;
@@ -617,6 +673,34 @@ bool lx_object_is_jz_zero(lx_object* obj)
 }
 
 
+
+lx_object_function* lx_create_object_function()
+{
+    lx_object_function* ret = LX_NEW(lx_object_function);
+    ret->base.type = LX_OBJECT_FUNCTION;
+    ret->func_opcodes = NULL;
+    ret->func_ptr = NULL;
+    ret->_G = NULL; // todo
+    ret->_E = NULL;
+    return ret;
+}
+lx_object_function* lx_create_object_function_p(lx_object_function_ptr_handle func_ptr)
+{
+    lx_object_function* ret = lx_create_object_function();
+    ret->func_ptr = func_ptr;
+    return ret;
+}
+lx_object_function* lx_create_object_function_ops(lx_opcodes* func_opcodes)
+{
+    lx_object_function* ret = lx_create_object_function();
+    ret->func_opcodes = func_opcodes;
+    return ret;
+}
+void lx_delete_object_function(lx_object_function* obj_func)
+{
+    lx_free(obj_func);
+}
+
 lx_object_table* lx_create_object_table()
 {
     lx_object_table* tab = LX_NEW(lx_object_table);
@@ -682,18 +766,19 @@ lx_object_table_key* lx_object_table_find(lx_object_table* tab, lx_object* k)
 lx_object_table_key* lx_object_table_always_found(lx_object_table* tab, lx_object* k)
 {
     lx_object_table_key* key = lx_object_table_find(tab, k);
-    if (!key) {
+    if (key == NULL) {
         //lx_object_table_replace(tab, k, &LX_OBJECT_nil);
         char id[LX_CONFIG_IDENTIFIER_MAX_LENGTH + 1];
         lx_object_get_id(k, id);
         int id_len = strlen(id);
 
         key = LX_NEW(lx_object_table_key);
+        key->base.type = LX_OBJECT_TABLE_KEY;
         key->key = lx_malloc(id_len + 1);
         memcpy(key->key, id, id_len + 1);
         key->value = &LX_OBJECT_nil;
 
-        HASH_ADD_KEYPTR(hh, tab->keyvalue_map, id, id_len, key);
+        HASH_ADD_KEYPTR(hh, tab->keyvalue_map, key->key, id_len, key);
     }
     return key;
 }
@@ -730,15 +815,19 @@ lx_object* lx_object_table_replace(lx_object_table* tab, lx_object* k, lx_object
     } else {
         old = &LX_OBJECT_nil; // no old
         kv = LX_NEW(lx_object_table_key);
+        kv->base.type = LX_OBJECT_TABLE_KEY;
+        kv->key = lx_malloc(id_len + 1);
     }
     memcpy(kv->key, id, id_len + 1);
     kv->value = v;
 
-    HASH_ADD_KEYPTR( hh, tab->keyvalue_map, id, id_len, kv);
+    HASH_ADD_KEYPTR( hh, tab->keyvalue_map, kv->key, id_len, kv);
     return old;
 }
 lx_object* lx_object_table_replace_s(lx_object_table* tab, const char* text, int text_len, lx_object* v)
 {
+    if(text_len == -1)
+        text_len = strlen(text);
     lx_object_string key;
     key.base.type = LX_OBJECT_STRING;
     key.text = text;
@@ -792,7 +881,7 @@ lx_object* lx_vm_stack_pop(lx_vm_stack* s)
 lx_vm* lx_create_vm ()
 {
     lx_vm* vm = LX_NEW(lx_vm);
-    //todo
+    vm->stack = lx_create_vm_stack(32);
     return vm;
 }
 
@@ -805,12 +894,49 @@ int lx_vm_run (lx_vm* vm, lx_object* func_obj)
 
 void lx_delete_vm (lx_vm* vm)
 {
-
+    lx_delete_vm_stack(vm->stack);
     lx_free(vm);
 }
 
 // helper function
 const char* lx_object_to_string(lx_object* obj, char str[])
+{
+    switch (obj->type) {
+    case LX_OBJECT_BOOL:
+        sprintf(str, "%s", obj->fnumber ? "true" : "false");
+        return str;
+    case LX_OBJECT_NUMBER:
+        sprintf(str, "%f", obj->fnumber);
+        // erase the unused zero, for example: 123.000000  ->  123.0
+        int i = strlen(str) - 1;
+        while (i > 0 && str[i] == '0' && str[i - 1] == '0') {
+            str[i] = '\0';
+            --i;
+        }
+        return str;
+    case LX_OBJECT_STRING: {
+        lx_object_string* obj_s = (lx_object_string*)obj;
+        memcpy(str, obj_s->text, obj_s->text_len);
+        str[obj_s->text_len] = '\0';
+        return str;
+    }
+    case LX_OBJECT_NIL:
+        strcpy(str, "nil");
+        return str;
+    case LX_OBJECT_TABLE:
+        sprintf(str, "table(%p)", obj);
+        return str;
+    case LX_OBJECT_FUNCTION:
+        sprintf(str, "function(%p)", obj);
+        return str;
+    case LX_OBJECT_TABLE_KEY:
+        return lx_object_to_string((lx_object_table_key *)obj, str);
+    default:
+        assert(false);
+        return "error";
+    }
+}
+const char* lx_object_inner_to_string(lx_object* obj, char str[])
 {
     switch (obj->type) {
     case LX_OBJECT_TAG: return "tag";
@@ -831,6 +957,7 @@ const char* lx_object_to_string(lx_object* obj, char str[])
     default:
         assert(false);
     }
+    return "error12"; //todo
 }
 void lx_dump_vm_stack(lx_vm* vm)
 {
@@ -839,7 +966,7 @@ void lx_dump_vm_stack(lx_vm* vm)
     printf("            ---------------\n");
     for (int i = 0; i <= vm->stack->curr; ++i) {
         sprintf(tem, "        %-4d| ", i);
-        lx_object_to_string(vm->stack->arr[i], tem + strlen(tem));
+        lx_object_inner_to_string(vm->stack->arr[i], tem + strlen(tem));
         printf("%s\n", tem);
     }
     if(vm->stack->curr == -1)

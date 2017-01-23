@@ -5,3 +5,11 @@
 #include "parser.h"
 #include "parser_callback.h"
 #include "vm.h"
+
+
+#ifndef LX_NO_STANDARD_LIBRARY
+#include "standard_lib/lio.h"
+#include "standard_lib/lmath.h"
+#include "standard_lib/lstring.h"
+#include "standard_lib/ltable.h"
+#endif

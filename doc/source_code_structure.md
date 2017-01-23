@@ -9,6 +9,7 @@
     - parser_callback.h&.c - Callback functions, which are called when parser deductes successfully.
     - mem.h&.c - Memory allocator.
     - vm.h&.c - Luax virtual machine.
+    - luax_api.h&.c - luax api for the communication between C and luax.
     - standard_lib/ - Running time environment.
 
     - luax_exec.c - A standalone executable interpreter.

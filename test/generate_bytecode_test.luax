@@ -66,6 +66,7 @@ func()();
 a, b = b, a;
 a, b = 1, 2, 3;
 a, b, c = 1, 2;
+a, b = func(1, 2, 3);
 a, b = func();
 a = b, c; -- equal to `a = b`;
 a += expr;

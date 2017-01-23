@@ -19,4 +19,4 @@
 /* temperary config to simplily coding */
 #define LX_CONFIG_LOCAL_INIT_MAX_SIZE 32
 
-#endif // end of __LX_CONFIG__H_
+#endif // !__LX_CONFIG__H_
