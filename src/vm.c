@@ -96,6 +96,40 @@ static int _op_call(lx_vm* vm, lx_object* obj)
     printf("error: _op_call: obj is not callable");
     assert(false);
 }
+static int _op_func_define_begin(lx_vm* vm, lx_opcodes* ops, int curr_op)
+{
+    lx_vm_stack* s = vm->stack;
+}
+static int _op_g_table_key(lx_vm* vm, lx_opcode_x* op, lx_object_function* func_obj)
+{
+    lx_vm_stack* s = vm->stack;
+    lx_object_string key;
+    key.base.type = LX_OBJECT_STRING;
+    key.text = op->text;
+    key.text_len = op->text_len;
+    lx_object_table_key* result = lx_object_table_find(func_obj->_G, &key);
+    if (result == NULL) {
+        result = lx_object_table_find(func_obj->_E, &key);
+        if (result == NULL) {
+            // lx_vm_stack_push(s, lx_object_table_always_found(func_obj->_G, &key));
+            //todo
+            printf("error: using a not-declared identifier is wrong");
+            assert(false);
+        } else {
+            lx_vm_stack_push(s, result);
+        }
+    } else {
+        lx_vm_stack_push(s, result);
+    }
+}
+static int _op_push_env(lx_vm* vm, lx_object_function* func_obj)
+{
+
+}
+static int _op_push_env(lx_vm* vm, lx_object_function* func_obj)
+{
+
+}
 
 
 static int _vm_run(lx_vm* vm, lx_object_function* func_obj)
@@ -165,7 +199,7 @@ static int _vm_run(lx_vm* vm, lx_object_function* func_obj)
             for(; count < label_count; f += direction){
                 if (f < 0 || f > ops->size) {
                     // todo
-                    printf("VM ERROR: can't find the distantion of jmp\n");
+                    printf("VM ERROR: can't find the destination of jmp\n");
                     assert(false);
                 }
                 if(lx_opcode_is_label(ops->arr[f]->type))
@@ -185,7 +219,7 @@ static int _vm_run(lx_vm* vm, lx_object_function* func_obj)
                 for (; count < label_count; f += direction) {
                     if (f < 0 || f > ops->size) {
                         // todo
-                        printf("VM ERROR: can't find the distantion of jz\n");
+                        printf("VM ERROR: can't find the destination of jz\n");
                         assert(false);
                     }
                     if(lx_opcode_is_label(ops->arr[f]->type))
@@ -268,25 +302,19 @@ static int _vm_run(lx_vm* vm, lx_object_function* func_obj)
         }
 
         case OP_PUSHC_NIL: {
-            lx_vm_stack_push(stack, _new_object(LX_OBJECT_NIL));
+            lx_vm_stack_push(stack, &LX_OBJECT_nil);
             continue;
         }
         case OP_PUSHC_FALSE: {
-            lx_vm_stack_push(stack, _new_object(LX_OBJECT_BOOL))->fnumber = false;
+            lx_vm_stack_push(stack, &LX_OBJECT_false);
             continue;
         }
         case OP_PUSHC_TRUE: {
-            lx_vm_stack_push(stack, _new_object(LX_OBJECT_BOOL))->fnumber = true;
+            lx_vm_stack_push(stack, &LX_OBJECT_true);
             continue;
         }
         case OP_G_TABLE_KEY: {
-            lx_opcode_x* op = (lx_opcode_x*)ops->arr[i];
-            lx_object_string key;
-            key.base.type = LX_OBJECT_STRING;
-            key.text = op->text;
-            key.text_len = op->text_len;
-            lx_object_table_key* result = lx_object_table_always_found(func_obj->_G, &key);
-            lx_vm_stack_push(stack, result);
+            _op_g_table_key(vm, ops->arr[i], func_obj);
             continue;
         }
         case OP_TABLE_KEY: {
@@ -350,7 +378,7 @@ static int _vm_run(lx_vm* vm, lx_object_function* func_obj)
             continue;
         }
         case OP_FUNC_DEF_BEGIN: {
-            //todo
+            _op_func_define_begin(vm, ops, i);
             continue;
         }
         case OP_FUNC_DEF_END: {
@@ -682,6 +710,7 @@ lx_object_function* lx_create_object_function()
     ret->func_ptr = NULL;
     ret->_G = NULL; // todo
     ret->_E = NULL;
+    ret->backup_env_stack = NULL;
     return ret;
 }
 lx_object_function* lx_create_object_function_p(lx_object_function_ptr_handle func_ptr)

@@ -10,6 +10,7 @@ set (SRC_LIST
     opcode.c
     parser.c
     parser_callback.c
+    object.c
     vm.c
     luax_api.c
     ${STANDARD_LIB_SRC_LIST}
@@ -22,6 +23,7 @@ set (HEADER_LIST
     opcode.h
     parser.h
     parser_callback.h
+    object.h
     vm.h
     luax_api.h
     ${STANDARD_LIB_HEADER_LIST}

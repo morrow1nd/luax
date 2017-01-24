@@ -1,3 +1,6 @@
+#ifndef __LUAX__H_
+#define __LUAX__H_
+
 
 #include "base.h"
 #include "mem.h"
@@ -13,3 +16,5 @@
 #include "standard_lib/lstring.h"
 #include "standard_lib/ltable.h"
 #endif
+
+#endif // !__LUAX__H_

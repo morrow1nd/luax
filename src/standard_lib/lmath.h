@@ -3,7 +3,6 @@
 
 #include "luax_api.h"
 
-void lmath__abs(lx_vm_stack* stack);
-
+lx_object_table* lx_lmath_load();
 
 #endif // !__L_MATH__H_
