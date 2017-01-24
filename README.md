@@ -2,11 +2,11 @@
 
 # What is Luax?
 
- Luax is a easy-to-learn, powerful, modern programming language. ([Chinese Page](./doc/doc-zh/README.md))
+ Luax is a easy-to-learn, concise and powerful programming language. ([Chinese Page](./doc/doc-zh/README.md))
 
  Luax provides full documentation(from the language itself to internal design), making it a perfect project for beginner to learn how to make a *interpreter*.
 
- Luax is distributed in source code, which contains the c-achieved interpreter, standard library, a standalone executable interpreter, a syntax-standardlization tool, and full documentation.
+ Luax is distributed in source code, which contains the bytecode generator, luax virtual machine, standard library, a standalone executable interpreter, a syntax-standardlization tool, and full documentation.
 
 
 # Features
@@ -27,7 +27,7 @@ The C achieve of luax:
 
  + [Get Started](https://github.com/morrow1nd/luxa/master/doc/get-started.md) (Coming soon!)
  + [5-minites-tour](https://github.com/morrow1nd/luxa/master/doc/5-minites-tour.md) (Coming soon!)
- + [Book:The Luax Programming Language]() (Coming soon!)
+ + [Luax Reference manual]() (Coming soon!)
 
 ## For Language Hacker
 
@@ -35,8 +35,10 @@ The C achieve of luax:
 # Build
 
 ```shell
-$ make
-$ make test
+mkdir build
+cd build
+cmake ..
+make && make test
 ```
 
 # About
