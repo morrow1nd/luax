@@ -8,8 +8,9 @@
     - parser.h&.c - Achieve a token scanner and a recursive descent parser.
     - parser_callback.h&.c - Callback functions, which are called when parser deductes successfully.
     - mem.h&.c - Memory allocator.
+    - object.h&.c - Luax object management.
     - vm.h&.c - Luax virtual machine.
-    - luax_api.h&.c - luax api for the communication between C and luax.
+    - luax_api.h&.c - Luax api for the communication between C and luax.
     - standard_lib/ - Running time environment.
 
     - luax_exec.c - A standalone executable interpreter.

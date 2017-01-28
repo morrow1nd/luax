@@ -53,8 +53,9 @@ int main(int argc, char * argv[])
     lx_object_function* func_obj = LX_NEW(lx_object_function);
     func_obj->base.type = LX_OBJECT_FUNCTION;
     func_obj->func_opcodes = p->opcodes;
+    func_obj->_E = lx_create_object_table();
+    lx_object_table_replace_s(func_obj->_E, "io", -1, luax_lio_load());
     func_obj->_G = lx_create_object_table();
-    lx_object_table_replace_s(func_obj->_G, "io", -1, luax_lio_load());
 
     lx_vm_run(vm, func_obj);
     lx_dump_vm_stack(vm);

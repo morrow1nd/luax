@@ -13,7 +13,7 @@ void lio__print(lx_vm_stack* s, lx_object* called_obj)
 }
 
 
-lx_object_table* luax_lio_load()
+lx_object_table* lx_lio_load()
 {
     lx_object_table* io = lx_create_object_table();
     lx_object_table_replace_s(io, "print", -1, lx_create_object_function_p(&lio__print));

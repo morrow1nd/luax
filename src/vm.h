@@ -36,6 +36,9 @@ typedef struct lx_object_function {
 
     lx_object_table* _E;
     lx_object_table* _G;
+    /* function running environment, used to store variable scope info */
+    lx_vm_env* backup_env_stack;
+
     lx_object_function_ptr_handle func_ptr;
     lx_opcodes* func_opcodes;
 } lx_object_function;
@@ -95,10 +98,17 @@ void lx_delete_vm_stack(lx_vm_stack* stack);
 lx_object* lx_vm_stack_push(lx_vm_stack* stack, lx_object* obj);
 lx_object* lx_vm_stack_pop(lx_vm_stack* stack);
 
+/* used in `push_env` and `pop_env` */
+typedef struct lx_vm_env {
+    lx_object_table* _E;
+    lx_object_table* _G;
+
+    struct lx_vm_env* prev;
+} lx_vm_env;
 
 typedef struct lx_vm {
-    lx_vm_stack* stack; /* runtime stack */
-
+    /* runtime stack */
+    lx_vm_stack* stack;
 } lx_vm;
 
 
@@ -108,7 +118,10 @@ void lx_delete_vm(lx_vm* vm);
 
 
 // helper function
+/* environment table used as func_obj's _E, only include base function, no full standard library */
+lx_object_table* lx_create_base_env_table();
 const char* lx_object_to_string(lx_object* obj, char str[]);
+// debug helper function
 const char* lx_object_inner_to_string(lx_object* obj, char str[]); /* for debug show */
 void lx_dump_vm_stack(lx_vm* vm);
 void lx_dump_vm_status(lx_vm* vm);

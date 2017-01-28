@@ -8,7 +8,7 @@
 void lx_push_number(lx_vm* vm, ...);
 void lx_push_string();
 void lx_push_bool();
-void lx_push_nil();
+void lx_push_nil(lx_vm_stack* stack);
 void lx_push_table();
 
 void lx_push_tag(lx_vm_stack* stack);

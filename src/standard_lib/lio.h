@@ -3,10 +3,6 @@
 
 #include "luax_api.h"
 
-void lio__print(lx_vm_stack* stack);
-
-
-
-lx_object_table* luax_lio_load();
+lx_object_table* lx_lio_load();
 
 #endif
