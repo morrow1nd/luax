@@ -28,7 +28,7 @@ void debuglog_luax_str(int text_len, char * ptr)
     assert(text_len >= 0 && "debuglog_luax_str: argument text_len must >= 0");
     char backup = *(ptr + text_len);
     *(ptr + text_len) = '\0';
-    printf("%s\n", ptr);
+    printf("debuglog_luax_str: %s\n", ptr);
     *(ptr + text_len) = backup;
 #endif
 }

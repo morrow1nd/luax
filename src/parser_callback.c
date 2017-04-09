@@ -181,7 +181,7 @@ LX_CALLBACK_DECLARE1(stmt_sequence, EMPTY_SYMBOL) // use EMPTY_SYMBOL to replace
     // FREE_SYNTAX_NODE(_1); // empty_symbol is NULL
 }
 
-LX_CALLBACK_DECLARE1(stmt, EOS) // EOS: end of statement
+LX_CALLBACK_DECLARE1(stmt, EOS) /* EOS: end of statement */
 {
     debuglog("stmt  ->  EOS");
     debuglog_l(_1->token->linenum, "================== new statement ================== empty statement");
@@ -236,7 +236,7 @@ LX_CALLBACK_DECLARE2(stmt, RETURN, EOS)
 {
     debuglog("stmt  ->  RETURN EOS");
     debuglog_l(_1->token->linenum, "================== new statement ================== return;");
-    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_return_stmt);
+    // append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_return_stmt); // return element doesn't need a tag
     append(_self, __new_op(OP_RETURN));
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
@@ -245,7 +245,7 @@ LX_CALLBACK_DECLARE3(stmt, RETURN, expr_list, EOS)
 {
     debuglog("stmt  ->  RETURN expr_list EOS");
     debuglog_l(_1->token->linenum, "================== new statement ================== return expr_list;");
-    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_return_stmt);
+    // append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_return_stmt); // return element doesn't need a tag
     move(_self, _2);
     append(_self, __new_op(OP_RETURN));
     FREE_SYNTAX_NODE(_3);
@@ -257,8 +257,12 @@ LX_CALLBACK_DECLARE3(stmt, LOCAL, identifier_list, EOS)
     debuglog("stmt  ->  LOCAL identifier_list EOS");
     debuglog_l(_1->token->linenum, "================== new statement ================== local identifier_list;");
     append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_local_declare);
-    for(lx_syntax_node* n = _2->next; n != NULL; n = n->next)
+    for (lx_syntax_node* n = _2->next, *tem; n != NULL;) {
         append(_self, __new_op_x(OP_PUSHC_STR, n));
+        tem = n->next;
+        FREE_SYNTAX_NODE(n);
+        n = tem;
+    }
     append(_self, __new_op(OP_LOCAL));
     FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2);
@@ -268,11 +272,15 @@ LX_CALLBACK_DECLARE5(stmt, LOCAL, identifier_list, EQL, expr_list, EOS)
 {
     debuglog("stmt  ->  LOCAL identifier_list EQL expr_list EOS");
     debuglog_l(_1->token->linenum, "================== new statement ================== local identifier_list = expr_list;");
-    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_local_declare);
-    for (lx_syntax_node* n = _2->next; n != NULL; n = n->next)
-        append(_self, __new_op_x(OP_PUSHC_STR, n));
     append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_local_declare_with_init);
     move(_self, _4);
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_local_declare);
+    for (lx_syntax_node* n = _2->next, *tem; n != NULL;){
+        append(_self, __new_op_x(OP_PUSHC_STR, n));
+        tem = n->next;
+        FREE_SYNTAX_NODE(n);
+        n = tem;
+    }
     append(_self, __new_op(OP_LOCAL_INIT));
     FREE_SYNTAX_NODE(_5);
     FREE_SYNTAX_NODE(_4);
@@ -425,7 +433,9 @@ LX_CALLBACK_DECLARE3(assign_expr, prefix_expr_list, assign_op, expr_list)
 {
     debuglog("assign_expr  ->  prefix_expr_list assign_op expr_list");
     append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_assign_stmt_lvalue);
+    append(_self, __new_op(OP_ENABLE_TABLE_SET));
     move(_self, _1);
+    append(_self, __new_op(OP_DISABLE_TABLE_SET));
     append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_assign_stmt_rvalue);
     move2(_self, _3, _2);
     FREE_SYNTAX_NODE(_3);
@@ -579,8 +589,10 @@ LX_CALLBACK_DECLARE1(single_expr, IDENTIFIER)
 LX_CALLBACK_DECLARE3(suffix_op, SL, SR, suffix_op)
 {
     debuglog("suffix_op  ->  SL SR suffix_op");
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_function_return_values_shift_to_1);
     append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_function_call_argc_empty);
     append(_self, __new_op(OP_CALL));
+    append(_self, __new_op(OP_FUNC_RET_VALUE_SHIFT_TO_1));
     move(_self, _3);
     FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2);
@@ -597,9 +609,11 @@ LX_CALLBACK_DECLARE2(suffix_op, SL, SR)
 LX_CALLBACK_DECLARE4(suffix_op, SL, expr_list, SR, suffix_op)
 {
     debuglog("suffix_op  ->  SL expr_list SR suffix_op");
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_function_return_values_shift_to_1);
     append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_function_call_argc);
     move(_self, _2);
     append(_self, __new_op(OP_CALL));
+    append(_self, __new_op(OP_FUNC_RET_VALUE_SHIFT_TO_1));
     move(_self, _4);
     FREE_SYNTAX_NODE(_4);
     FREE_SYNTAX_NODE(_3);
@@ -703,7 +717,7 @@ LX_CALLBACK_DECLARE2(object_immediate, BL, BR)
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
 }
-LX_CALLBACK_DECLARE3(object_immediate, BL, object_immediate_item_list, BR)
+LX_CALLBACK_DECLARE3(object_immediate, BL, object_immediate_item_list, BR) /* todo */
 {
     debuglog("object_immediate  ->  BL object_immediate_item_list BR");
     append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_immediate_table);
@@ -714,7 +728,7 @@ LX_CALLBACK_DECLARE3(object_immediate, BL, object_immediate_item_list, BR)
     FREE_SYNTAX_NODE(_1);
 }
 
-LX_CALLBACK_DECLARE3(object_immediate_item_list, object_immediate_item, COMMA, object_immediate_item_list)
+LX_CALLBACK_DECLARE3(object_immediate_item_list, object_immediate_item, COMMA, object_immediate_item_list) /* todo */
 {
     debuglog("object_immediate_item_list  ->  object_immediate_item COMMA object_immediate_item_list");
     // move2(_self, _1, _3);
@@ -723,14 +737,14 @@ LX_CALLBACK_DECLARE3(object_immediate_item_list, object_immediate_item, COMMA, o
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
 }
-LX_CALLBACK_DECLARE1(object_immediate_item_list, object_immediate_item)
+LX_CALLBACK_DECLARE1(object_immediate_item_list, object_immediate_item) /* todo */
 {
     debuglog("object_immediate_item_list  ->  object_immediate_item");
     move(_self, _1);
     FREE_SYNTAX_NODE(_1);
 }
 
-LX_CALLBACK_DECLARE3(object_immediate_item, IDENTIFIER, COLON, object_immediate_item_value)
+LX_CALLBACK_DECLARE3(object_immediate_item, IDENTIFIER, COLON, object_immediate_item_value) /* todo */
 {
     debuglog("object_immediate_item  ->  IDENTIFIER COLON object_immediate_item_value");
     // !!! we don't support this now.
@@ -738,7 +752,7 @@ LX_CALLBACK_DECLARE3(object_immediate_item, IDENTIFIER, COLON, object_immediate_
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
 }
-LX_CALLBACK_DECLARE3(object_immediate_item, STRING_IMMEDIATE, COLON, object_immediate_item_value)
+LX_CALLBACK_DECLARE3(object_immediate_item, STRING_IMMEDIATE, COLON, object_immediate_item_value) /* todo */
 {
     debuglog("object_immediate_item  ->  STRING_IMMEDIATE COLON object_immediate_item_value");
     append(_self, __new_op_x(OP_PUSHC_STR, _1));
@@ -747,7 +761,7 @@ LX_CALLBACK_DECLARE3(object_immediate_item, STRING_IMMEDIATE, COLON, object_imme
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
 }
-LX_CALLBACK_DECLARE3(object_immediate_item, NUMBER_IMMEDIATE, COLON, object_immediate_item_value)
+LX_CALLBACK_DECLARE3(object_immediate_item, NUMBER_IMMEDIATE, COLON, object_immediate_item_value) /* todo */
 {
     debuglog("object_immediate_item  ->  NUMBER_IMMEDIATE COLON object_immediate_item_value");
     float f = 0.0f;
@@ -770,7 +784,7 @@ LX_CALLBACK_DECLARE3(object_immediate_item, NUMBER_IMMEDIATE, COLON, object_imme
     FREE_SYNTAX_NODE(_1);
 }
 
-LX_CALLBACK_DECLARE1(object_immediate_item_value, immediate)
+LX_CALLBACK_DECLARE1(object_immediate_item_value, immediate) /* todo */
 {
     debuglog("object_immediate_item_value  ->  immediate");
     move(_self, _1);
@@ -782,11 +796,15 @@ LX_CALLBACK_DECLARE6(function_define, FUNCTION, SL, identifier_list, SR, stmt_se
 {
     debuglog("function_define  ->  FUNCTION SL identifier_list SR stmt_sequence END");
     append(_self, __new_op(OP_FUNC_DEF_BEGIN));
-    for (lx_syntax_node* n = _3->next; n != NULL; n = n->next) {
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_local_declare);
+    for (lx_syntax_node* n = _3->next, *tem; n != NULL;) {
         append(_self, __new_op_x(OP_PUSHC_STR, n));
-        // todo: i should free these n
+        tem = n->next;
+        FREE_SYNTAX_NODE(n);
+        n = tem;
     }
-    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_function_define_argc_end);
+    append(_self, __new_op(OP_LOCAL_INIT)); // init expr(s) have been pushed to stack by caller
+    //append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_function_define_argc_end);
     move(_self, _5);
     append(_self, __new_op(OP_FUNC_DEF_END));
     append(_self, __new_op(OP_PUSHC_FUNC));
@@ -809,16 +827,15 @@ LX_CALLBACK_DECLARE3(identifier_list, IDENTIFIER, COMMA, identifier_list)
     end_of__3->next = _1;
     _self->next = _3->next;
 
-    //FREE_SYNTAX_NODE(_3);
-    FREE_SYNTAX_NODE(_2); // todo: this is wrong when it comes to using stack allocator ///// begin with here !!!
-    //FREE_SYNTAX_NODE(_1);
+    // FREE_SYNTAX_NODE(_2); // problem: this is wrong when it comes to using stack allocator
+                             // solutation: parser call this function with NULL, so we don't need to free this node
 }
 LX_CALLBACK_DECLARE1(identifier_list, IDENTIFIER)
 {
     debuglog_luax_str(_1->token->text_len, _1->token->text);
     debuglog("identifier_list  ->  IDENTIFIER");
     _self->next = _1;
-    //FREE_SYNTAX_NODE(_1);
+    // FREE_SYNTAX_NODE(_1); // we should free this node in it's father syntax node: `XXX -> identifier_list`
 }
 
 LX_CALLBACK_DECLARE1(assign_op, EQL)
@@ -928,7 +945,7 @@ LX_CALLBACK_DECLARE1(multiply_op, DIV)
     FREE_SYNTAX_NODE(_1);
 }
 
-LX_CALLBACK_DECLARE1(prefix_op, SUB)
+LX_CALLBACK_DECLARE1(prefix_op, SUB) /* inverst operator */
 {
     debuglog("prefix_op  ->  SUB");
     append(_self, __new_op(OP_INVERST));

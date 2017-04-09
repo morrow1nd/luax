@@ -1,0 +1,650 @@
+;============ show readable opcode ===============
+    tag                                 ; local declare
+    pushc_str foo
+    local
+    tag                                 ; local declare
+    pushc_str bb
+    pushc_str aa
+    local
+    tag                                 ; local declare(init part)
+    pushc_number 3.000000
+    pushc_number 2.000000
+    pushc_number 1.000000
+    tag                                 ; local declare
+    pushc_str aa
+    pushc_str tem
+    local_init
+    tag                                 ; expr_stmt
+    g_table_key a
+    g_table_key b
+    add
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    pushc_number 555.000000
+    sub
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    g_table_key b
+    pushc_number 56.000000
+    mul
+    add
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    g_table_key b
+    g_table_key c
+    add
+    mul
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    g_table_key b
+    less
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    g_table_key b
+    greater
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    g_table_key b
+    less_eql
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    g_table_key b
+    greater_eql
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    g_table_key b
+    eql_eql
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    g_table_key b
+    not_eql
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    g_table_key b
+    less
+    g_table_key c
+    g_table_key d
+    less
+    and
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    g_table_key b
+    not_eql
+    g_table_key b
+    g_table_key c
+    not_eql
+    or
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key b
+    g_table_key a
+    eql_eql
+    not
+    pop_to_tag
+    tag                                 ; expr_stmt
+    pushc_nil
+    pop_to_tag
+    tag                                 ; expr_stmt
+    pushc_false
+    pop_to_tag
+    tag                                 ; expr_stmt
+    pushc_true
+    pop_to_tag
+    tag                                 ; expr_stmt
+    pushc_number 123.000000
+    pop_to_tag
+    tag                                 ; expr_stmt
+    pushc_number 10.560000
+    pop_to_tag
+    tag                                 ; expr_stmt
+    pushc_str a string
+	\"you can use this"
+this string is end
+    pop_to_tag
+    tag                                 ; expr_stmt
+    pushc_str "another string"'hitab
+\n <-here
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; immediate table
+    pushc_str key4
+    func_def_begin
+    tag                                 ; local declare
+    pushc_str b
+    pushc_str a
+    local_init
+    tag                                 ; return stmt
+    g_table_key a
+    g_table_key b
+    add
+    return
+    func_def_end
+    pushc_func
+    pushc_str key3
+    pushc_empty_table
+    pushc_str key 2
+    pushc_number 56.000000
+    pushc_str key
+    pushc_str value
+    pushc_table
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key func
+    tag                                 ; func call argc(empty)
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key func
+    tag                                 ; func call argc
+    g_table_key c
+    g_table_key b
+    g_table_key a
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key func
+    tag                                 ; func call argc
+    pushc_nil
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key funcb
+    tag                                 ; func call argc
+    pushc_str uu
+    pushc_number 56.000000
+    call
+    tag                                 ; func call argc(empty)
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    func_def_begin
+    tag                                 ; local declare
+    pushc_str b
+    pushc_str a
+    local_init
+    tag                                 ; return stmt
+    g_table_key a
+    g_table_key b
+    sub
+    return
+    func_def_end
+    pushc_func
+    pop_to_tag
+    tag                                 ; expr_stmt
+    func_def_begin
+    tag                                 ; local declare
+    pushc_str c
+    pushc_str b
+    pushc_str a
+    local_init
+    tag                                 ; return stmt
+    g_table_key a
+    g_table_key b
+    g_table_key c
+    add
+    add
+    return
+    func_def_end
+    pushc_func
+    tag                                 ; func call argc
+    pushc_number 3.000000
+    pushc_number 2.000000
+    pushc_number 1.000000
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    tag                                 ; `tab[expr]`: label for table index
+    pushc_str key 3
+    table_key
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key mula
+    tag                                 ; `tab[expr]`: label for table index
+    g_table_key func
+    tag                                 ; func call argc
+    pushc_number 2.000000
+    pushc_number 1.000000
+    call
+    table_key
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    tag                                 ; `tab[expr]`: label for table index
+    pushc_str key 3
+    table_key
+    tag                                 ; `tab[expr]`: label for table index
+    pushc_number 56.000000
+    table_key
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    tag                                 ; `tab[expr]`: label for table index
+    g_table_key str
+    pushc_str .png
+    add
+    table_key
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    tag                                 ; `tab[expr]`: label for table index
+    g_table_key func
+    tag                                 ; func call argc(empty)
+    call
+    pushc_number 2.000000
+    div
+    table_key
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    table_key_imm key2
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    table_key_imm key2
+    table_key_imm key2
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    table_key_imm key2
+    tag                                 ; `tab[expr]`: label for table index
+    pushc_str username
+    table_key
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key a
+    table_key_imm key2
+    tag                                 ; `tab[expr]`: label for table index
+    pushc_str opcode
+    table_key
+    tag                                 ; func call argc
+    pushc_number 2.000000
+    pushc_number 1.000000
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key func
+    tag                                 ; func call argc(empty)
+    call
+    tag                                 ; `tab[expr]`: label for table index
+    pushc_str username
+    table_key
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key func
+    tag                                 ; func call argc(empty)
+    call
+    tag                                 ; func call argc(empty)
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key func
+    tag                                 ; func call argc(empty)
+    call
+    tag                                 ; func call argc(empty)
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_key func
+    tag                                 ; func call argc(empty)
+    call
+    tag                                 ; `tab[expr]`: label for table index
+    pushc_number 56.000000
+    table_key
+    tag                                 ; `tab[expr]`: label for table index
+    pushc_number 1.000000
+    pushc_number 2.000000
+    add
+    g_table_key a
+    mul
+    table_key
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key b
+    g_table_key a
+    tag                                 ; assign_stmt rvalue
+    g_table_key a
+    g_table_key b
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key b
+    g_table_key a
+    tag                                 ; assign_stmt rvalue
+    pushc_number 3.000000
+    pushc_number 2.000000
+    pushc_number 1.000000
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key c
+    g_table_key b
+    g_table_key a
+    tag                                 ; assign_stmt rvalue
+    pushc_number 2.000000
+    pushc_number 1.000000
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key b
+    g_table_key a
+    tag                                 ; assign_stmt rvalue
+    g_table_key func
+    tag                                 ; func call argc
+    pushc_number 3.000000
+    pushc_number 2.000000
+    pushc_number 1.000000
+    call
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key b
+    g_table_key a
+    tag                                 ; assign_stmt rvalue
+    g_table_key func
+    tag                                 ; func call argc(empty)
+    call
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key a
+    tag                                 ; assign_stmt rvalue
+    g_table_key c
+    g_table_key b
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key a
+    tag                                 ; assign_stmt rvalue
+    g_table_key expr
+    add_assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key a
+    tag                                 ; assign_stmt rvalue
+    pushc_number 1.000000
+    pushc_number 5.000000
+    add
+    mul_assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key a
+    tag                                 ; assign_stmt rvalue
+    pushc_number 1.000000
+    pushc_number 5.000000
+    mul
+    sub_assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key a
+    tag                                 ; assign_stmt rvalue
+    pushc_number 1.000000
+    pushc_number 1.000000
+    eql_eql
+    add_assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key aaa
+    tag                                 ; assign_stmt rvalue
+    g_table_key tab
+    tag                                 ; `tab[expr]`: label for table index
+    g_table_key a
+    table_key
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key tab
+    tag                                 ; `tab[expr]`: label for table index
+    pushc_str key
+    table_key
+    tag                                 ; assign_stmt rvalue
+    pushc_number 123.000000
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key func
+    tag                                 ; func call argc(empty)
+    call
+    tag                                 ; `tab[expr]`: label for table index
+    pushc_str key2
+    table_key
+    tag                                 ; assign_stmt rvalue
+    g_table_key tab
+    tag                                 ; `tab[expr]`: label for table index
+    pushc_str key3
+    table_key
+    pushc_number 456.000000
+    add
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key func
+    tag                                 ; func call argc(empty)
+    call
+    tag                                 ; assign_stmt rvalue
+    g_table_key b
+    add_assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key a
+    tag                                 ; assign_stmt rvalue
+    g_table_key a
+    inverst
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key a
+    tag                                 ; assign_stmt rvalue
+    pushc_number 5.000000
+    inverst
+    pushc_number 6.000000
+    add
+    assign
+    pop_to_tag
+    g_table_key expr
+    jz 1
+    push_env
+    tag                                 ; expr_stmt
+    g_table_key stmt
+    pop_to_tag
+    pop_env
+label:
+    g_table_key expr
+    jz 1
+    push_env
+    tag                                 ; expr_stmt
+    g_table_key stmt
+    pop_to_tag
+    pop_env
+    jmp 2
+label:
+    push_env
+    tag                                 ; expr_stmt
+    g_table_key stmt
+    pop_to_tag
+    pop_env
+label:
+label_while_begin:
+    g_table_key expr
+    jz 1
+    push_env
+    tag                                 ; expr_stmt
+    g_table_key stmt
+    pop_to_tag
+    break
+    continue
+    pop_env
+    jmp -1
+label_while_end:
+    tag                                 ; assign_stmt lvalue
+    g_table_key i
+    tag                                 ; assign_stmt rvalue
+    pushc_number 5.000000
+    assign
+label_for_body:
+    g_table_key i
+    pushc_number 700.000000
+    less
+    jz 2
+    push_env
+    pop_env
+label_for_begin:
+    tag                                 ; assign_stmt lvalue
+    g_table_key i
+    tag                                 ; assign_stmt rvalue
+    g_table_key i
+    pushc_number 1.000000
+    add
+    assign
+    jmp -2
+label_for_end:
+    tag                                 ; expr_stmt
+    g_table_key show
+    tag                                 ; func call argc
+    pushc_str begin
+    call
+    pop_to_tag
+    tag                                 ; assign_stmt lvalue
+    g_table_key i
+    tag                                 ; assign_stmt rvalue
+    pushc_number 0.000000
+    assign
+label_for_body:
+    g_table_key i
+    pushc_number 100.000000
+    less
+    jz 7
+    push_env
+    tag                                 ; local declare(init part)
+    pushc_number 56.000000
+    tag                                 ; local declare
+    pushc_str j
+    local_init
+label_while_begin:
+    g_table_key j
+    g_table_key func
+    tag                                 ; func call argc
+    g_table_key i
+    call
+    less
+    jz 3
+    push_env
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key j
+    tag                                 ; assign_stmt rvalue
+    g_table_key func_test
+    tag                                 ; func call argc
+    g_table_key j
+    g_table_key i
+    call
+    add_assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_key aaa
+    tag                                 ; `tab[expr]`: label for table index
+    g_table_key j
+    table_key
+    tag                                 ; assign_stmt rvalue
+    func_def_begin
+    tag                                 ; local declare
+    pushc_str b
+    pushc_str a
+    local_init
+    tag                                 ; return stmt
+    g_table_key a
+    g_table_key b
+    mul
+    g_table_key j
+    add
+    return
+    func_def_end
+    pushc_func
+    assign
+    pop_to_tag
+    g_table_key sqrt
+    tag                                 ; func call argc
+    g_table_key j
+    call
+    pushc_number 0.200000
+    eql_eql
+    jz 1
+    push_env
+    continue
+    pop_env
+label:
+    g_table_key sqrt
+    tag                                 ; func call argc
+    g_table_key j
+    call
+    pushc_number 0.500000
+    eql_eql
+    jz 1
+    push_env
+    break
+    pop_env
+label:
+    pop_env
+    jmp -3
+label_while_end:
+    tag                                 ; expr_stmt
+    g_table_key show
+    tag                                 ; func call argc
+    g_table_key i
+    call
+    pop_to_tag
+    g_table_key sqrt
+    tag                                 ; func call argc
+    g_table_key i
+    call
+    pushc_number 0.500000
+    greater
+    jz 1
+    push_env
+    break
+    pop_env
+label:
+    pop_env
+label_for_begin:
+    tag                                 ; assign_stmt lvalue
+    g_table_key i
+    tag                                 ; assign_stmt rvalue
+    pushc_number 1.000000
+    add_assign
+    jmp -7
+label_for_end:
+    tag                                 ; expr_stmt
+    g_table_key show
+    tag                                 ; func call argc
+    pushc_str end
+    call
+    pop_to_tag
+;=========== readable opcode end =====================

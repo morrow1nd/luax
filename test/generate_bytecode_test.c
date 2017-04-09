@@ -44,7 +44,7 @@ int main(int argc, char * argv[])
     fclose(fp);
 
     lx_parser * p = lx_genBytecode(data, ret);
-    lx_helper_dump_bytecode(p->opcodes);
+    lx_helper_dump_opcode(p->opcodes, stdout);
     lx_free(data);
     if (p != NULL) {
         printf("success\n");

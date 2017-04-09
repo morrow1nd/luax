@@ -19,11 +19,11 @@ char* lx_helper_dump_token(lx_token *token, char * outstr)
     return outstr;
 }
 
-void lx_helper_dump_bytecode(lx_opcodes* ops)
+void lx_helper_dump_opcode(lx_opcodes* ops, FILE* fp)
 {
     char tem[1024];
     char tem2[1024];
-    printf("============ show readable bytecode ===============\n");
+    fprintf(fp, ";============ show readable opcode ===============\n");
     for(int i = 0; i < ops->size; ++i){
         tem[0] = '\0';
         if(! lx_opcode_is_label(ops->arr[i]->type))
@@ -34,14 +34,13 @@ void lx_helper_dump_bytecode(lx_opcodes* ops)
                 memset((char*)tem + strlen(tem), ' ', 40 - strlen(tem));
                 tem[40] = '\0';
             }
-            printf("%s; %s\n", tem, lx_opcode_expr_info_to_string(ops->arr[i]->extra_info));
+            fprintf(fp, "%s; %s\n", tem, lx_opcode_expr_info_to_string(ops->arr[i]->extra_info));
         }else{
-            printf("%s\n", tem);
+            fprintf(fp, "%s\n", tem);
         }
     }
-    printf("=========== readable bytecode end =====================\n");
+    fprintf(fp, ";=========== readable opcode end =====================\n");
 }
-
 
 //
 // Token Scanner - internal use
@@ -1534,15 +1533,15 @@ static int identifier_list(lx_parser *p, lx_syntax_node *self)
         int backup_state = lx_token_scanner_get_curr_state(p->scanner);
         if (NEXT_TYPE_EQUAL(p, ',')) {
             GOTO_NEXT(p);
-            NEW_SYNTAX_NODE_T(comma_node, CURR(p));
+            // NEW_SYNTAX_NODE_T(comma_node, CURR(p)); // we use a NULL to replace it
             NEW_SYNTAX_NODE(identifier_list_node);
             if (identifier_list(p, identifier_list_node) == 0) {
                 LX_CALLBACK_CALL3(identifier_list, IDENTIFIER, COMMA, identifier_list,
-                    self, identifier_node, comma_node, identifier_list_node);
+                    self, identifier_node, /* comma_node*/ NULL, identifier_list_node);
                 return 0;
             }
             FREE_SYNTAX_NODE(identifier_list_node);
-            FREE_SYNTAX_NODE(comma_node);
+            // FREE_SYNTAX_NODE(comma_node);
         }
         lx_token_scanner_recover_state(p->scanner, backup_state);
         LX_CALLBACK_CALL1(identifier_list, IDENTIFIER, self, identifier_node);

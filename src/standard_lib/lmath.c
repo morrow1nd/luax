@@ -21,7 +21,7 @@ void lmath__abs(lx_vm_stack* s, lx_object* call_obj)
             obj->fnumber = - obj->fnumber;
         --tagi;
     }
-    ... todo
+    //... todo
 }
 
 lx_object_table* lx_lmath_load()

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "luax.h"
 
@@ -8,27 +9,26 @@ void usage(char* argv[])
 {
     printf("usage: %s [option] [script]\n"
         "Available options are:\n"
-        "  -e stat    execute string 'stat'\n"
-        "  -i         enter interaction mode after executing 'script'\n"
-        "  -v         show version information\n"
-        "  -          execute stdin and stop handling options\n"
+        "  -o path    specify output file path\n"
+        "  -c         complie luax code to opcode\n"
+        "  -r         run opcode\n"
+        //"  -e stat    execute string 'stat'\n"
+        //"  -i         enter interaction mode after executing 'script'\n"
+        //"  -          execute stdin and stop handling options\n"
+        //"  -v         show version information\n"
         "  -h         show help info\n"
         "\n"
         , argv[0]
     );
 }
 
-#include <stdlib.h>
-
-
-int main(int argc, char * argv[])
-{
-    char * const filepath = TEST_BINARY_DIR ".vm_run_test.luax";
+// remember to lx_free this pointer
+char * _read_file(const char* filepath, int* file_len) {
     FILE * fp = NULL;
     fp = fopen(filepath, "r");
     if (!fp) {
         printf("Error: can't open file:%s\n", filepath);
-        return -1;
+        return NULL;
     }
     int ret = -1;
     fseek(fp, 0, SEEK_END);
@@ -39,81 +39,217 @@ int main(int argc, char * argv[])
     fseek(fp, 0, SEEK_SET);
     if ((ret = fread(data, 1, filelength, fp)) <= 0) {
         printf("Error: can't read file:%s\n", filepath);
-        return -1;
+        fclose(fp);
+        return NULL;
     }
     *(data + ret) = '\0';
     fclose(fp);
+    *file_len = ret;
+    return data;
+}
 
-    lx_parser * p = lx_genBytecode(data, ret);
+enum luax_exec_run_mode {
+    M_NORMAL = 0, // parse and run luax source code
+    M_COMPLIE,
+    M_RUN_OPCODE,
+};
 
-    lx_helper_dump_bytecode(p->opcodes);
+int main(int argc, char * argv[])
+{
+    int mode = M_NORMAL;
+    const char * output_name = "a.luaxo";
+    char * script_files[1024];
+    int script_file_number = 0;
 
-
-    lx_vm* vm = lx_create_vm();
-    lx_object_function* func_obj = LX_NEW(lx_object_function);
-    func_obj->base.type = LX_OBJECT_FUNCTION;
-    func_obj->func_opcodes = p->opcodes;
-    func_obj->_E = lx_create_object_table();
-    lx_object_table_replace_s(func_obj->_E, "io", -1, luax_lio_load());
-    func_obj->_G = lx_create_object_table();
-
-    lx_vm_run(vm, func_obj);
-    lx_dump_vm_stack(vm);
-
-    lx_free(data);
-    if (p != NULL) {
-        printf("success\n");
+    // process arguments
+    for (int i = 1; i < argc; ++i) {
+        if(strcmp(argv[i], "-c") == 0)
+            mode = M_COMPLIE;
+        if(strcmp(argv[i], "-r") == 0)
+            mode = M_RUN_OPCODE;
+        else if (strcmp(argv[i], "-o") == 0) {
+            output_name = argv[i + 1];
+            ++i;
+        } else {
+            script_files[script_file_number++] = argv[i];
+        }
     }
-    lx_delete_parser(p);
 
-    printf("----- program end -------\n");
 
-#ifdef _WIN32
+    switch (mode) {
+    case M_NORMAL: {
+        if (script_file_number == 0) {
+            usage(argv);
+            break;
+        }
+        for (int i = 0; i < script_file_number; ++i) {
+            int file_len = 0;
+            char * data = _read_file(script_files[i], &file_len);
+            if (data == NULL)
+                continue;
+            lx_parser * p = lx_genBytecode(data, file_len);
+            lx_free(data); // lx_genBytecode has copied data
+            if (p == NULL) {
+                printf("Error: syntax error\n");
+                continue;
+            }
+            
+            lx_vm* vm = lx_create_vm();
+            // we use base_env_table now, it doesn't load any Standard lib.
+            lx_object_function* func_obj = lx_create_object_function_ops(p->opcodes, /* env_creator */ lx_create_base_env_table());
+
+            int ret = lx_vm_run(vm, func_obj);
+
+            //func_obj->_E = lx_create_object_table();
+            //lx_object_table_replace_s(func_obj->_E, "io", -1, luax_lio_load());
+            //lx_dump_vm_stack(vm);
+            lx_delete_parser(p);
+            lx_delete_vm(vm);
+        }
+        break;
+    }
+    case M_COMPLIE: {
+        for (int i = 0; i < script_file_number; ++i) {
+            int file_len = 0;
+            char * data = _read_file(script_files[i], &file_len);
+            if(data == NULL)
+                continue;
+
+            lx_parser * p = lx_genBytecode(data, file_len);
+            lx_free(data); // lx_genBytecode has copied data
+            if (p == NULL) {
+                printf("Error: syntax error\n");
+                continue;
+            }
+
+            FILE* output_fp = NULL;
+            if (i > 0) {
+                output_fp = fopen(output_name, "a");
+                fprintf("\n; opcode generated from: %s\n", script_files[i]);
+            } else {
+                output_fp = fopen(output_name, "w");
+            }
+            if (output_fp == NULL) {
+                printf("Error: can't open output file: %s\n", output_name);
+                return -1;
+            }
+            lx_helper_dump_opcode(p->opcodes, output_fp);
+
+            lx_delete_parser(p);
+        }
+        break;
+    }
+    case M_RUN_OPCODE: {
+        // opcode parser has not been written
+
+        break;
+    }
+    default: {
+        usage(argv);
+        break;
+    }
+    }
+
+#ifdef _WIN32 && LX_DEBUG
     system("pause");
 #endif
     return 0;
 }
 
 
-#include <string.h>  /* strcpy */
-#include <stdlib.h>  /* malloc */
-#include <stdio.h>   /* printf */
-#include "hash/src/uthash.h"
+//int main(int argc, char * argv[])
+//{
+//    char * const filepath = TEST_BINARY_DIR ".vm_run_test.luax";
+//    FILE * fp = NULL;
+//    fp = fopen(filepath, "r");
+//    if (!fp) {
+//        printf("Error: can't open file:%s\n", filepath);
+//        return -1;
+//    }
+//    int ret = -1;
+//    fseek(fp, 0, SEEK_END);
+//    int filelength = ftell(fp);
+//    printf("filelength:%d\n", filelength);
+//
+//    char* data = (char*)lx_malloc(filelength + 1);
+//    fseek(fp, 0, SEEK_SET);
+//    if ((ret = fread(data, 1, filelength, fp)) <= 0) {
+//        printf("Error: can't read file:%s\n", filepath);
+//        return -1;
+//    }
+//    *(data + ret) = '\0';
+//    fclose(fp);
+//
+//    lx_parser * p = lx_genBytecode(data, ret);
+//
+//    lx_helper_dump_bytecode(p->opcodes);
+//
+//
+//    lx_vm* vm = lx_create_vm();
+//    lx_object_function* func_obj = LX_NEW(lx_object_function);
+//    func_obj->base.type = LX_OBJECT_FUNCTION;
+//    func_obj->func_opcodes = p->opcodes;
+//    func_obj->_E = lx_create_object_table();
+//    lx_object_table_replace_s(func_obj->_E, "io", -1, luax_lio_load());
+//    func_obj->_G = lx_create_object_table();
+//
+//    lx_vm_run(vm, func_obj);
+//    lx_dump_vm_stack(vm);
+//
+//    lx_free(data);
+//    if (p != NULL) {
+//        printf("success\n");
+//    }
+//    lx_delete_parser(p);
+//
+//    printf("----- program end -------\n");
+//
+//#ifdef _WIN32
+//    system("pause");
+//#endif
+//    return 0;
+//}
 
-struct my_struct {
-    const char *name;          /* key */
-    int id;
-    UT_hash_handle hh;         /* makes this structure hashable */
-};
 
-
-int __main(int argc, char *argv[]) {
-    const char **n, *names[] = { "joe", "bob", "betty", NULL };
-    struct my_struct *s, *tmp, *users = NULL;
-    int i = 0;
-
-    for (n = names; *n != NULL; n++) {
-        s = (struct my_struct*)malloc(sizeof(struct my_struct));
-        s->name = *n;
-        s->id = i++;
-        HASH_ADD_KEYPTR(hh, users, s->name, strlen(s->name), s);
-    }
-
-    char tem[1024];
-    strcpy(tem, "betty");
-    HASH_FIND_STR(users, tem, s);
-    if (s)
-        printf("betty's id is %d\n", s->id);
-    else
-    {
-        printf("not found\n");
-    }
-
-    /* free the hash table contents */
-    HASH_ITER(hh, users, s, tmp) {
-        HASH_DEL(users, s);
-        free(s);
-    }
-    system("pause");
-    return 0;
-}
+//#include <string.h>  /* strcpy */
+//#include <stdlib.h>  /* malloc */
+//#include <stdio.h>   /* printf */
+//#include "hash/src/uthash.h"
+//
+//struct my_struct {
+//    const char *name;          /* key */
+//    int id;
+//    UT_hash_handle hh;         /* makes this structure hashable */
+//};
+//
+//
+//int __main(int argc, char *argv[]) {
+//    const char **n, *names[] = { "joe", "bob", "betty", NULL };
+//    struct my_struct *s, *tmp, *users = NULL;
+//    int i = 0;
+//
+//    for (n = names; *n != NULL; n++) {
+//        s = (struct my_struct*)malloc(sizeof(struct my_struct));
+//        s->name = *n;
+//        s->id = i++;
+//        HASH_ADD_KEYPTR(hh, users, s->name, strlen(s->name), s);
+//    }
+//
+//    char tem[1024];
+//    strcpy(tem, "betty");
+//    HASH_FIND_STR(users, tem, s);
+//    if (s)
+//        printf("betty's id is %d\n", s->id);
+//    else
+//    {
+//        printf("not found\n");
+//    }
+//
+//    /* free the hash table contents */
+//    HASH_ITER(hh, users, s, tmp) {
+//        HASH_DEL(users, s);
+//        free(s);
+//    }
+//    system("pause");
+//    return 0;
+//}

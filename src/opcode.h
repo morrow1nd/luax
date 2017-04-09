@@ -12,39 +12,44 @@ enum LX_OPCODE_TYPE {
     OP_LABEL_FOR_BEGIN,
     OP_LABEL_FOR_END,
 
-    OP_BREAK = 10,
-    OP_CONTINUE,
-    OP_CALL,
-    OP_RETURN,
-    OP_JMP,
-    OP_JZ,
+    OP_BREAK = 10,                  // break
+    OP_CONTINUE,                    // continue
+    OP_CALL,                        // call a luax function
+    OP_RETURN,                      // return (expr)
+    OP_FUNC_RET_VALUE_SHIFT_TO_1,   // shift the values of function returning to one value(ended by a tag, this tag is pushed by caller)
+    OP_JMP,                         // jump to someplace
+    OP_JZ,                          // if the top element of stack is zero, jump to someplace, and remove the top element in the stack.
 
-    OP_TAG,
-    OP_POP_TO_TAG,
+    OP_TAG,                         // push a tag to the stack
+    OP_POP_TO_TAG,                  // pop elements from the stack, until meet the first tag, pop the tag too.
 
-    OP_LOCAL,
-    OP_LOCAL_INIT,
-    OP_PUSH_ENV,
+    OP_LOCAL,                       // used to declare variable(s) in current function's local variable table.
+    OP_LOCAL_INIT,                  // declare variable(s) and init them with some values.
+    OP_PUSH_ENV,                    // todo
     OP_POP_ENV,
     
-    OP_PUSHC_NIL,
-    OP_PUSHC_FALSE,
-    OP_PUSHC_TRUE,
-    OP_G_TABLE_KEY,
-    OP_TABLE_KEY,
-    OP_TABLE_KEY_IMM,
-    OP_PUSHC_EMPTY_TABLE,
-    OP_PUSHC_STR,
-    OP_PUSHC_NUMBER,
-    OP_PUSHC_TABLE,
+    OP_PUSHC_NIL,                   // push a `nil` to the stack
+    OP_PUSHC_FALSE,                 // ... `false`
+    OP_PUSHC_TRUE,                  // ... `true`
+    OP_G_TABLE_KEY,                 // access variable from current environment
+    OP_TABLE_KEY,                   // push the table_kv of a specify key to the stack
+    OP_TABLE_KEY_IMM,               // the key is provided as a immediate string
+    OP_PUSHC_EMPTY_TABLE,           // push a empty table to the stack
+    OP_PUSHC_STR,                   // create a string from a immediate string and push it to the stack
+    OP_PUSHC_NUMBER,                // push a number to the stack
+    OP_PUSHC_TABLE,                 // todo
     OP_FUNC_DEF_BEGIN,
     OP_FUNC_DEF_END,
-    OP_PUSHC_FUNC,
+    OP_PUSHC_FUNC,                  // push a function to the stack
+    
+    OP_ENABLE_TABLE_SET,            // enter table set mode, every time you call _table_get, it would push the table to a table_stack.
+    OP_DISABLE_TABLE_SET,           // leave table set mode
     OP_ASSIGN,
     OP_ADD_ASSIGN,
     OP_SUB_ASSIGN,
     OP_MUL_ASSIGN,
     OP_DIV_ASSIGN,
+
     OP_AND,
     OP_OR,
     OP_NOT,
@@ -63,7 +68,7 @@ enum LX_OPCODE_TYPE {
 
 enum LX_OP_EXTRA_INFO {
     OPINFO_tag_for_expr_stmt = 1,
-    OPINFO_tag_for_function_define_argc_end,
+    // OPINFO_tag_for_function_define_argc_end,
     OPINFO_tag_for_function_call_argc,
     OPINFO_tag_for_function_call_argc_empty,
     OPINFO_tag_for_assign_stmt_lvalue,
@@ -73,6 +78,8 @@ enum LX_OP_EXTRA_INFO {
     OPINFO_tag_for_local_declare,
     OPINFO_tag_for_local_declare_with_init,
     OPINFO_tag_for_table_index_ML_expr_MR,
+
+    OPINFO_tag_for_function_return_values_shift_to_1, // this tag is used to shift the values of function returning to one value
 };
 
 typedef struct lx_opcode {

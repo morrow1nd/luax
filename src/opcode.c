@@ -21,6 +21,7 @@ const char* lx_opcode_type_to_string(unsigned char type)
     case OP_CONTINUE: return "continue";
     case OP_CALL: return "call";
     case OP_RETURN: return "return";
+    case OP_FUNC_RET_VALUE_SHIFT_TO_1: return "func_ret_value_shift_to_1";
     case OP_JMP: return "jmp";
     case OP_JZ: return "jz";
 
@@ -45,11 +46,15 @@ const char* lx_opcode_type_to_string(unsigned char type)
     case OP_FUNC_DEF_BEGIN: return "func_def_begin";
     case OP_FUNC_DEF_END: return "func_def_end";
     case OP_PUSHC_FUNC: return "pushc_func";
+
+    case OP_ENABLE_TABLE_SET: return "enable_table_set";
+    case OP_DISABLE_TABLE_SET: return "disable_table_set";
     case OP_ASSIGN: return "assign";
     case OP_ADD_ASSIGN: return "add_assign";
     case OP_SUB_ASSIGN: return "sub_assign";
     case OP_MUL_ASSIGN: return "mul_assign";
     case OP_DIV_ASSIGN: return "div_assign";
+
     case OP_AND: return "and";
     case OP_OR: return "or";
     case OP_NOT: return "not";
@@ -85,6 +90,7 @@ const char* lx_opcode_to_string(lx_opcode_x* op, char* str)
     case OP_CONTINUE: return "continue";
     case OP_CALL: return "call";
     case OP_RETURN: return "return";
+    case OP_FUNC_RET_VALUE_SHIFT_TO_1: return "func_ret_value_shift_to_1";
     case OP_JMP: sprintf(str, "jmp %d", op->inumber); return str;
     case OP_JZ: sprintf(str, "jz %d", op->inumber); return str;
 
@@ -109,11 +115,15 @@ const char* lx_opcode_to_string(lx_opcode_x* op, char* str)
     case OP_FUNC_DEF_BEGIN: return "func_def_begin";
     case OP_FUNC_DEF_END: return "func_def_end";
     case OP_PUSHC_FUNC: return "pushc_func";
+
+    case OP_ENABLE_TABLE_SET: return "enable_table_set";
+    case OP_DISABLE_TABLE_SET: return "disable_table_set";
     case OP_ASSIGN: return "assign";
     case OP_ADD_ASSIGN: return "add_assign";
     case OP_SUB_ASSIGN: return "sub_assign";
     case OP_MUL_ASSIGN: return "mul_assign";
     case OP_DIV_ASSIGN: return "div_assign";
+
     case OP_AND: return "and";
     case OP_OR: return "or";
     case OP_NOT: return "not";
@@ -138,7 +148,7 @@ const char* lx_opcode_expr_info_to_string(int type)
 {
     switch ((enum LX_OP_EXTRA_INFO)type) {
     case OPINFO_tag_for_expr_stmt: return "expr_stmt";
-    case OPINFO_tag_for_function_define_argc_end: return "func define argc";
+    //case OPINFO_tag_for_function_define_argc_end: return "func define argc";
     case OPINFO_tag_for_function_call_argc: return "func call argc";
     case OPINFO_tag_for_function_call_argc_empty: return "func call argc(empty)";
     case OPINFO_tag_for_assign_stmt_lvalue: return "assign_stmt lvalue";
@@ -148,6 +158,7 @@ const char* lx_opcode_expr_info_to_string(int type)
     case OPINFO_tag_for_local_declare: return "local declare";
     case OPINFO_tag_for_local_declare_with_init: return "local declare(init part)";
     case OPINFO_tag_for_table_index_ML_expr_MR: return "`tab[expr]`: label for table index";
+    case OPINFO_tag_for_function_return_values_shift_to_1: return "shift func ret value to one value";
     default: assert(false); return "lx_opcode_expr_info_to_string error";
     }
 }

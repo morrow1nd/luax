@@ -1,6 +1,11 @@
 #ifndef __LUAX_API__H_
 #define __LUAX_API__H_
 
+/*
+ standard lib achiever only call function declared in this file.
+
+*/
+
 #include "./base.h"
 #include "vm.h"
 

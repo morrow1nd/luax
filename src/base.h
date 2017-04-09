@@ -14,7 +14,7 @@
 
 
 #if(LX_DEBUG)
-# include <stdio.h> // printf, sprintf
+# include <stdio.h> // printf, sprintf, fprintf
 #endif
 # include <stdio.h> // todo:remove this
 
@@ -25,5 +25,12 @@ void debuglog(const char * one_line);
 void debuglog_l(int linenum, const char * one_line);
 void debuglog_luax_str(int text_len, char * ptr);
 
+
+#define UNUSED_ARGUMENT(argv)
+
+
+#ifdef _WIN32
+#pragma warning(disable:4996)
+#endif
 
 #endif // end of __LX_BASE__H_

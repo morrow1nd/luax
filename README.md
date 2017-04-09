@@ -25,9 +25,9 @@ The C achieve of luax:
 
 ## For Language User
 
- + [Get Started](https://github.com/morrow1nd/luxa/master/doc/get-started.md) (Coming soon!)
- + [5-minites-tour](https://github.com/morrow1nd/luxa/master/doc/5-minites-tour.md) (Coming soon!)
- + [Luax Reference manual]() (Coming soon!)
+ + [Get Started](./doc/get-started.md) - Setup a working environment.
+ + [5-minites-tour](./doc/5-minites-tour.md) (Coming soon!)
+ + [Luax Reference Manual](./doc/Luax_Reference_Manual.md) (Coming soon!)
 
 ## For Language Hacker
 
@@ -40,5 +40,3 @@ cd build
 cmake ..
 make && make test
 ```
-
-# About

@@ -4,7 +4,7 @@
 /* used to control debug info output */
 #define LX_DEBUG 1
 /* print parser debug log to stdout(only function when LX_DEBUG is set to 1) */
-#define LX_PARSER_DEBUG_LOG 0
+#define LX_PARSER_DEBUG_LOG 1
 /* show lx_malloc, lx_free calling info */
 #define LX_PRINT_MALLOC_INFO 0
 
