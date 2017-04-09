@@ -564,14 +564,15 @@ lx_parser* lx_genBytecode(const char* _source_code, const int source_code_length
     if(p->scanner->curr != p->scanner->token_number - 1){
         lx_token* curr = lx_token_nextN(p->scanner, 1);
         printf("Parser unfinished: stop at L%d: text_len:%d type:%d %s\n", curr->linenum, curr->text_len, curr->type, curr->text);
+        ret = -1; // todo
     }
     if(ret != 0){
-        FREE_SYNTAX_NODE(compile_unit_node);
-        lx_delete_parser(p);
         debuglog("compile_unit didn't return 0");
         // todo:
         lx_token* curr = lx_token_nextN(p->scanner, 1);
         printf("Parsr Error: parser failed at L%d: text_len:%d type:%d %s\n", curr->linenum, curr->text_len, curr->type, curr->text);
+        FREE_SYNTAX_NODE(compile_unit_node);
+        lx_delete_parser(p);
         return NULL;
     }
     p->opcodes = genBytecode(compile_unit_node);
@@ -941,15 +942,15 @@ static int prefix_expr_list(lx_parser *p, lx_syntax_node *self)
         int backup_state = lx_token_scanner_get_curr_state(p->scanner);
         if (NEXT_TYPE_EQUAL(p, ',')) {
             GOTO_NEXT(p);
-            NEW_SYNTAX_NODE_T(comma_node, CURR(p));
+            // NEW_SYNTAX_NODE_T(comma_node, CURR(p));
             NEW_SYNTAX_NODE(prefix_expr_list_node);
             if (prefix_expr_list(p, prefix_expr_list_node) == 0) {
                 LX_CALLBACK_CALL3(prefix_expr_list, prefix_expr, COMMA, prefix_expr_list,
-                    self, prefix_expr_node, comma_node, prefix_expr_list_node);
+                    self, prefix_expr_node, NULL/* comma_node */, prefix_expr_list_node);
                 return 0;
             }
             FREE_SYNTAX_NODE(prefix_expr_list_node);
-            FREE_SYNTAX_NODE(comma_node);
+            // FREE_SYNTAX_NODE(comma_node);
         }
         lx_token_scanner_recover_state(p->scanner, backup_state);
         LX_CALLBACK_CALL1(prefix_expr_list, prefix_expr,

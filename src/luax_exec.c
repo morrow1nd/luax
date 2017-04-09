@@ -65,7 +65,7 @@ int main(int argc, char * argv[])
     for (int i = 1; i < argc; ++i) {
         if(strcmp(argv[i], "-c") == 0)
             mode = M_COMPLIE;
-        if(strcmp(argv[i], "-r") == 0)
+        else if(strcmp(argv[i], "-r") == 0)
             mode = M_RUN_OPCODE;
         else if (strcmp(argv[i], "-o") == 0) {
             output_name = argv[i + 1];
@@ -74,7 +74,14 @@ int main(int argc, char * argv[])
             script_files[script_file_number++] = argv[i];
         }
     }
-
+#if LX_DEBUG
+    printf("mode: %d\n", mode);
+    printf("output_path: %s\n", output_name);
+    printf("script_file_number: %d\n", script_file_number);
+    for (int i = 0; i < script_file_number; ++i) {
+        printf("    %d: %s\n", i + 1, script_files[i]);
+    }
+#endif
 
     switch (mode) {
     case M_NORMAL: {
@@ -102,7 +109,7 @@ int main(int argc, char * argv[])
 
             //func_obj->_E = lx_create_object_table();
             //lx_object_table_replace_s(func_obj->_E, "io", -1, luax_lio_load());
-            //lx_dump_vm_stack(vm);
+            lx_dump_vm_stack(vm->stack);
             lx_delete_parser(p);
             lx_delete_vm(vm);
         }
@@ -125,7 +132,6 @@ int main(int argc, char * argv[])
             FILE* output_fp = NULL;
             if (i > 0) {
                 output_fp = fopen(output_name, "a");
-                fprintf("\n; opcode generated from: %s\n", script_files[i]);
             } else {
                 output_fp = fopen(output_name, "w");
             }
@@ -133,7 +139,9 @@ int main(int argc, char * argv[])
                 printf("Error: can't open output file: %s\n", output_name);
                 return -1;
             }
+            fprintf(output_fp, "; opcode generated from: %s\n", script_files[i]);
             lx_helper_dump_opcode(p->opcodes, output_fp);
+            fclose(output_fp);
 
             lx_delete_parser(p);
         }
@@ -150,7 +158,7 @@ int main(int argc, char * argv[])
     }
     }
 
-#ifdef _WIN32 && LX_DEBUG
+#if _WIN32 && LX_DEBUG
     system("pause");
 #endif
     return 0;

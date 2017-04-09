@@ -119,7 +119,7 @@ static void append(lx_syntax_node* _self, struct opcode_w* op)
         _self->opcodes->front = _self->opcodes->back;
     } else {
         _self->opcodes->back->next = op;
-        _self->opcodes->back = _self->opcodes->back->next;
+        _self->opcodes->back = _self->opcodes->back->next; // todo <=?=> _self->opcodes->back = op;
     }
 }
 static void append_with_opinfo(lx_syntax_node* _self, struct opcode_w* op, int op_extra_info)
@@ -405,20 +405,69 @@ LX_CALLBACK_DECLARE1(expr_list, expr)
     move(_self, _1);
     FREE_SYNTAX_NODE(_1);
 }
+// change `table_get` to `table_set_tkt` 
+static void _table_set_prepare(par expr)
+{
+    lx_opcode* table_get_op = NULL;
+    // find the last `table_get`-like opcode
+    for (struct opcode_w* opw = expr->opcodes->front; opw != NULL; opw = opw->next) {
+        if(lx_opcode_is_table_get(opw->real_opcode->type))
+            table_get_op = opw->real_opcode;
+    }
+    if (table_get_op == NULL) {
+        // !!!not found!!!
+        // these codes cound generate `table_get`-like opcode:
+        //      a = 1;
+        //      tab[1] = 2;
+        //      func()["key"] = 1, 2;
+        //      tab.name = tab2.name;
+        // and tab2.name would generate `table_get` too, but it wouldn't come to here!
+        assert(false && "in prefix_expr, you must find a `table_get`-like opcode. we don't allow this code: `func() = 1`");
+        return;
+    }
+    switch (table_get_op->type) { // todo: maybe we cound use: table_get_op->type ++; // this need the enum LX_OPCODE_TYPE to be sorted well
+    case OP_TABLE_GET:
+        table_get_op->type = OP_TABLE_SET_TKT;
+        break;
+    case OP_TABLE_GET_IMM:
+        table_get_op->type = OP_TABLE_IMM_SET_TKT;
+        break;
+    case OP_G_TABLE_GET:
+        table_get_op->type = OP_G_TABLE_SET_TKT;
+        break;
+    default:
+        assert(false && "no way to come to here");
+    }
+}
+//LX_CALLBACK_DECLARE3(prefix_expr_list, prefix_expr, COMMA, prefix_expr_list)
+//{
+//    debuglog("prefix_expr_list  ->  prefix_expr COMMA prefix_expr_list");
+//    // move2(_self, _1, _3);
+//    _table_set_prepare(_1);
+//    move2(_self, _3, _1);
+//    FREE_SYNTAX_NODE(_3);
+//    FREE_SYNTAX_NODE(_2);
+//    FREE_SYNTAX_NODE(_1);
+//}
+//LX_CALLBACK_DECLARE1(prefix_expr_list, prefix_expr)
+//{
+//    debuglog("prefix_expr_list  ->  prefix_expr");
+//    _table_set_prepare(_1);
+//    move(_self, _1);
+//    FREE_SYNTAX_NODE(_1);
+//}
 LX_CALLBACK_DECLARE3(prefix_expr_list, prefix_expr, COMMA, prefix_expr_list)
 {
     debuglog("prefix_expr_list  ->  prefix_expr COMMA prefix_expr_list");
-    // move2(_self, _1, _3);
-    move2(_self, _3, _1);
+    _self->next = _1;
+    _1->next = _3->next;
     FREE_SYNTAX_NODE(_3);
-    FREE_SYNTAX_NODE(_2);
-    FREE_SYNTAX_NODE(_1);
+    // FREE_SYNTAX_NODE(_2); // _2 is a NULL, no need to free it.
 }
 LX_CALLBACK_DECLARE1(prefix_expr_list, prefix_expr)
 {
     debuglog("prefix_expr_list  ->  prefix_expr");
-    move(_self, _1);
-    FREE_SYNTAX_NODE(_1);
+    _self->next = _1;
 }
 
 
@@ -429,13 +478,31 @@ LX_CALLBACK_DECLARE1(expr, assign_expr)
     FREE_SYNTAX_NODE(_1);
 }
 
+
 LX_CALLBACK_DECLARE3(assign_expr, prefix_expr_list, assign_op, expr_list)
 {
     debuglog("assign_expr  ->  prefix_expr_list assign_op expr_list");
     append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_assign_stmt_lvalue);
-    append(_self, __new_op(OP_ENABLE_TABLE_SET));
-    move(_self, _1);
-    append(_self, __new_op(OP_DISABLE_TABLE_SET));
+    par _prev = NULL;
+    par _curr = _1->next;
+    par _next;
+    while (_curr != NULL) {
+        _next = _curr->next;
+
+        _curr->next = _prev;
+
+        _prev = _curr;
+        _curr = _next;
+    }
+    par _prefix_expr = _prev;
+    while(_prefix_expr != NULL) {
+        _table_set_prepare(_prefix_expr);
+        move(_self, _prefix_expr);
+
+        par next = _prefix_expr->next;
+        FREE_SYNTAX_NODE(_prefix_expr);
+        _prefix_expr = next;
+    }
     append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_assign_stmt_rvalue);
     move2(_self, _3, _2);
     FREE_SYNTAX_NODE(_3);
@@ -581,7 +648,7 @@ LX_CALLBACK_DECLARE1(single_expr, IDENTIFIER)
 {
     debuglog_luax_str(_1->token->text_len, _1->token->text);
     debuglog("single_expr  ->  IDENTIFIER");
-    append(_self, __new_op_x(OP_G_TABLE_KEY, _1));
+    append(_self, __new_op_x(OP_G_TABLE_GET, _1));
     FREE_SYNTAX_NODE(_1);
 }
 
@@ -635,7 +702,7 @@ LX_CALLBACK_DECLARE4(suffix_op, ML, expr, MR, suffix_op)
     debuglog("suffix_op  ->  ML expr MR suffix_op");
     append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_table_index_ML_expr_MR);
     move(_self, _2);
-    append(_self, __new_op(OP_TABLE_KEY));
+    append(_self, __new_op(OP_TABLE_GET));
     move(_self, _4);
     FREE_SYNTAX_NODE(_4);
     FREE_SYNTAX_NODE(_3);
@@ -647,7 +714,7 @@ LX_CALLBACK_DECLARE3(suffix_op, ML, expr, MR)
     debuglog("suffix_op  ->  ML expr MR");
     append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_table_index_ML_expr_MR);
     move(_self, _2);
-    append(_self, __new_op(OP_TABLE_KEY));
+    append(_self, __new_op(OP_TABLE_GET));
     FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
@@ -655,7 +722,7 @@ LX_CALLBACK_DECLARE3(suffix_op, ML, expr, MR)
 LX_CALLBACK_DECLARE3(suffix_op, DOT, IDENTIFIER, suffix_op)
 {
     debuglog("suffix_op  ->  DOT IDENTIFIER suffix_op");
-    append(_self, __new_op_x(OP_TABLE_KEY_IMM, _2));
+    append(_self, __new_op_x(OP_TABLE_GET_IMM, _2));
     move(_self, _3);
     FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2);
@@ -664,7 +731,7 @@ LX_CALLBACK_DECLARE3(suffix_op, DOT, IDENTIFIER, suffix_op)
 LX_CALLBACK_DECLARE2(suffix_op, DOT, IDENTIFIER)
 {
     debuglog("suffix_op  ->  DOT IDENTIFIER");
-    append(_self, __new_op_x(OP_TABLE_KEY_IMM, _2));
+    append(_self, __new_op_x(OP_TABLE_GET_IMM, _2));
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);
 }

@@ -1,6 +1,7 @@
 #ifndef __LUAX__H_
 #define __LUAX__H_
 
+/* todo: is this file meaningful? what's the differences of luax_api.h and this file */
 
 #include "base.h"
 #include "mem.h"

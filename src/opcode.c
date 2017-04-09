@@ -6,6 +6,10 @@ bool lx_opcode_is_label(unsigned char type)
 {
     return 1 <= type && type <= 9;
 }
+bool lx_opcode_is_table_get(unsigned char type)
+{
+    return (type == OP_TABLE_GET || type == OP_TABLE_GET_IMM || type == OP_G_TABLE_GET);
+}
 
 const char* lx_opcode_type_to_string(unsigned char type)
 {
@@ -36,9 +40,6 @@ const char* lx_opcode_type_to_string(unsigned char type)
     case OP_PUSHC_NIL: return "pushc_nil";
     case OP_PUSHC_FALSE: return "pushc_false";
     case OP_PUSHC_TRUE: return "pushc_true";
-    case OP_G_TABLE_KEY: return "g_table_key";
-    case OP_TABLE_KEY: return "table_key";
-    case OP_TABLE_KEY_IMM: return "table_key_imm";
     case OP_PUSHC_EMPTY_TABLE: return "pushc_empty_table";
     case OP_PUSHC_STR: return "pushc_str";
     case OP_PUSHC_NUMBER: return "pushc_number";
@@ -47,8 +48,13 @@ const char* lx_opcode_type_to_string(unsigned char type)
     case OP_FUNC_DEF_END: return "func_def_end";
     case OP_PUSHC_FUNC: return "pushc_func";
 
-    case OP_ENABLE_TABLE_SET: return "enable_table_set";
-    case OP_DISABLE_TABLE_SET: return "disable_table_set";
+    case OP_TABLE_GET: return "table_get";
+    case OP_TABLE_SET_TKT: return "table_set_tkt";
+    case OP_G_TABLE_GET: return "g_table_get";
+    case OP_G_TABLE_SET_TKT: return "g_table_set_tkt";
+    case OP_TABLE_GET_IMM: return "table_get_imm";
+    case OP_TABLE_IMM_SET_TKT: return "table_imm_set_tkt";
+
     case OP_ASSIGN: return "assign";
     case OP_ADD_ASSIGN: return "add_assign";
     case OP_SUB_ASSIGN: return "sub_assign";
@@ -105,9 +111,6 @@ const char* lx_opcode_to_string(lx_opcode_x* op, char* str)
     case OP_PUSHC_NIL: return "pushc_nil";
     case OP_PUSHC_FALSE: return "pushc_false";
     case OP_PUSHC_TRUE: return "pushc_true";
-    case OP_G_TABLE_KEY: strcpy(str, "g_table_key "); memcpy(str + 12, op->text, op->text_len); *(str + 12 + op->text_len) = '\0'; return str;
-    case OP_TABLE_KEY: return "table_key";
-    case OP_TABLE_KEY_IMM: strcpy(str, "table_key_imm "); memcpy(str + 14, op->text, op->text_len); *(str + 14 + op->text_len) = '\0'; return str;
     case OP_PUSHC_EMPTY_TABLE: return "pushc_empty_table";
     case OP_PUSHC_STR: strcpy(str, "pushc_str "); memcpy(str + 10, op->text, op->text_len); *(str + 10 + op->text_len) = '\0'; return str;
     case OP_PUSHC_NUMBER: sprintf(str, "pushc_number %f", op->fnumber); return str;
@@ -116,8 +119,13 @@ const char* lx_opcode_to_string(lx_opcode_x* op, char* str)
     case OP_FUNC_DEF_END: return "func_def_end";
     case OP_PUSHC_FUNC: return "pushc_func";
 
-    case OP_ENABLE_TABLE_SET: return "enable_table_set";
-    case OP_DISABLE_TABLE_SET: return "disable_table_set";
+    case OP_TABLE_GET: return "table_get";
+    case OP_TABLE_SET_TKT: return "table_set_tkt";
+    case OP_G_TABLE_GET: strcpy(str, "g_table_get "); memcpy(str + 12, op->text, op->text_len); *(str + 12 + op->text_len) = '\0'; return str;
+    case OP_G_TABLE_SET_TKT: strcpy(str, "g_table_set_tkt "); memcpy(str + 16, op->text, op->text_len); *(str + 16 + op->text_len) = '\0'; return str;
+    case OP_TABLE_GET_IMM: strcpy(str, "table_get_imm "); memcpy(str + 14, op->text, op->text_len); *(str + 14 + op->text_len) = '\0'; return str;
+    case OP_TABLE_IMM_SET_TKT: strcpy(str, "table_imm_set_tkt "); memcpy(str + 18, op->text, op->text_len); *(str + 18 + op->text_len) = '\0'; return str;
+
     case OP_ASSIGN: return "assign";
     case OP_ADD_ASSIGN: return "add_assign";
     case OP_SUB_ASSIGN: return "sub_assign";

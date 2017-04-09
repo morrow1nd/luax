@@ -32,3 +32,10 @@ void debuglog_luax_str(int text_len, char * ptr)
     *(ptr + text_len) = backup;
 #endif
 }
+
+void vm_debuglog(const char* one_line)
+{
+#if LX_VM_DEBUG_LOG
+    printf("VM LOG: %s\n", one_line);
+#endif
+}

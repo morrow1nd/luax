@@ -1,3 +1,9 @@
+-- tem test
+tab['key'].name = 1;
+tab['key1'].name, tab2[func()]["name2"] = 1, 2, 3;
+
+-- tem test end
+
 -- var declare
 local foo;
 local aa, bb;
