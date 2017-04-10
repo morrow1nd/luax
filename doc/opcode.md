@@ -1,5 +1,8 @@
 # Opcode
 
+**see [opcode.h](../src/opcode.h)**
+
+
 todo: add pic to show the change of stack for every command.
 
  name | argument | description | achieve | example

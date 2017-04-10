@@ -145,17 +145,9 @@ typedef struct lx_vm_stack {
 } lx_vm_stack;
 lx_vm_stack* lx_create_vm_stack(int capacity_enlarge_grain);
 void lx_delete_vm_stack(lx_vm_stack* stack);
-/* return the pushed obj */
-lx_object* lx_vm_stack_push(lx_vm_stack* stack, lx_object* obj);
+lx_object* lx_vm_stack_push(lx_vm_stack* stack, lx_object* obj); /* return the pushed obj */
 lx_object* lx_vm_stack_pop(lx_vm_stack* stack);
 lx_object* lx_vm_stack_remove(lx_vm_stack* stack, int index);
-
-/* used in `push_env` and `pop_env` */
-typedef struct _vm_env {
-    lx_object_table* _env;
-
-    struct _vm_env* prev;
-} _vm_env;
 
 
 

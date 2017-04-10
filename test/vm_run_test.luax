@@ -54,6 +54,28 @@ print(a, b, c); -- bug: b = 3
 -- closure
 
 
+-- if-else
+print('\n## test if-else');
+if true then
+    print(true);
+end
+if a == 3 then
+    print(true);
+else
+    print('error');
+end
+if a == 2 then
+    print('error1');
+else
+    print(a); -- bug
+    if a == 3 then
+        print(true);
+    else
+        print('error2'); -- bug
+    end
+end
+
+-- while
 
 --[[
 

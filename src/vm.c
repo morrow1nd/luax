@@ -431,16 +431,13 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                     assert(false);
                 }
                 lx_vm_stack_push(stack, LX_OBJECT_tag()); // tag for calling _env's meta function _set
-                if(stack->arr[value]->type != LX_OBJECT_TAG){
-                    lx_vm_stack_push(stack, stack->arr[value]);
-                    --value;
-                }else
+                if(stack->arr[value]->type != LX_OBJECT_TAG)
+                    lx_vm_stack_push(stack, stack->arr[value--]);
+                else
                     lx_vm_stack_push(stack, LX_OBJECT_nil());
-                lx_vm_stack_push(stack, stack->arr[key]);
+                lx_vm_stack_push(stack, stack->arr[key--]);
                 lx_vm_stack_push(stack, _env);
                 _op_call(vm, _env, lx_meta_function_get(_env, "_set"));
-
-                --key;
             }
             stack->curr = value - 1; /* pop_to_tag */
             continue;
