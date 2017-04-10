@@ -39,3 +39,12 @@ void vm_debuglog(const char* one_line)
     printf("VM LOG: %s\n", one_line);
 #endif
 }
+
+// fprint data N times to FILE* fp
+void fprintN(FILE* fp, const char* data, int times)
+{
+    while (times > 0) {
+        fprintf(fp, "%s", data);
+        times--;
+    }
+}

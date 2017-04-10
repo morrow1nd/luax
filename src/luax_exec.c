@@ -103,13 +103,10 @@ int main(int argc, char * argv[])
             
             lx_vm* vm = lx_create_vm();
             // we use base_env_table now, it doesn't load any Standard lib.
-            lx_object_function* func_obj = lx_create_object_function_ops(p->opcodes, /* env_creator */ lx_create_base_env_table());
+            lx_object_function* func_obj = lx_create_object_function_ops(p->opcodes, /* env_creator */ lx_create_env_table_with_inside_function());
 
             int ret = lx_vm_run(vm, func_obj);
 
-            //func_obj->_E = lx_create_object_table();
-            //lx_object_table_replace_s(func_obj->_E, "io", -1, luax_lio_load());
-            lx_dump_vm_stack(vm->stack);
             lx_delete_parser(p);
             lx_delete_vm(vm);
         }

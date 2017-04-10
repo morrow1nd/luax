@@ -1,1 +1,54 @@
--- 
+--[[ 
+    Let me tell you what luax can do.
+
+**inside functions**:
+ + meta_table(tab)  - return the meta table of tab
+ + set_meta_table(tab, new_meta_table)
+ + table_get(tab, key)  - raw get, don't use the "_get" function of tab's meta table
+ + table_set(tab, key, value)  - raw set
+ + new_table(meta_table)  - create a table using the provided meta table
+
+**template debug functions**:
+ + print(obj)  - show one obj to standard output
+ + dump_stack()  - dump runtime stack to standard output
+ + emit_VS_breakpoint()  - emit visual studio breakpoint, so we can use visual studio's debug tool begin from here!
+]]
+
+
+-- basic type
+print(nil);
+print(true); -- boolean: true, false
+print(3.1415); -- real number
+print('hello, world!'); -- string
+print({}); -- table(something like Javascript's Object)
+print(print); -- function achieved in luax or C
+
+
+-- variable declare
+local foo; -- init to nil
+local a, b, c = 1, 2; -- c equals to nil
+
+
+-- table
+local tab = {};
+tab.name = 'Tom';
+tab["key 1"] = 123;
+tab[1] = "number";
+tab.subtab = {};
+tab.subtab.a = a;
+tab.subtab.b = b;
+print(tab); -- show every key-value of tab to standard output
+local meta_tab = tab[tab];
+
+-- function
+table_set(meta_tab, "_get", function(tab, key) return key; end);
+print(tab["this is a key"]);
+table_set(meta_tab, "_set", function(tab, key, value) print("this table is readonly"); end);
+tab.name = "new name";
+
+local func = function(a, b) return a + b, a, b; end;
+a, b, c = func(a, b); -- a: 3, b: 1, c: 2
+print(a, b, c); -- bug: b = 3
+
+
+-- closure

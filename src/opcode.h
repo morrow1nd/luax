@@ -115,4 +115,6 @@ const char* lx_opcode_type_to_string(unsigned char type);
 const char* lx_opcode_to_string(lx_opcode_x* op, char* str);
 const char* lx_opcode_expr_info_to_string(int type);
 
+void lx_helper_dump_opcode(lx_opcodes* ops, FILE* fp);
+
 #endif

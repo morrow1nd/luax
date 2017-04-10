@@ -1,18 +1,18 @@
 ; opcode generated from: .vm_run_test.luax
 ;============ show readable opcode ===============
     tag                                 ; local declare(init part)
-    pushc_empty_table
+    func_def_begin
     tag                                 ; local declare
-    pushc_str tab
+    pushc_str b
+    pushc_str a
     local_init
-    tag                                 ; expr_stmt
-    tag                                 ; assign_stmt lvalue
-    g_table_get tab
-    tag                                 ; `tab[expr]`: label for table index
-    pushc_str name
-    table_set_tkt
-    tag                                 ; assign_stmt rvalue
-    pushc_number 1.000000
-    assign
-    pop_to_tag
+    g_table_get a
+    g_table_get b
+    add
+    return
+    func_def_end
+    pushc_func
+    tag                                 ; local declare
+    pushc_str func
+    local_init
 ;=========== readable opcode end =====================

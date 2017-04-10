@@ -19,29 +19,6 @@ char* lx_helper_dump_token(lx_token *token, char * outstr)
     return outstr;
 }
 
-void lx_helper_dump_opcode(lx_opcodes* ops, FILE* fp)
-{
-    char tem[1024];
-    char tem2[1024];
-    fprintf(fp, ";============ show readable opcode ===============\n");
-    for(int i = 0; i < ops->size; ++i){
-        tem[0] = '\0';
-        if(! lx_opcode_is_label(ops->arr[i]->type))
-            sprintf(tem, "    "); // use 4 spaces to replace \t
-        sprintf(tem + strlen(tem), "%s", lx_opcode_to_string((lx_opcode_x*)(ops->arr[i]), tem2));
-        if(ops->arr[i]->extra_info != -1){
-            if(strlen(tem) < 40){
-                memset((char*)tem + strlen(tem), ' ', 40 - strlen(tem));
-                tem[40] = '\0';
-            }
-            fprintf(fp, "%s; %s\n", tem, lx_opcode_expr_info_to_string(ops->arr[i]->extra_info));
-        }else{
-            fprintf(fp, "%s\n", tem);
-        }
-    }
-    fprintf(fp, ";=========== readable opcode end =====================\n");
-}
-
 //
 // Token Scanner - internal use
 //
@@ -88,6 +65,13 @@ void lx_delete_token_scanner(lx_token_scanner * s)
     }
     lx_free(s->tokens);
     lx_free(s);
+}
+
+static bool _is_connected(const char* p) {
+    return (*p >= 'a' && *p <= 'z')
+        || (*p >= 'A' && *p <= 'Z')
+        || (*p >= '0' && *p <= '9')
+        || (*p == '_');
 }
 
 lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
@@ -152,71 +136,85 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
             continue;
         }
         if (memcmp(p, "break", 5) == 0) {
+            if(_is_connected(p + 5)) goto _next_;
             add_one_token(s, LX_TOKEN_BREAK, p, 5, linenum);
             p += 5;
             continue;
         }
         if (memcmp(p, "continue", 8) == 0) {
+            if (_is_connected(p + 8)) goto _next_;
             add_one_token(s, LX_TOKEN_CONTINUE, p, 8, linenum);
             p += 8;
             continue;
         }
         if (memcmp(p, "return", 6) == 0) {
+            if (_is_connected(p + 6)) goto _next_;
             add_one_token(s, LX_TOKEN_RETURN, p, 6, linenum);
             p += 6;
             continue;
         }
         if (memcmp(p, "if", 2) == 0) {
+            if (_is_connected(p + 2)) goto _next_;
             add_one_token(s, LX_TOKEN_IF, p, 2, linenum);
             p += 2;
             continue;
         }
         if (memcmp(p, "then", 4) == 0) {
+            if (_is_connected(p + 4)) goto _next_;
             add_one_token(s, LX_TOKEN_THEN, p, 4, linenum);
             p += 4;
             continue;
         }
         if (memcmp(p, "else", 4) == 0) {
+            if (_is_connected(p + 4)) goto _next_;
             add_one_token(s, LX_TOKEN_ELSE, p, 4, linenum);
             p += 4;
             continue;
         }
         if (memcmp(p, "while", 5) == 0) {
+            if (_is_connected(p + 5)) goto _next_;
             add_one_token(s, LX_TOKEN_WHILE, p, 5, linenum);
             p += 5;
             continue;
         }
         if (memcmp(p, "for", 3) == 0) {
+            if (_is_connected(p + 3)) goto _next_;
             add_one_token(s, LX_TOKEN_FOR, p, 3, linenum);
             p += 3;
             continue;
         }
         if (memcmp(p, "function", 8) == 0) {
+            if (_is_connected(p + 8)) goto _next_;
             add_one_token(s, LX_TOKEN_FUNCTION, p, 8, linenum);
             p += 8;
             continue;
         }
         if (memcmp(p, "end", 3) == 0) {
+            if (_is_connected(p + 3)) goto _next_;
             add_one_token(s, LX_TOKEN_END, p, 3, linenum);
             p += 3;
             continue;
         }
         if (memcmp(p, "local", 5) == 0) {
+            if (_is_connected(p + 5)) goto _next_;
             add_one_token(s, LX_TOKEN_LOCAL, p, 5, linenum);
             p += 5;
             continue;
         }
         if (memcmp(p, "not", 3) == 0) {
+            if (_is_connected(p + 3)) goto _next_;
             add_one_token(s, LX_TOKEN_NOT, p, 3, linenum);
             p += 3;
             continue;
         }
         if (memcmp(p, "and", 3) == 0) {
+            if (_is_connected(p + 3)) goto _next_;
             add_one_token(s, LX_TOKEN_AND, p, 3, linenum);
             p += 3;
             continue;
         }
         if (memcmp(p, "or", 2) == 0) {
+            if (_is_connected(p + 2)) goto _next_;
             add_one_token(s, LX_TOKEN_OR, p, 2, linenum);
             p += 2;
             continue;
@@ -262,20 +260,25 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
             continue;
         }
         if (memcmp(p, "nil", 3) == 0) {
+            if (_is_connected(p + 3)) goto _next_;
             add_one_token(s, LX_TOKEN_NIL, p, 3, linenum);
             p += 3;
             continue;
         }
         if (memcmp(p, "false", 5) == 0) {
+            if (_is_connected(p + 5)) goto _next_;
             add_one_token(s, LX_TOKEN_FALSE, p, 5, linenum);
             p += 5;
             continue;
         }
         if (memcmp(p, "true", 4) == 0) {
+            if (_is_connected(p + 4)) goto _next_;
             add_one_token(s, LX_TOKEN_TRUE, p, 4, linenum);
             p += 4;
             continue;
         }
+
+_next_: p;
 
         int type = -1;
         switch (*p) {

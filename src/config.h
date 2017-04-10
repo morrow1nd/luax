@@ -7,6 +7,8 @@
 #define LX_PARSER_DEBUG_LOG 0
 /* print VM debug log to stdout */
 #define LX_VM_DEBUG_LOG 1
+/* show opcodes before run VM */
+#define LX_VM_OPCODE_SHOW 1
 /* show lx_malloc, lx_free calling info */
 #define LX_PRINT_MALLOC_INFO 0
 

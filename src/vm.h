@@ -14,16 +14,28 @@ enum LX_OBJECT_TYPE {
     LX_OBJECT_TABLE,
 
     LX_OBJECT_TAG,
+
+    //LX_OBJECT_NIL = '_', // todo
+    //LX_OBJECT_BOOL = 'B',
+    //LX_OBJECT_NUMBER = 'N',
+    //LX_OBJECT_STRING = 'S',
+    //LX_OBJECT_FUNCTION = 'F',
+    //LX_OBJECT_TABLE = 'T',
+
+    //LX_OBJECT_TAG = '#',
 };
 
 
 typedef struct lx_object {
     short type;
-    short float_or_int;
-    union {
-        float fnumber;
-        int inumber;
-    };
+    //char float_or_int; // no use now
+    //char read_only; // 0 or 1 (useful in table)
+
+    //union {
+    //    float fnumber;
+    //    int inumber;
+    //};
+    float fnumber;
 } lx_object;
 lx_object* lx_create_object(short type);
 void lx_delete_object(lx_object* obj);
@@ -79,8 +91,11 @@ lx_object_table* lx_create_object_table(); // create a normal table, such as thi
 lx_object_table* lx_create_object_table_with_meta_table(lx_object_table* meta_table);
 lx_object_table* lx_create_object_env_table(); // create empty environmet table with no inside functions
 lx_object_table* lx_create_object_env_table_with_father_env(lx_object_table* _father_env);
-lx_object_table* lx_create_base_env_table(); /* environment table, only include inside function, no standard library */
+lx_object_table* lx_create_env_table_with_inside_function(); /* environment table, only include inside function, no standard library */
 void lx_delete_object_table(lx_object_table* tab); // todo: basicily, we shouldn't call this function, it's GC's job
+
+lx_object_table* lx_create_default_meta_table();
+lx_object_table* lx_create_default_env_meta_table();
 
 // table key-value get and set
 _object_table_kv* lx_object_table_find(lx_object_table* tab, lx_object* k); /* return NULL when didn't find */
@@ -116,10 +131,6 @@ lx_object* LX_OBJECT_nil();
 lx_object* LX_OBJECT_true();
 lx_object* LX_OBJECT_false();
 lx_object* LX_OBJECT_tag();
-lx_object_table* LX_OBJECT_TABLE_DEFAULT_META_TABLE();
-lx_object_table* LX_OBJECT_TABLE_DEFAULT_ENV_META_TABLE();
-lx_object_table* LX_OBJECT_TABLE_empty();
-lx_object_table* LX_OBJECT_ENV_TABLE_empty();
 
 
 //
@@ -160,9 +171,11 @@ void lx_delete_vm(lx_vm* vm);
 
 // helper function
 const char* lx_object_to_string(lx_object* obj, char str[]);
+// dump all of this obj. For a table, it would dump it's every key-value.
+void lx_dump_object(lx_object* obj, FILE* fp);
 
 // debug helper function
-const char* lx_object_inner_to_string(lx_object* obj, char str[]); /* for debug show */
+void lx_object_inner_to_string(lx_object* obj, char str[]); /* for debug show */
 void lx_dump_vm_stack(lx_vm_stack* stack);
 void lx_dump_vm_status(lx_vm* vm);
 

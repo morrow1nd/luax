@@ -27,6 +27,8 @@ void debuglog_luax_str(int text_len, char * ptr);
 
 void vm_debuglog(const char* one_line);
 
+void fprintN(FILE* fp, const char* data, int times);
+
 #define UNUSED_ARGUMENT(argv)
 
 

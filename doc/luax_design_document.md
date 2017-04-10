@@ -50,6 +50,10 @@ When a function was created, it store it's current environment as it's father en
  + table_set(tab, key, value)  - raw set
  + new_table(meta_table)  - create a table using the provided meta table
 
+**template debug functions**:
+ + print(obj)  - show one obj to standard output
+ + dump_stack()  - dump runtime stack to standard output
+ + emit_VS_breakpoint()  - emit visual studio breakpoint, so we can use visual studio's debug tool begin from here!
 
 
  + variable must be declared before use.

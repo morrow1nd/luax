@@ -170,3 +170,26 @@ const char* lx_opcode_expr_info_to_string(int type)
     default: assert(false); return "lx_opcode_expr_info_to_string error";
     }
 }
+
+void lx_helper_dump_opcode(lx_opcodes* ops, FILE* fp)
+{
+    char tem[1024];
+    char tem2[1024];
+    fprintf(fp, ";============ show readable opcode ===============\n");
+    for (int i = 0; i < ops->size; ++i) {
+        tem[0] = '\0';
+        if (!lx_opcode_is_label(ops->arr[i]->type))
+            sprintf(tem, "    "); // use 4 spaces to replace \t
+        sprintf(tem + strlen(tem), "%s", lx_opcode_to_string((lx_opcode_x*)(ops->arr[i]), tem2));
+        if (ops->arr[i]->extra_info != -1) {
+            if (strlen(tem) < 40) {
+                memset((char*)tem + strlen(tem), ' ', 40 - strlen(tem));
+                tem[40] = '\0';
+            }
+            fprintf(fp, "%s; %s\n", tem, lx_opcode_expr_info_to_string(ops->arr[i]->extra_info));
+        } else {
+            fprintf(fp, "%s\n", tem);
+        }
+    }
+    fprintf(fp, ";=========== readable opcode end =====================\n");
+}
