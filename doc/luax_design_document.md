@@ -57,6 +57,7 @@ When a function was created, it store it's current environment as it's father en
 #### sequence in stack
 **forward**: first one first in. For example, `func(1, 2)` => `push 1; push 2`
 **reverse**: 
+
             situation               |   type  |   explain
 ------------------------------------|---------|------------
 `func(1, 2)`                        | reverse |
