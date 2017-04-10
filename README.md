@@ -12,12 +12,12 @@
 # Features
 
 The luax programming language itself:
- + easy-to-learn: it inherits lua's simple and decent syntax
+ + easy-to-learn
  + powerful data description constructs
- + encapsulation: avoid implicit global namespace pollution
 
 The C achieve of luax:
- + using subset of c++ and c: show you low-layer resource management technology
+ + lightwight arch(6000 line code)
+ + using subset of c++ and c
  + full-documented: covered from design to implementation, a good guide to learn modern compiler&amp;interpreter
 
 
@@ -27,16 +27,17 @@ The C achieve of luax:
 
  + [Get Started](./doc/get-started.md) - Setup a working environment.
  + [5-minites-tour](./doc/5-minites-tour.md) (Coming soon!)
- + [Luax Reference Manual](./doc/Luax_Reference_Manual.md) (Coming soon!)
+ + [Luax Reference Manual](./doc/luax_reference_manual.md) (Coming soon!)
 
 ## For Language Hacker
+
+ + [Luax Design Document](./doc/luax_design_document.md)
 
 
 # Build
 
 ```shell
-mkdir build
-cd build
+mkdir build && cd build
 cmake ..
 make && make test
 ```

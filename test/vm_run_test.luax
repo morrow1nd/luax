@@ -52,3 +52,270 @@ print(a, b, c); -- bug: b = 3
 
 
 -- closure
+
+
+
+--[[
+
+=================
+  example output
+=================
+
+mode: 0
+output_path: a.luaxo
+script_file_number: 1
+    1: vm_run_test.luax
+filelength:1576
+;============ show readable opcode ===============
+    tag                                 ; expr_stmt
+    g_table_get print
+    tag                                 ; func call argc
+    pushc_nil
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_get print
+    tag                                 ; func call argc
+    pushc_true
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_get print
+    tag                                 ; func call argc
+    pushc_number 3.141500
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_get print
+    tag                                 ; func call argc
+    pushc_str hello, world!
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_get print
+    tag                                 ; func call argc
+    pushc_empty_table
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_get print
+    tag                                 ; func call argc
+    g_table_get print
+    call
+    pop_to_tag
+    tag                                 ; local declare
+    pushc_str foo
+    local
+    tag                                 ; local declare(init part)
+    pushc_number 2.000000
+    pushc_number 1.000000
+    tag                                 ; local declare
+    pushc_str c
+    pushc_str b
+    pushc_str a
+    local_init
+    tag                                 ; local declare(init part)
+    pushc_empty_table
+    tag                                 ; local declare
+    pushc_str tab
+    local_init
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_get tab
+    table_imm_set_tkt name
+    tag                                 ; assign_stmt rvalue
+    pushc_str Tom
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_get tab
+    tag                                 ; `tab[expr]`: label for table index
+    pushc_str key 1
+    table_set_tkt
+    tag                                 ; assign_stmt rvalue
+    pushc_number 123.000000
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_get tab
+    tag                                 ; `tab[expr]`: label for table index
+    pushc_number 1.000000
+    table_set_tkt
+    tag                                 ; assign_stmt rvalue
+    pushc_str number
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_get tab
+    table_imm_set_tkt subtab
+    tag                                 ; assign_stmt rvalue
+    pushc_empty_table
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_get tab
+    table_get_imm subtab
+    table_imm_set_tkt a
+    tag                                 ; assign_stmt rvalue
+    g_table_get a
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_get tab
+    table_get_imm subtab
+    table_imm_set_tkt b
+    tag                                 ; assign_stmt rvalue
+    g_table_get b
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_get print
+    tag                                 ; func call argc
+    g_table_get tab
+    call
+    pop_to_tag
+    tag                                 ; local declare(init part)
+    g_table_get tab
+    tag                                 ; `tab[expr]`: label for table index
+    g_table_get tab
+    table_get
+    tag                                 ; local declare
+    pushc_str meta_tab
+    local_init
+    tag                                 ; expr_stmt
+    g_table_get table_set
+    tag                                 ; func call argc
+    func_def_begin
+    tag                                 ; local declare
+    pushc_str key
+    pushc_str tab
+    local_init
+    g_table_get key
+    return
+    func_def_end
+    pushc_func
+    pushc_str _get
+    g_table_get meta_tab
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_get print
+    tag                                 ; func call argc
+    g_table_get tab
+    tag                                 ; `tab[expr]`: label for table index
+    pushc_str this is a key
+    table_get
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_get table_set
+    tag                                 ; func call argc
+    func_def_begin
+    tag                                 ; local declare
+    pushc_str value
+    pushc_str key
+    pushc_str tab
+    local_init
+    tag                                 ; expr_stmt
+    g_table_get print
+    tag                                 ; func call argc
+    pushc_str this table is readonly
+    call
+    pop_to_tag
+    func_def_end
+    pushc_func
+    pushc_str _set
+    g_table_get meta_tab
+    call
+    pop_to_tag
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_get tab
+    table_imm_set_tkt name
+    tag                                 ; assign_stmt rvalue
+    pushc_str new name
+    assign
+    pop_to_tag
+    tag                                 ; local declare(init part)
+    func_def_begin
+    tag                                 ; local declare
+    pushc_str b
+    pushc_str a
+    local_init
+    g_table_get b
+    g_table_get a
+    g_table_get a
+    g_table_get b
+    add
+    return
+    func_def_end
+    pushc_func
+    tag                                 ; local declare
+    pushc_str func
+    local_init
+    tag                                 ; expr_stmt
+    tag                                 ; assign_stmt lvalue
+    g_table_set_tkt c
+    g_table_set_tkt b
+    g_table_set_tkt a
+    tag                                 ; assign_stmt rvalue
+    g_table_get func
+    tag                                 ; func call argc
+    g_table_get b
+    g_table_get a
+    call
+    assign
+    pop_to_tag
+    tag                                 ; expr_stmt
+    g_table_get print
+    tag                                 ; func call argc
+    g_table_get c
+    g_table_get b
+    g_table_get a
+    call
+    pop_to_tag
+;=========== readable opcode end =====================
+~~~~~~~~~~~ VM START ~~~~~~~~~~~~~
+nil
+true
+3.14150
+hello, world!
+table(007F7760):
+    |- 5007F7760: table(007F73E0):
+                      |- 3_get: function(007F05E8)
+                      |- 3_set: function(007F0368)
+                      |- 3_call: function(007F04E8)
+                      |- 3_delete: function(007F0668)
+
+function(007EFCE8)
+table(007F7728):
+    |- 5007F7728: table(007F73A8):
+                      |- 3_get: function(007F0028)
+                      |- 3_set: function(007F00E8)
+                      |- 3_call: function(007F01E8)
+                      |- 3_delete: function(007F01A8)
+    |- 3name: Tom
+    |- 3key 1: 123.0
+    |- 21.000000: number
+    |- 3subtab: table(007F7258):
+                    |- 5007F7258: table(007F7488):
+                                      |- 3_get: function(007E60D0)
+                                      |- 3_set: function(007E6390)
+                                      |- 3_call: function(007E6510)
+                                      |- 3_delete: function(007E6AD0)
+                    |- 3a: 1.0
+                    |- 3b: 2.0
+
+this is a key
+this table is readonly
+3.0
+3.0
+2.0
+~~~~~~~~~~~ VM END(ret:0) ~~~~~~~~~~~~~
+
+]]

@@ -6,7 +6,7 @@
     - base.h&.c - Included by all other header file.
     - opcode.h&.c - Opcode declarations and some opcode utilities.
     - parser.h&.c - Achieve a token scanner and a recursive descent parser.
-    - parser_callback.h&.c - Callback functions, which are called when parser deductes successfully.
+    - parser_callback.h&.c - Callback functions, which are called when parser deductes successfully. Opcode generator is located here!
     - mem.h&.c - Memory allocator.
     - object.h&.c - Luax object management.
     - vm.h&.c - Luax virtual machine.

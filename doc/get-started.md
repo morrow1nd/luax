@@ -30,6 +30,6 @@ Clone our git repository, or download the [latest code](https://github.com/morro
 cd path/to/luax/
 mkdir build
 cd build/
-cmake ../
+cmake ..
 make && make test
 ```

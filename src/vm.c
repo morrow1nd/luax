@@ -883,6 +883,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             assert(false);
         }
     }
+    return 0;
 }
 
 

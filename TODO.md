@@ -83,3 +83,5 @@ stmt  ->  expr_stmt
 2017/01/23
  + [ ] support `for in...`
  
+2017/04/10
+ + [ ] fix bug of closure
