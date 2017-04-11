@@ -859,6 +859,21 @@ LX_CALLBACK_DECLARE1(object_immediate_item_value, immediate) /* todo */
 }
 
 
+LX_CALLBACK_DECLARE5(function_define, FUNCTION, SL, SR, stmt_sequence, END)
+{
+    debuglog("function_define  ->  FUNCTION SL SR stmt_sequence END");
+    append(_self, __new_op(OP_FUNC_DEF_BEGIN));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_local_declare);
+    append(_self, __new_op(OP_LOCAL_INIT)); // init expr(s) have been pushed to stack by caller
+    move(_self, _4);
+    append(_self, __new_op(OP_FUNC_DEF_END));
+    append(_self, __new_op(OP_PUSHC_FUNC));
+    FREE_SYNTAX_NODE(_5);
+    FREE_SYNTAX_NODE(_4);
+    FREE_SYNTAX_NODE(_3);
+    FREE_SYNTAX_NODE(_2);
+    FREE_SYNTAX_NODE(_1);
+}
 LX_CALLBACK_DECLARE6(function_define, FUNCTION, SL, identifier_list, SR, stmt_sequence, END)
 {
     debuglog("function_define  ->  FUNCTION SL identifier_list SR stmt_sequence END");

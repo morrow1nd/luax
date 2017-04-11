@@ -11,6 +11,8 @@ extern int lx_call_lx_free_number;
 
 int main(int argc, char * argv[])
 {
+    UNUSED_ARGUMENT(argc);
+    UNUSED_ARGUMENT(argv);
     char * const filepath = TEST_BINARY_DIR "parser_using_stack_allocator_test.luax";
     FILE * fp = NULL;
     fp = fopen(filepath, "r");

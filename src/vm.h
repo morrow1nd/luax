@@ -119,10 +119,10 @@ void lx_meta_function_set(lx_object_table* tab, const char* str, lx_object_funct
 typedef struct lx_object_string {
     lx_object base;
 
-    char * text;
+    const char * text;
     int text_len;
 } lx_object_string;
-lx_object_string* lx_create_object_string_s(char * text, int text_len);
+lx_object_string* lx_create_object_string_s(const char * text, int text_len);
 lx_object_string* lx_create_object_string(const char * str); // string ended by '\0'
 
 
@@ -170,5 +170,11 @@ void lx_dump_object(lx_object* obj, FILE* fp);
 void lx_object_inner_to_string(lx_object* obj, char str[]); /* for debug show */
 void lx_dump_vm_stack(lx_vm_stack* stack);
 void lx_dump_vm_status(lx_vm* vm);
+
+
+#define CAST_O (lx_object*)
+#define CAST_S (lx_object_string*)
+#define CAST_T (lx_object_table*)
+#define CAST_F (lx_object_function*)
 
 #endif

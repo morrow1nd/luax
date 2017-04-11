@@ -14,6 +14,8 @@ char * test_data[] = {
 
 int main(int argc, char *argv[])
 {
+    UNUSED_ARGUMENT(argc);
+    UNUSED_ARGUMENT(argv);
 #ifndef __LX_MEM__H_
     printf("__LX_MEM__H_ not defined\n");
     return -4;

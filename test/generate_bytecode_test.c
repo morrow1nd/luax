@@ -22,6 +22,8 @@ void usage(char* argv[])
 
 int main(int argc, char * argv[])
 {
+    UNUSED_ARGUMENT(argc);
+    UNUSED_ARGUMENT(argv);
     char * const filepath = TEST_BINARY_DIR "generate_bytecode_test.luax";
     FILE * fp = NULL;
     fp = fopen(filepath, "r");

@@ -37,3 +37,24 @@ cd build/
 cmake ..
 make && make test
 ```
+
+
+
+## Run Luax Code
+
+ After building the project, you will get a command line program - luax_exec.
+
+```
+$ luax_exec.exe  -h
+usage: luax_exec.exe [option] [script]
+Available options are:
+  -o path    specify output file path
+  -c         complie luax code to opcode
+  -r         run opcode
+  -h --help  show help info
+  --version  version info
+
+  https://github.com/morrow1nd/luax
+$ luax_exec.exe app.luax  # run app.luax
+$ luax_exec.exe -c -o opcode.luaxo app.luax  # compile luax code to opcode
+```

@@ -1501,6 +1501,23 @@ static int function_define(lx_parser *p, lx_syntax_node *self)
         if (NEXT_TYPE_EQUAL(p, '(')) {
             GOTO_NEXT(p);
             NEW_SYNTAX_NODE_T(sl_node, CURR(p));
+            if (NEXT_TYPE_EQUAL(p, ')')) {
+                GOTO_NEXT(p);
+                NEW_SYNTAX_NODE_T(sr_node, CURR(p));
+                NEW_SYNTAX_NODE(stmt_sequence_node);
+                if (stmt_sequence(p, stmt_sequence_node) == 0) {
+                    if (NEXT_TYPE_EQUAL(p, LX_TOKEN_END)) {
+                        GOTO_NEXT(p);
+                        NEW_SYNTAX_NODE_T(end_node, CURR(p));
+                        LX_CALLBACK_CALL5(function_define, FUNCTION, SL, SR, stmt_sequence, END,
+                            self, function_node, sl_node, sr_node, stmt_sequence_node, end_node);
+                        return 0;
+                    }
+                }
+                FREE_SYNTAX_NODE(stmt_sequence_node);
+                FREE_SYNTAX_NODE(sr_node);
+            }
+
             NEW_SYNTAX_NODE(identifier_list_node);
             if (identifier_list(p, identifier_list_node) == 0) {
                 if (NEXT_TYPE_EQUAL(p, ')')) {

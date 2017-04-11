@@ -1,21 +1,25 @@
 --[[ 
-    Let me tell you what luax can do.
+    This is luax code for testing luax VM.
 
-**inside functions**:
+inside functions:
  + meta_table(tab)  - return the meta table of tab
  + set_meta_table(tab, new_meta_table)
  + table_get(tab, key)  - raw get, don't use the "_get" function of tab's meta table
  + table_set(tab, key, value)  - raw set
  + new_table(meta_table)  - create a table using the provided meta table
 
-**template debug functions**:
+template debug functions:
  + print(obj)  - show one obj to standard output
  + dump_stack()  - dump runtime stack to standard output
  + emit_VS_breakpoint()  - emit visual studio breakpoint, so we can use visual studio's debug tool begin from here!
+
 ]]
 
 
--- basic type
+--[[
+    basic type
+]]
+print('=== basic type ===');
 print(nil);
 print(true); -- boolean: true, false
 print(3.1415); -- real number
@@ -23,13 +27,17 @@ print('hello, world!'); -- string
 print({}); -- table(something like Javascript's Object)
 print(print); -- function achieved in luax or C
 
-
--- variable declare
+--[[
+    variable declare
+]]
 local foo; -- init to nil
 local a, b, c = 1, 2; -- c equals to nil
 
 
--- table
+--[[
+    table
+]]
+print('=== table ===');
 local tab = {};
 tab.name = 'Tom';
 tab["key 1"] = 123;
@@ -40,22 +48,47 @@ tab.subtab.b = b;
 print(tab); -- show every key-value of tab to standard output
 local meta_tab = tab[tab];
 
--- function
+
+--[[
+    function
+]]
+print('=== function ===');
 table_set(meta_tab, "_get", function(tab, key) return key; end);
 print(tab["this is a key"]);
 table_set(meta_tab, "_set", function(tab, key, value) print("this table is readonly"); end);
 tab.name = "new name";
 
+local a, b, c = 1, 2;
 local func = function(a, b) return a + b, a, b; end;
-a, b, c = func(a, b); -- a: 3, b: 1, c: 2
-print(a, b, c); -- bug: b = 3
+a, b, c = func(a, b);
+print(a, b, c); -- 3, 1, 2
+
+local func1 = function(a, b, c) print('function arguments:', a, b, c); return c, b, a; end;
+print(func1(1, 2));
+print(func1(1, 2, 3, 4));
+print(func1(1, 2, 3));
 
 
--- closure
+--[[
+    closure
+]]
+print('=== closure ===');
+local createCounter = function(init_number) 
+    local _inner = init_number; 
+    return function()  _inner = _inner + 1; return _inner; end; 
+end;
+
+local counter = createCounter(5);
+counter();
+print(counter()); -- 7
+print(counter()); -- 8
 
 
--- if-else
-print('\n## test if-else');
+--[[
+    if-else, while
+]]
+a = 3;
+print('=== if-else, while ===');
 if true then
     print(true);
 end
@@ -67,277 +100,31 @@ end
 if a == 2 then
     print('error1');
 else
-    print(a); -- bug
     if a == 3 then
         print(true);
     else
-        print('error2'); -- bug
+        print('error2');
     end
 end
 
--- while
+local numbers = {};
+numbers[0] = 20;
+numbers[1] = 15;
+numbers[2] = 50;
+numbers[3] = 3;
+
+a = 0;
+emit_VS_breakpoint();
+while a < 4 then
+    print(numbers[a]);
+    a = a + 1;
+end
+
 
 --[[
-
-=================
-  example output
-=================
-
-mode: 0
-output_path: a.luaxo
-script_file_number: 1
-    1: vm_run_test.luax
-filelength:1576
-;============ show readable opcode ===============
-    tag                                 ; expr_stmt
-    g_table_get print
-    tag                                 ; func call argc
-    pushc_nil
-    call
-    pop_to_tag
-    tag                                 ; expr_stmt
-    g_table_get print
-    tag                                 ; func call argc
-    pushc_true
-    call
-    pop_to_tag
-    tag                                 ; expr_stmt
-    g_table_get print
-    tag                                 ; func call argc
-    pushc_number 3.141500
-    call
-    pop_to_tag
-    tag                                 ; expr_stmt
-    g_table_get print
-    tag                                 ; func call argc
-    pushc_str hello, world!
-    call
-    pop_to_tag
-    tag                                 ; expr_stmt
-    g_table_get print
-    tag                                 ; func call argc
-    pushc_empty_table
-    call
-    pop_to_tag
-    tag                                 ; expr_stmt
-    g_table_get print
-    tag                                 ; func call argc
-    g_table_get print
-    call
-    pop_to_tag
-    tag                                 ; local declare
-    pushc_str foo
-    local
-    tag                                 ; local declare(init part)
-    pushc_number 2.000000
-    pushc_number 1.000000
-    tag                                 ; local declare
-    pushc_str c
-    pushc_str b
-    pushc_str a
-    local_init
-    tag                                 ; local declare(init part)
-    pushc_empty_table
-    tag                                 ; local declare
-    pushc_str tab
-    local_init
-    tag                                 ; expr_stmt
-    tag                                 ; assign_stmt lvalue
-    g_table_get tab
-    table_imm_set_tkt name
-    tag                                 ; assign_stmt rvalue
-    pushc_str Tom
-    assign
-    pop_to_tag
-    tag                                 ; expr_stmt
-    tag                                 ; assign_stmt lvalue
-    g_table_get tab
-    tag                                 ; `tab[expr]`: label for table index
-    pushc_str key 1
-    table_set_tkt
-    tag                                 ; assign_stmt rvalue
-    pushc_number 123.000000
-    assign
-    pop_to_tag
-    tag                                 ; expr_stmt
-    tag                                 ; assign_stmt lvalue
-    g_table_get tab
-    tag                                 ; `tab[expr]`: label for table index
-    pushc_number 1.000000
-    table_set_tkt
-    tag                                 ; assign_stmt rvalue
-    pushc_str number
-    assign
-    pop_to_tag
-    tag                                 ; expr_stmt
-    tag                                 ; assign_stmt lvalue
-    g_table_get tab
-    table_imm_set_tkt subtab
-    tag                                 ; assign_stmt rvalue
-    pushc_empty_table
-    assign
-    pop_to_tag
-    tag                                 ; expr_stmt
-    tag                                 ; assign_stmt lvalue
-    g_table_get tab
-    table_get_imm subtab
-    table_imm_set_tkt a
-    tag                                 ; assign_stmt rvalue
-    g_table_get a
-    assign
-    pop_to_tag
-    tag                                 ; expr_stmt
-    tag                                 ; assign_stmt lvalue
-    g_table_get tab
-    table_get_imm subtab
-    table_imm_set_tkt b
-    tag                                 ; assign_stmt rvalue
-    g_table_get b
-    assign
-    pop_to_tag
-    tag                                 ; expr_stmt
-    g_table_get print
-    tag                                 ; func call argc
-    g_table_get tab
-    call
-    pop_to_tag
-    tag                                 ; local declare(init part)
-    g_table_get tab
-    tag                                 ; `tab[expr]`: label for table index
-    g_table_get tab
-    table_get
-    tag                                 ; local declare
-    pushc_str meta_tab
-    local_init
-    tag                                 ; expr_stmt
-    g_table_get table_set
-    tag                                 ; func call argc
-    func_def_begin
-    tag                                 ; local declare
-    pushc_str key
-    pushc_str tab
-    local_init
-    g_table_get key
-    return
-    func_def_end
-    pushc_func
-    pushc_str _get
-    g_table_get meta_tab
-    call
-    pop_to_tag
-    tag                                 ; expr_stmt
-    g_table_get print
-    tag                                 ; func call argc
-    g_table_get tab
-    tag                                 ; `tab[expr]`: label for table index
-    pushc_str this is a key
-    table_get
-    call
-    pop_to_tag
-    tag                                 ; expr_stmt
-    g_table_get table_set
-    tag                                 ; func call argc
-    func_def_begin
-    tag                                 ; local declare
-    pushc_str value
-    pushc_str key
-    pushc_str tab
-    local_init
-    tag                                 ; expr_stmt
-    g_table_get print
-    tag                                 ; func call argc
-    pushc_str this table is readonly
-    call
-    pop_to_tag
-    func_def_end
-    pushc_func
-    pushc_str _set
-    g_table_get meta_tab
-    call
-    pop_to_tag
-    tag                                 ; expr_stmt
-    tag                                 ; assign_stmt lvalue
-    g_table_get tab
-    table_imm_set_tkt name
-    tag                                 ; assign_stmt rvalue
-    pushc_str new name
-    assign
-    pop_to_tag
-    tag                                 ; local declare(init part)
-    func_def_begin
-    tag                                 ; local declare
-    pushc_str b
-    pushc_str a
-    local_init
-    g_table_get b
-    g_table_get a
-    g_table_get a
-    g_table_get b
-    add
-    return
-    func_def_end
-    pushc_func
-    tag                                 ; local declare
-    pushc_str func
-    local_init
-    tag                                 ; expr_stmt
-    tag                                 ; assign_stmt lvalue
-    g_table_set_tkt c
-    g_table_set_tkt b
-    g_table_set_tkt a
-    tag                                 ; assign_stmt rvalue
-    g_table_get func
-    tag                                 ; func call argc
-    g_table_get b
-    g_table_get a
-    call
-    assign
-    pop_to_tag
-    tag                                 ; expr_stmt
-    g_table_get print
-    tag                                 ; func call argc
-    g_table_get c
-    g_table_get b
-    g_table_get a
-    call
-    pop_to_tag
-;=========== readable opcode end =====================
-~~~~~~~~~~~ VM START ~~~~~~~~~~~~~
-nil
-true
-3.14150
-hello, world!
-table(007F7760):
-    |- 5007F7760: table(007F73E0):
-                      |- 3_get: function(007F05E8)
-                      |- 3_set: function(007F0368)
-                      |- 3_call: function(007F04E8)
-                      |- 3_delete: function(007F0668)
-
-function(007EFCE8)
-table(007F7728):
-    |- 5007F7728: table(007F73A8):
-                      |- 3_get: function(007F0028)
-                      |- 3_set: function(007F00E8)
-                      |- 3_call: function(007F01E8)
-                      |- 3_delete: function(007F01A8)
-    |- 3name: Tom
-    |- 3key 1: 123.0
-    |- 21.000000: number
-    |- 3subtab: table(007F7258):
-                    |- 5007F7258: table(007F7488):
-                                      |- 3_get: function(007E60D0)
-                                      |- 3_set: function(007E6390)
-                                      |- 3_call: function(007E6510)
-                                      |- 3_delete: function(007E6AD0)
-                    |- 3a: 1.0
-                    |- 3b: 2.0
-
-this is a key
-this table is readonly
-3.0
-3.0
-2.0
-~~~~~~~~~~~ VM END(ret:0) ~~~~~~~~~~~~~
-
+    _E: you can access the current environment by variable _E.
+        local a = 123; <==> _E.a = 123;
+        By the way, _E["_E"] == _E
 ]]
+print('=== show variable _E');
+print(_E); -- notice the <SELF> node. it means this table has a key-value points to itself.

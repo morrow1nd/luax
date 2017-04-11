@@ -116,7 +116,8 @@ object_immediate_item_value ->
 		  immediate
 
 function_define ->
-		  FUNCTION '(' identifier_list ')' stmt_sequence END
+		  FUNCTION '(' ')' stmt_sequence END
+        | FUNCTION '(' identifier_list ')' stmt_sequence END
 identifier_list ->
 		  IDENTIFIER ',' identifier_list
 		| IDENTIFIER

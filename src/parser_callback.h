@@ -166,6 +166,7 @@ LX_CALLBACK_DECLARE3(object_immediate_item, NUMBER_IMMEDIATE, COLON, object_imme
 LX_CALLBACK_DECLARE1(object_immediate_item_value, immediate);
 
 
+LX_CALLBACK_DECLARE5(function_define, FUNCTION, SL, SR, stmt_sequence, END);
 LX_CALLBACK_DECLARE6(function_define, FUNCTION, SL, identifier_list, SR, stmt_sequence, END);
 LX_CALLBACK_DECLARE3(identifier_list, IDENTIFIER, COMMA, identifier_list);
 LX_CALLBACK_DECLARE1(identifier_list, IDENTIFIER);

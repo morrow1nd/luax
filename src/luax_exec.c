@@ -16,8 +16,10 @@ void usage(char* argv[])
         //"  -i         enter interaction mode after executing 'script'\n"
         //"  -          execute stdin and stop handling options\n"
         //"  -v         show version information\n"
-        "  -h         show help info\n"
+        "  -h --help  show help info\n"
+        "  --version  version info\n"
         "\n"
+        "  https://github.com/morrow1nd/luax\n"
         , argv[0]
     );
 }
@@ -70,6 +72,12 @@ int main(int argc, char * argv[])
         else if (strcmp(argv[i], "-o") == 0) {
             output_name = argv[i + 1];
             ++i;
+        } else if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0){
+            usage(argv);
+            exit(0);
+        } else if(strcmp(argv[i], "--version") == 0){
+            version();
+            exit(0);
         } else {
             script_files[script_file_number++] = argv[i];
         }
@@ -155,9 +163,6 @@ int main(int argc, char * argv[])
     }
     }
 
-#if _WIN32 && LX_DEBUG
-    system("pause");
-#endif
     return 0;
 }
 

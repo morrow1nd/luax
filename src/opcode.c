@@ -4,7 +4,7 @@
 
 bool lx_opcode_is_label(unsigned char type)
 {
-    return 1 <= type && type <= 9;
+    return 1U <= type && type <= 9U;
 }
 bool lx_opcode_is_table_get(unsigned char type)
 {
@@ -187,8 +187,10 @@ void lx_helper_dump_opcode(lx_opcodes* ops, FILE* fp)
                 tem[40] = '\0';
             }
             fprintf(fp, "%s; %s\n", tem, lx_opcode_expr_info_to_string(ops->arr[i]->extra_info));
+            //fprintf(fp, "%-6d%s; %s\n", i + 1, tem, lx_opcode_expr_info_to_string(ops->arr[i]->extra_info));
         } else {
             fprintf(fp, "%s\n", tem);
+            //fprintf(fp, "%-6d%s\n", i + 1, tem);
         }
     }
     fprintf(fp, ";=========== readable opcode end =====================\n");

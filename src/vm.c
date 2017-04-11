@@ -3,6 +3,7 @@
 #include "mem.h"
 #include "opcode.h"
 
+static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_table* _env);
 
 static void _op_pop_to_tag(lx_vm_stack* s)
 {
@@ -16,16 +17,14 @@ static void _op_pop_to_tag(lx_vm_stack* s)
     }
 }
 
-static int _op_call(lx_vm* vm, lx_object_table* _father_env, lx_object* obj) // obj -> called_obj(function or table)
+static int _op_call(lx_vm* vm, lx_object* obj) // obj -> called_obj(function or table)
 {
-    if(_father_env == NULL)
-        assert(false);
     if (obj->type == LX_OBJECT_FUNCTION) {
         lx_object_function* obj_func = (lx_object_function*)obj;
         if (obj_func->func_opcodes) {
-            _vm_run_opcodes(vm, obj_func, lx_create_object_env_table_with_father_env(_father_env)); // todo: check it!
+            _vm_run_opcodes(vm, obj_func, lx_create_object_env_table_with_father_env(obj_func->env_creator));
         } else if (obj_func->func_ptr) {
-            obj_func->func_ptr(vm->stack, obj /*, lx_create_object_env_table_with_father_env(_father_env)*/); // todo: check it!
+            obj_func->func_ptr(vm->stack, obj);
         } else {
             assert(false && "error: lx_object_function no callable ptr");//todo
         }
@@ -33,10 +32,11 @@ static int _op_call(lx_vm* vm, lx_object_table* _father_env, lx_object* obj) // 
     }
     if (obj->type == LX_OBJECT_TABLE) {
         lx_vm_stack_push(vm->stack, obj); // `_call` needs this
-        return _op_call(vm, _father_env, lx_meta_function_get((lx_object_table*)obj, "_call"));
+        return _op_call(vm, CAST_O lx_meta_function_get((lx_object_table*)obj, "_call"));
     }
 
     assert(false && "error: _op_call: obj is not callable");//todo
+    return -1;
 }
 
 
@@ -61,7 +61,7 @@ void _meta_table(lx_vm_stack* s, lx_object* _called_obj)
     if (tab->base.type != LX_OBJECT_TABLE) {
         lx_vm_stack_push(s, LX_OBJECT_nil());
     } else {
-        lx_vm_stack_push(s, lx_object_table_get_meta_table(tab)); // push it's meta table
+        lx_vm_stack_push(s, CAST_O lx_object_table_get_meta_table(tab)); // push it's meta table
     }
 }
 // set meta table
@@ -112,12 +112,12 @@ void _new_table(lx_vm_stack* s, lx_object* _called_obj)
     UNUSED_ARGUMENT(_called_obj);
     lx_object* obj = lx_vm_stack_pop(s);
     if(obj->type == LX_OBJECT_TAG)
-        lx_vm_stack_push(s, lx_create_object_table());
+        lx_vm_stack_push(s, CAST_O lx_create_object_table());
     else{
         lx_object* meta_table = lx_vm_stack_pop(s);
         if(meta_table->type != LX_OBJECT_TABLE)
             assert(false && "new_table needs a table"); // todo, we should throw a error
-        lx_vm_stack_push(s, lx_create_object_table_with_meta_table(meta_table));
+        lx_vm_stack_push(s, CAST_O lx_create_object_table_with_meta_table(CAST_T meta_table));
         if (lx_vm_stack_pop(s)->type != LX_OBJECT_TAG) {
             assert(false && "new_table can't accept more than one argument"); // todo
             _op_pop_to_tag(s);
@@ -196,7 +196,7 @@ static void default_meta_func__delete(lx_vm_stack* s, lx_object* _called_obj)
 static void default_env_meta_func__get(lx_vm_stack* s, lx_object* _called_obj)
 {
     UNUSED_ARGUMENT(_called_obj);
-    lx_object_table* _env = lx_vm_stack_pop(s);
+    lx_object_table* _env = CAST_T lx_vm_stack_pop(s);
     lx_object* key = lx_vm_stack_pop(s);
     if (lx_vm_stack_pop(s)->type != LX_OBJECT_TAG) {
         assert(false && "default_env_meta_func__get argument error");
@@ -207,14 +207,14 @@ static void default_env_meta_func__get(lx_vm_stack* s, lx_object* _called_obj)
         return;
     }
     // not found, search in it's _father_env
-    lx_object_table* _father_env = lx_meta_element_get(_env, "_father_env");
-    if (_father_env && _father_env->base.type != LX_OBJECT_NIL) {
+    lx_object* _father_env = lx_meta_element_get(_env, "_father_env");
+    if (_father_env && _father_env->type != LX_OBJECT_NIL) {
         lx_vm_stack_push(s, LX_OBJECT_tag());
         lx_vm_stack_push(s, key);
         lx_vm_stack_push(s, _father_env);
         //_op_call(vm, NULL, lx_meta_function_get(_father_env, "_get"));
-        lx_object_function* _get = lx_meta_function_get(_father_env, "_get");
-        _get->func_ptr(s, _get);
+        lx_object_function* _get = lx_meta_function_get(CAST_T _father_env, "_get");
+        _get->func_ptr(s, CAST_O _get);
     } else {
         lx_vm_stack_push(s, LX_OBJECT_nil());
     }
@@ -222,6 +222,18 @@ static void default_env_meta_func__get(lx_vm_stack* s, lx_object* _called_obj)
 // set(tab, key, value)
 static void default_env_meta_func__set(lx_vm_stack* s, lx_object* _called_obj)
 {
+    lx_object_table* _curr_env = CAST_T lx_vm_stack_pop(s);
+    lx_object_table* _env = _curr_env;
+    while(_env && _env->base.type != LX_OBJECT_NIL){
+        if (lx_object_table_find(_env, s->arr[s->curr])) {
+            lx_vm_stack_push(s, CAST_O _env);
+            _table_set(s, _called_obj);
+            return; // finished
+        } else {
+            _env = CAST_T lx_meta_element_get(_env, "_father_env");
+        }
+    }
+    lx_vm_stack_push(s, CAST_O _curr_env);
     _table_set(s, _called_obj);
 }
 static void default_env_meta_func__call(lx_vm_stack* s, lx_object* _called_obj)
@@ -326,7 +338,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 tagi--;
             // now tagi points to the called object
             lx_object* called_obj = lx_vm_stack_remove(stack, tagi); // remove the called object
-            _op_call(vm, _env, called_obj);
+            _op_call(vm, called_obj);
             continue;
         }
         case OP_RETURN: {
@@ -343,7 +355,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 lx_vm_stack_push(stack, value);
             continue;
         }
-        case OP_JMP: {
+        case OP_JMP: { // todo: consider env push and pop
             int label_count = ((lx_opcode_x *)ops->arr[i])->inumber;
             int direction = label_count / abs(label_count);
             label_count = abs(label_count);
@@ -351,17 +363,18 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             int f = i;
             for(; count < label_count; f += direction){
                 if (f < 0 || f > ops->size) {
-                    // todo
-                    printf("VM ERROR: can't find the destination of jmp\n");
-                    assert(false);
+                    assert(false && "VM ERROR: can't find the destination of jmp\n"); // todo
                 }
-                if(lx_opcode_is_label(ops->arr[f]->type))
+                if(lx_opcode_is_label(ops->arr[f]->type)){
                     count++;
+                    if(count == label_count)
+                        break;
+                }
             }
-            i = f - 1;
+            i = f;
             continue;
         }
-        case OP_JZ:{
+        case OP_JZ:{ // todo: consider env push and pop
             lx_object* condition = lx_vm_stack_pop(stack);
             if (lx_object_is_jz_zero(condition)) {
                 int label_count = ((lx_opcode_x *)ops->arr[i])->inumber;
@@ -371,14 +384,15 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 int f = i;
                 for (; count < label_count; f += direction) {
                     if (f < 0 || f > ops->size) {
-                        // todo
-                        printf("VM ERROR: can't find the destination of jz\n");
-                        assert(false);
+                        assert(false && "VM ERROR: can't find the destination of jz\n"); // todo
                     }
-                    if(lx_opcode_is_label(ops->arr[f]->type))
+                    if(lx_opcode_is_label(ops->arr[f]->type)){
                         count++;
+                        if(count == label_count)
+                            break;
+                    }
                 }
-                i = f - 1;
+                i = f;
             }
             continue;
         }
@@ -404,8 +418,8 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 lx_vm_stack_push(stack, LX_OBJECT_tag());
                 lx_vm_stack_push(stack, LX_OBJECT_nil());
                 lx_vm_stack_push(stack, obj);
-                lx_vm_stack_push(stack, _env);
-                _op_call(vm, _env, lx_meta_function_get(_env, "_set"));
+                lx_vm_stack_push(stack, CAST_O _env);
+                _op_call(vm, CAST_O lx_meta_function_get(_env, "_set"));
             }
             if (obj == NULL) {
                 //todo
@@ -436,9 +450,11 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 else
                     lx_vm_stack_push(stack, LX_OBJECT_nil());
                 lx_vm_stack_push(stack, stack->arr[key--]);
-                lx_vm_stack_push(stack, _env);
-                _op_call(vm, _env, lx_meta_function_get(_env, "_set"));
+                lx_vm_stack_push(stack, CAST_O _env);
+                _op_call(vm, CAST_O lx_meta_function_get(_env, "_set"));
             }
+            while(stack->arr[value]->type != LX_OBJECT_TAG)
+                value--;
             stack->curr = value - 1; /* pop_to_tag */
             continue;
         }
@@ -448,7 +464,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_POP_ENV: {
-            lx_object_table* prev_env = lx_meta_element_get(_env, "_father_env");
+            lx_object_table* prev_env = CAST_T lx_meta_element_get(_env, "_father_env");
             lx_meta_element_set(_env, "_father_env", LX_OBJECT_nil()); // let the GC to collect it
             _env = prev_env;
             continue;
@@ -469,12 +485,12 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
         case OP_PUSHC_EMPTY_TABLE: {
             // todo: vm_debuglog("op_pushc_empty_table");
             lx_object_table* table = lx_create_object_table();
-            lx_vm_stack_push(stack, table);
+            lx_vm_stack_push(stack, CAST_O table);
             continue;
         }
         case OP_PUSHC_STR: {
-            lx_opcode_x* op = ops->arr[i];
-            lx_vm_stack_push(stack, lx_create_object_string_s(op->text, op->text_len));
+            lx_opcode_x* op = (lx_opcode_x*) ops->arr[i];
+            lx_vm_stack_push(stack, CAST_O lx_create_object_string_s(op->text, op->text_len));
             continue;
         }
         case OP_PUSHC_NUMBER: {
@@ -504,7 +520,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             opcodes->capacity = opcodes->size;
             opcodes->arr = ops->arr + func_begin;
             lx_object_function* func = lx_create_object_function_ops(opcodes, _env);
-            lx_vm_stack_push(stack, func);
+            lx_vm_stack_push(stack, CAST_O func);
             continue;
         }
         case OP_FUNC_DEF_END: {
@@ -528,9 +544,9 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
 
             lx_vm_stack_push(stack, LX_OBJECT_tag());
             lx_vm_stack_push(stack, key);
-            lx_vm_stack_push(stack, tab);
+            lx_vm_stack_push(stack, CAST_O tab);
 
-            _op_call(vm, _env, lx_meta_function_get(tab, "_get"));
+            _op_call(vm, CAST_O lx_meta_function_get(tab, "_get"));
             continue;
         }
         case OP_TABLE_SET_TKT: {
@@ -545,39 +561,39 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
 
             //lx_vm_stack_push(stack, LX_OBJECT_tag());
             lx_vm_stack_push(stack, key);
-            lx_vm_stack_push(stack, tab);
+            lx_vm_stack_push(stack, CAST_O tab);
             continue;
         }
         case OP_TABLE_GET_IMM: {
             lx_opcode_x* op = (lx_opcode_x*)ops->arr[i];
             lx_object_table* tab = (lx_object_table*)lx_vm_stack_pop(stack);
             lx_vm_stack_push(stack, LX_OBJECT_tag());
-            lx_vm_stack_push(stack, lx_create_object_string_s(op->text, op->text_len));
-            lx_vm_stack_push(stack, tab);
-            _op_call(vm, _env, lx_meta_function_get(tab, "_get"));
+            lx_vm_stack_push(stack, CAST_O lx_create_object_string_s(op->text, op->text_len));
+            lx_vm_stack_push(stack, CAST_O tab);
+            _op_call(vm, CAST_O lx_meta_function_get(tab, "_get"));
             continue;
         }
         case OP_TABLE_IMM_SET_TKT: {
             lx_opcode_x* op = (lx_opcode_x*)ops->arr[i];
             lx_object* tab = lx_vm_stack_pop(stack);
             //lx_vm_stack_push(stack, LX_OBJECT_tag());
-            lx_vm_stack_push(stack, lx_create_object_string_s(op->text, op->text_len));
+            lx_vm_stack_push(stack, CAST_O lx_create_object_string_s(op->text, op->text_len));
             lx_vm_stack_push(stack, tab);
             continue;
         }
         case OP_G_TABLE_GET: {
             lx_opcode_x* op = (lx_opcode_x*)ops->arr[i];
             lx_vm_stack_push(stack, LX_OBJECT_tag());
-            lx_vm_stack_push(stack, lx_create_object_string_s(op->text, op->text_len));
-            lx_vm_stack_push(stack, _env);
-            _op_call(vm, _env, lx_meta_function_get(_env, "_get"));
+            lx_vm_stack_push(stack, CAST_O lx_create_object_string_s(op->text, op->text_len));
+            lx_vm_stack_push(stack, CAST_O _env);
+            _op_call(vm, CAST_O lx_meta_function_get(_env, "_get"));
             continue;
         }
         case OP_G_TABLE_SET_TKT: {
             lx_opcode_x* op = (lx_opcode_x*)ops->arr[i];
             //lx_vm_stack_push(stack, LX_OBJECT_tag());
-            lx_vm_stack_push(stack, lx_create_object_string_s(op->text, op->text_len));
-            lx_vm_stack_push(stack, _env);
+            lx_vm_stack_push(stack, CAST_O lx_create_object_string_s(op->text, op->text_len));
+            lx_vm_stack_push(stack, CAST_O _env);
             continue;
         }
 
@@ -599,7 +615,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
 
                 lx_vm_stack_push(stack, stack->arr[left_tkt - 1]); // key
                 lx_vm_stack_push(stack, stack->arr[left_tkt]); // tab
-                _op_call(vm, _env, lx_meta_function_get(stack->arr[left_tkt], "_set"));
+                _op_call(vm, CAST_O lx_meta_function_get(CAST_T stack->arr[left_tkt], "_set"));
 
                 left_tkt -= 2;
             }
@@ -686,13 +702,10 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             lx_object* b = lx_vm_stack_pop(stack);
             lx_object* a = lx_vm_stack_pop(stack);
             if (a && b) {
-                a->fnumber = (float)(a->fnumber && b->fnumber);
-                a->type = LX_OBJECT_BOOL;
-                lx_vm_stack_push(stack, a);
+                lx_object* out = (a->fnumber != 0.0f && b->fnumber != 0.0f) ? LX_OBJECT_true() : LX_OBJECT_false();
+                lx_vm_stack_push(stack, out);
             } else {
-                // todo
-                printf("VM ERROR: no item in stack\n");
-                assert(false);
+                assert(false && "VM ERROR: no item in stack\n");// todo
             }
             continue;
         }
@@ -700,171 +713,143 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             lx_object* b = lx_vm_stack_pop(stack);
             lx_object* a = lx_vm_stack_pop(stack);
             if (a && b) {
-                a->fnumber = (float)(a->fnumber || b->fnumber);
-                a->type = LX_OBJECT_BOOL;
-                lx_vm_stack_push(stack, a);
+                lx_object* out = (a->fnumber != 0.0f || b->fnumber != 0.0f) ? LX_OBJECT_true() : LX_OBJECT_false();
+                lx_vm_stack_push(stack, out);
             } else {
-                // todo
-                printf("VM ERROR: no item in stack\n");
-                assert(false);
+                assert(false && "VM ERROR: no item in stack\n");// todo
             }
             continue;
         }
-        case OP_NOT: { //todo
+        case OP_NOT: {
             lx_object* a = lx_vm_stack_pop(stack);
             if (a) {
-                a->fnumber = ! a->fnumber;
-                a->type = LX_OBJECT_BOOL;
-                lx_vm_stack_push(stack, a);
+                lx_object* out = (a->fnumber == 0.0f) ? LX_OBJECT_true() : LX_OBJECT_false();
+                lx_vm_stack_push(stack, out);
             } else {
-                // todo
-                printf("VM ERROR: no item in stack\n");
-                assert(false);
+                assert(false && "VM ERROR: no item in stack\n");// todo
             }
             continue;
         }
-        case OP_LESS: { //todo
+        case OP_LESS: {
             lx_object* b = lx_vm_stack_pop(stack);
             lx_object* a = lx_vm_stack_pop(stack);
             if (a && b) {
-                a->fnumber = (float)(a->fnumber < b->fnumber);
-                a->type = LX_OBJECT_BOOL;
-                lx_vm_stack_push(stack, a);
+                lx_object* out = (a->fnumber < b->fnumber) ? LX_OBJECT_true() : LX_OBJECT_false();
+                lx_vm_stack_push(stack, out);
             } else {
-                // todo
-                printf("VM ERROR: no item in stack\n");
-                assert(false);
+                assert(false && "VM ERROR: no item in stack\n");// todo
             }
             continue;
         }
-        case OP_GREATER: { //todo
+        case OP_GREATER: {
             lx_object* b = lx_vm_stack_pop(stack);
             lx_object* a = lx_vm_stack_pop(stack);
             if (a && b) {
-                a->fnumber = (float)(a->fnumber > b->fnumber);
-                a->type = LX_OBJECT_BOOL;
-                lx_vm_stack_push(stack, a);
+                lx_object* out = (a->fnumber > b->fnumber) ? LX_OBJECT_true() : LX_OBJECT_false();
+                lx_vm_stack_push(stack, out);
             } else {
-                // todo
-                printf("VM ERROR: no item in stack\n");
-                assert(false);
+                assert(false && "VM ERROR: no item in stack\n");// todo
             }
             continue;
         }
-        case OP_LESS_EQL: { //todo
+        case OP_LESS_EQL: {
             lx_object* b = lx_vm_stack_pop(stack);
             lx_object* a = lx_vm_stack_pop(stack);
             if (a && b) {
-                a->fnumber = (float)(a->fnumber <= b->fnumber);
-                a->type = LX_OBJECT_BOOL;
-                lx_vm_stack_push(stack, a);
+                lx_object* out = (a->fnumber <= b->fnumber) ? LX_OBJECT_true() : LX_OBJECT_false();
+                lx_vm_stack_push(stack, out);
             } else {
-                // todo
-                printf("VM ERROR: no item in stack\n");
-                assert(false);
+                assert(false && "VM ERROR: no item in stack\n");// todo
             }
             continue;
         }
-        case OP_GREATER_EQL: { //todo
+        case OP_GREATER_EQL: {
             lx_object* b = lx_vm_stack_pop(stack);
             lx_object* a = lx_vm_stack_pop(stack);
             if (a && b) {
-                a->fnumber = (float)(a->fnumber >= b->fnumber);
-                a->type = LX_OBJECT_BOOL;
-                lx_vm_stack_push(stack, a);
+                lx_object* out = (a->fnumber >= b->fnumber) ? LX_OBJECT_true() : LX_OBJECT_false();
+                lx_vm_stack_push(stack, out);
             } else {
-                // todo
-                printf("VM ERROR: no item in stack\n");
-                assert(false);
+                assert(false && "VM ERROR: no item in stack\n");// todo
             }
             continue;
         }
-        case OP_EQL_EQL: { //todo
+        case OP_EQL_EQL: {
             lx_object* b = lx_vm_stack_pop(stack);
             lx_object* a = lx_vm_stack_pop(stack);
             if (a && b) {
-                a->fnumber = (float)(a->fnumber == b->fnumber);
-                a->type = LX_OBJECT_BOOL;
-                lx_vm_stack_push(stack, a);
+                lx_object* out = (a->fnumber == b->fnumber) ? LX_OBJECT_true() : LX_OBJECT_false();
+                lx_vm_stack_push(stack, out);
             } else {
-                // todo
-                printf("VM ERROR: no item in stack\n");
-                assert(false);
+                assert(false && "VM ERROR: no item in stack\n");// todo
             }
             continue;
         }
-        case OP_NOT_EQL: { //todo
+        case OP_NOT_EQL: {
             lx_object* b = lx_vm_stack_pop(stack);
             lx_object* a = lx_vm_stack_pop(stack);
             if (a && b) {
-                a->fnumber = (float)(a->fnumber != b->fnumber);
-                a->type = LX_OBJECT_BOOL;
-                lx_vm_stack_push(stack, a);
+                lx_object* out = (a->fnumber != b->fnumber) ? LX_OBJECT_true() : LX_OBJECT_false();
+                lx_vm_stack_push(stack, out);
             } else {
-                // todo
-                printf("VM ERROR: no item in stack\n");
-                assert(false);
+                assert(false && "VM ERROR: no item in stack\n");// todo
             }
             continue;
         }
-        case OP_ADD: { //todo
+        case OP_ADD: {
             lx_object* b = lx_vm_stack_pop(stack);
             lx_object* a = lx_vm_stack_pop(stack);
             if (a && b) {
-                a->fnumber = a->fnumber + b->fnumber;
-                lx_vm_stack_push(stack, a);
+                lx_object* out = lx_create_object(LX_OBJECT_NUMBER);
+                out->fnumber = a->fnumber + b->fnumber;
+                lx_vm_stack_push(stack, out);
             } else {
-                // todo
-                printf("VM ERROR: no item in stack\n");
-                assert(false);
+                assert(false && "VM ERROR: no item in stack\n");// todo
             }
             continue;
         }
-        case OP_SUB: { //todo
+        case OP_SUB: {
             lx_object* b = lx_vm_stack_pop(stack);
             lx_object* a = lx_vm_stack_pop(stack);
             if (a && b) {
-                a->fnumber = a->fnumber - b->fnumber;
-                lx_vm_stack_push(stack, a);
+                lx_object* out = lx_create_object(LX_OBJECT_NUMBER);
+                out->fnumber = a->fnumber - b->fnumber;
+                lx_vm_stack_push(stack, out);
             } else {
-                // todo
-                printf("VM ERROR: no item in stack\n");
-                assert(false);
+                assert(false && "VM ERROR: no item in stack\n");// todo
             }
             continue;
         }
-        case OP_MUL: { //todo
+        case OP_MUL: {
             lx_object* b = lx_vm_stack_pop(stack);
             lx_object* a = lx_vm_stack_pop(stack);
             if (a && b) {
-                a->fnumber = a->fnumber * b->fnumber;
-                lx_vm_stack_push(stack, a);
+                lx_object* out = lx_create_object(LX_OBJECT_NUMBER);
+                out->fnumber = a->fnumber * b->fnumber;
+                lx_vm_stack_push(stack, out);
             } else {
-                // todo
-                printf("VM ERROR: no item in stack\n");
-                assert(false);
+                assert(false && "VM ERROR: no item in stack\n");// todo
             }
             continue;
         }
-        case OP_DIV: { //todo
+        case OP_DIV: {
             lx_object* b = lx_vm_stack_pop(stack);
             lx_object* a = lx_vm_stack_pop(stack);
-            if (a && b){
+            if (a && b) {
                 if (b->fnumber == 0.0f) {
                     // todo
                     printf("VM ERROR: div by 0 error\n");
                     assert(false);
                 }
-                a->fnumber = a->fnumber / b->fnumber;
-                lx_vm_stack_push(stack, a);
+                lx_object* out = lx_create_object(LX_OBJECT_NUMBER);
+                out->fnumber = a->fnumber / b->fnumber;
+                lx_vm_stack_push(stack, out);
             } else {
-                // todo
-                printf("VM ERROR: no item in stack\n");
-                assert(false);
+                assert(false && "VM ERROR: no item in stack\n");// todo
             }
             continue;
         }
-        case OP_INVERST: { //todo
+        case OP_INVERST: {
             if (0 <= stack->curr && stack->curr < stack->capacity) {
                 stack->arr[stack->curr]->fnumber = - stack->arr[stack->curr]->fnumber;
             } else {
@@ -897,8 +882,8 @@ void lx_delete_object(lx_object* obj)
 bool lx_object_is_jz_zero(lx_object* obj)
 {
     if(obj->type == LX_OBJECT_NIL 
-        || (obj->type == LX_OBJECT_BOOL && obj->fnumber == 0)
-        || (obj->type == LX_OBJECT_NUMBER && obj->fnumber == 0)
+        || (obj->type == LX_OBJECT_BOOL && obj->fnumber == 0.0f)
+        || (obj->type == LX_OBJECT_NUMBER && obj->fnumber == 0.0f)
         )
         return true;
     else
@@ -963,25 +948,25 @@ lx_object_table* lx_create_object_env_table()
 lx_object_table* lx_create_object_env_table_with_father_env(lx_object_table* _father_env)
 {
     lx_object_table* env_table = lx_create_object_env_table();
-    lx_object_table_replace_s(env_table, "_E", 2, env_table); // store `_E` to itself
+    lx_object_table_replace_s(env_table, "_E", 2, CAST_O env_table); // store `_E` to itself
 
-    lx_meta_element_set(env_table, "_father_env", _father_env);
+    lx_meta_element_set(env_table, "_father_env", CAST_O _father_env);
     return env_table;
 }
 lx_object_table* lx_create_env_table_with_inside_function()
 {
     lx_object_table* env_table = lx_create_object_env_table();
     // inside functions
-    lx_object_table_replace_s(env_table, "meta_table", 10, lx_create_object_function_p(_meta_table, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "set_meta_table", 14, lx_create_object_function_p(_set_meta_table, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "table_get", 9, lx_create_object_function_p(_table_get, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "table_set", 9, lx_create_object_function_p(_table_set, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "new_table", 9, lx_create_object_function_p(_new_table, lx_create_object_env_table()));
+    lx_object_table_replace_s(env_table, "meta_table", 10, CAST_O lx_create_object_function_p(_meta_table, lx_create_object_env_table()));
+    lx_object_table_replace_s(env_table, "set_meta_table", 14, CAST_O lx_create_object_function_p(_set_meta_table, lx_create_object_env_table()));
+    lx_object_table_replace_s(env_table, "table_get", 9, CAST_O lx_create_object_function_p(_table_get, lx_create_object_env_table()));
+    lx_object_table_replace_s(env_table, "table_set", 9, CAST_O lx_create_object_function_p(_table_set, lx_create_object_env_table()));
+    lx_object_table_replace_s(env_table, "new_table", 9, CAST_O lx_create_object_function_p(_new_table, lx_create_object_env_table()));
 
     // template debug functions
-    lx_object_table_replace_s(env_table, "print", 5, lx_create_object_function_p(_print, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "dump_stack", 10, lx_create_object_function_p(_dump_stack, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "emit_VS_breakpoint", 18, lx_create_object_function_p(_emit_VS_breakpoint, lx_create_object_env_table()));
+    lx_object_table_replace_s(env_table, "print", 5, CAST_O lx_create_object_function_p(_print, lx_create_object_env_table()));
+    lx_object_table_replace_s(env_table, "dump_stack", 10, CAST_O lx_create_object_function_p(_dump_stack, lx_create_object_env_table()));
+    lx_object_table_replace_s(env_table, "emit_VS_breakpoint", 18, CAST_O lx_create_object_function_p(_emit_VS_breakpoint, lx_create_object_env_table()));
     
     return env_table;
 }
@@ -998,19 +983,19 @@ void lx_delete_object_table(lx_object_table* tab)
 lx_object_table* lx_create_default_meta_table()
 {
     lx_object_table* default_meta_table = lx_create_object_table_raw();
-    lx_object_table_replace_s(default_meta_table, "_get", 4, lx_create_object_function_p(default_meta_func__get, LX_OBJECT_nil()));
-    lx_object_table_replace_s(default_meta_table, "_set", 4, lx_create_object_function_p(default_meta_func__set, LX_OBJECT_nil()));
-    lx_object_table_replace_s(default_meta_table, "_call", 5, lx_create_object_function_p(default_meta_func__call, LX_OBJECT_nil()));
-    lx_object_table_replace_s(default_meta_table, "_delete", 7, lx_create_object_function_p(default_meta_func__delete, LX_OBJECT_nil()));
+    lx_object_table_replace_s(default_meta_table, "_get", 4, CAST_O lx_create_object_function_p(default_meta_func__get, CAST_T LX_OBJECT_nil()));
+    lx_object_table_replace_s(default_meta_table, "_set", 4, CAST_O lx_create_object_function_p(default_meta_func__set, CAST_T LX_OBJECT_nil()));
+    lx_object_table_replace_s(default_meta_table, "_call", 5, CAST_O lx_create_object_function_p(default_meta_func__call, CAST_T LX_OBJECT_nil()));
+    lx_object_table_replace_s(default_meta_table, "_delete", 7, CAST_O lx_create_object_function_p(default_meta_func__delete, CAST_T LX_OBJECT_nil()));
     return default_meta_table;
 }
 lx_object_table* lx_create_default_env_meta_table()
 {
     lx_object_table* default_env_meta_table = lx_create_object_table_raw();
-    lx_object_table_replace_s(default_env_meta_table, "_get", 4, lx_create_object_function_p(default_env_meta_func__get, LX_OBJECT_nil()));
-    lx_object_table_replace_s(default_env_meta_table, "_set", 4, lx_create_object_function_p(default_env_meta_func__set, LX_OBJECT_nil()));
-    lx_object_table_replace_s(default_env_meta_table, "_call", 5, lx_create_object_function_p(default_env_meta_func__call, LX_OBJECT_nil()));
-    lx_object_table_replace_s(default_env_meta_table, "_delete", 7, lx_create_object_function_p(default_env_meta_func__delete, LX_OBJECT_nil()));
+    lx_object_table_replace_s(default_env_meta_table, "_get", 4, CAST_O lx_create_object_function_p(default_env_meta_func__get, CAST_T LX_OBJECT_nil()));
+    lx_object_table_replace_s(default_env_meta_table, "_set", 4, CAST_O lx_create_object_function_p(default_env_meta_func__set, CAST_T LX_OBJECT_nil()));
+    lx_object_table_replace_s(default_env_meta_table, "_call", 5, CAST_O lx_create_object_function_p(default_env_meta_func__call, CAST_T LX_OBJECT_nil()));
+    lx_object_table_replace_s(default_env_meta_table, "_delete", 7, CAST_O lx_create_object_function_p(default_env_meta_func__delete, CAST_T LX_OBJECT_nil()));
     // .._find(tab, "_father_env") return NULL
     lx_object_table_replace_s(default_env_meta_table, "_father_env", 11, LX_OBJECT_nil() /* LX_OBJECT_ENV_TABLE_empty() */);
     return default_env_meta_table;
@@ -1050,11 +1035,11 @@ static char* lx_object_get_id(lx_object* obj, char id[])
 
 lx_object_table* lx_object_table_get_meta_table(lx_object_table* tab)
 {
-    return lx_object_table_find(tab, (lx_object*)tab)->value;
+    return CAST_T lx_object_table_find(tab, CAST_O tab)->value;
 }
 void lx_object_table_set_meta_table(lx_object_table* tab, lx_object_table* new_meta_table)
 {
-    lx_object_table_replace(tab, tab, (lx_object*)new_meta_table);
+    lx_object_table_replace(tab, CAST_O tab, CAST_O new_meta_table);
 }
 lx_object* lx_meta_element_get(lx_object_table* tab, const char* str)
 {
@@ -1066,11 +1051,11 @@ void lx_meta_element_set(lx_object_table* tab, const char* str, lx_object* _elem
 }
 lx_object_function* lx_meta_function_get(lx_object_table* tab, const char* str)
 {
-    return lx_object_table_find_s(lx_object_table_get_meta_table(tab), str, strlen(str))->value;
+    return CAST_F lx_object_table_find_s(lx_object_table_get_meta_table(tab), str, strlen(str))->value;
 }
 void lx_meta_function_set(lx_object_table* tab, const char* str, lx_object_function* _functor)
 {
-    lx_object_table_replace_s(lx_object_table_get_meta_table(tab), str, strlen(str), _functor);
+    lx_object_table_replace_s(lx_object_table_get_meta_table(tab), str, strlen(str), CAST_O _functor);
 }
 
 _object_table_kv* lx_object_table_find(lx_object_table* tab, lx_object* k)
@@ -1090,7 +1075,7 @@ _object_table_kv* lx_object_table_find_s(lx_object_table* tab, const char* text,
     };
     obj.text = text;
     obj.text_len = text_len;
-    return lx_object_table_find(tab, &obj);
+    return lx_object_table_find(tab, CAST_O &obj);
 }
 _object_table_kv* lx_object_table_always_found(lx_object_table* tab, lx_object* k)
 {
@@ -1152,10 +1137,10 @@ lx_object* lx_object_table_replace_s(lx_object_table* tab, const char* text, int
     key.base.type = LX_OBJECT_STRING;
     key.text = text;
     key.text_len = text_len;
-    return lx_object_table_replace(tab, &key, v);
+    return lx_object_table_replace(tab, CAST_O &key, v);
 }
 
-lx_object_string* lx_create_object_string_s(char * text, int text_len)
+lx_object_string* lx_create_object_string_s(const char * text, int text_len)
 {
     lx_object_string* str = LX_NEW(lx_object_string);
     str->base.type = LX_OBJECT_STRING;
@@ -1302,6 +1287,17 @@ static void lx_dump_object_table(lx_object_table* tab, FILE* fp, const char* lin
     HASH_ITER(hh, tab->keyvalue_map, current, tmp) {
         fprintf(fp, "%s|- %s: ", line_before, current->key);
         if (current->value->type == LX_OBJECT_TABLE) {
+            if (current->value == CAST_O tab) {
+                fprintf(fp, "<SELF> table(%p)\n", current->value);
+            } else {
+                int i = strlen(current->key);
+                tem[i] = '\0';
+                for (--i; i >= 0; --i) {
+                    tem[i] = ' ';
+                }
+                sprintf(new_line_before, "%s   %s  %s", line_before, tem, "    ");
+                lx_dump_object_table(CAST_T current->value, fp, new_line_before);
+            }
             //if (current->value == LX_OBJECT_TABLE_DEFAULT_META_TABLE()) {
             //    fprintf(fp, "<DEFAULT_META_TABLE>\n");
             //} else {
@@ -1313,13 +1309,6 @@ static void lx_dump_object_table(lx_object_table* tab, FILE* fp, const char* lin
             //    sprintf(new_line_before, "%s   %s  %s", line_before, tem, "    ");
             //    lx_dump_object_table(current->value, fp, new_line_before);
             //}
-            int i = strlen(current->key);
-            tem[i] = '\0';
-            for (--i; i >= 0; --i) {
-                tem[i] = ' ';
-            }
-            sprintf(new_line_before, "%s   %s  %s", line_before, tem, "    ");
-            lx_dump_object_table(current->value, fp, new_line_before);
         } else {
             lx_dump_object(current->value, fp);
             fprintf(fp, "\n");
@@ -1361,7 +1350,7 @@ void lx_dump_object(lx_object* obj, FILE* fp)
         break;
     default:
         assert(false);
-        return "error";
+        return;
     }
 }
 void lx_object_inner_to_string(lx_object* obj, char str[])

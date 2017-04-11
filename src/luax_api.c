@@ -4,7 +4,7 @@
 
 void lx_push_tag(lx_vm_stack* stack)
 {
-    lx_vm_stack_push(stack, &LX_OBJECT_tag);
+    lx_vm_stack_push(stack, LX_OBJECT_tag());
 }
 
 lx_object* lx_pop(lx_vm_stack* stack)

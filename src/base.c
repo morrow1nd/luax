@@ -1,5 +1,12 @@
 #include "./base.h"
 
+void version()
+{
+    printf( "Luax 0.9\n"
+    );
+}
+
+
 void debug(const char * info)
 {
 #if(LX_DEBUG)
@@ -38,13 +45,4 @@ void vm_debuglog(const char* one_line)
 #if LX_VM_DEBUG_LOG
     printf("VM LOG: %s\n", one_line);
 #endif
-}
-
-// fprint data N times to FILE* fp
-void fprintN(FILE* fp, const char* data, int times)
-{
-    while (times > 0) {
-        fprintf(fp, "%s", data);
-        times--;
-    }
 }
