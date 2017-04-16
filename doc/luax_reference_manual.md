@@ -107,11 +107,11 @@ print(str * 5); -- 10.5
 
 #### operators
 
-          type        |    operators   
+type        | operators   
 ----------------------|--------------------
- Arithmetic operators | `+ - * /` 
- Relational operators | `< > <= >= == !=` 
-  Logical operators   | `and or not` 
+Arithmetic operators | `+ - * /` 
+Relational operators | `< > <= >= == !=` 
+Logical operators   | `and or not` 
 
 #### The table assess expression
 
