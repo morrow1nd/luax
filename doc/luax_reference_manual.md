@@ -16,7 +16,7 @@
 
 ### variable
 
- Luax's variable can refer to any kinds of values, which is why it's called a dynamic type languages. Unlike lua, luax's variable must be declared before using. This means a inner function calling can't pollute the global environment. It can't add new variables to the caller's environment. Let's see a example.
+ Luax's variable can refer to any kinds of values, which is why it's called a dynamic type languages. Unlike lua, luax's variable must be declared before using. This means a inner function calling can't pollute the global environment. The called function can't add new variables to the caller's environment. Let's see a example.
 
  In lua, you can write this:
 ```lua
@@ -113,7 +113,7 @@ Arithmetic operators | `+ - * /`
 Relational operators | `< > <= >= == !=` 
 Logical operators   | `and or not` 
 
-#### The table assess expression
+#### table assess expression
 
 ```lua
 local tab = {};

@@ -12,13 +12,13 @@
 # Features
 
 The luax programming language itself:
- + easy-to-learn
+ + easy-to-learn: [5-minites-tour](./doc/5-minites-tour.md)
  + powerful data description constructs
 
 The C achieve of luax:
- + lightwight arch(6000 line code)
+ + lightwight arch: [source code structure](./doc/source_code_structure.md)
  + using subset of c++ and c
- + full-documented: covered from design to implementation, a good guide to learn modern compiler&amp;interpreter
+ + full-commented
 
 
 # Documentation
