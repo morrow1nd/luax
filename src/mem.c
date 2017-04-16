@@ -1,27 +1,43 @@
 #include "./mem.h"
 
-#if(LX_PRINT_MALLOC_INFO)
+#if LX_PRINT_MALLOC_INFO
 int lx_call_lx_malloc_number = 0;
 int lx_call_lx_free_number = 0;
 #endif
+#if LX_MALLOC_STATISTICS
+int lx_memory_usage = 0; /* byte */
+#endif
+
 
 void * lx_malloc(size_t len)
 {
+    int * ret = NULL;
+#if LX_MALLOC_STATISTICS
+    lx_memory_usage += len;
+    ret = (int*)malloc(len + sizeof(int));
+    *ret = len;
+    ++ret;
+#else
+    ret = (int*)malloc(len);
+#endif
 #if(LX_PRINT_MALLOC_INFO)
     ++lx_call_lx_malloc_number;
-    char * ret = malloc(len);
     printf("lx_malloc:%d %p size:%d\n", lx_call_lx_malloc_number, ret, (int)len);
-    return ret;
 #endif
-    return malloc(len);
+    return ret;
 }
 void lx_free(void * ptr)
 {
+#if LX_MALLOC_STATISTICS
+    lx_memory_usage -= *((int*)ptr - 1);
+    ptr = (int*)ptr - 1;
+#endif
 #if(LX_PRINT_MALLOC_INFO)
     ++lx_call_lx_free_number;
     printf("lx_free:%d %p\n", lx_call_lx_free_number, ptr);
-#endif
+#else
     free(ptr);
+#endif
 }
 
 

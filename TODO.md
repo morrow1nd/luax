@@ -77,11 +77,34 @@ stmt  ->  expr_stmt
 2017/01/20
  + [ ] remove prefix_op in BNF and code.
 2017/01/21
- + [ ] `func() += b;` 
  + [ ] support `for local i = 0; ....`
 
 2017/01/23
  + [ ] support `for in...`
  
 2017/04/10
- + [ ] fix bug of closure
+ + [X] fix bug of closure
+
+
+2017/04/14
+ + [ ]  += -= *= /=
+ + [ ]  str + str
+ + [X]  table init: {a: 1, str:"aaa", subtab: {'test': num }}
+ + [X]  exception and restore
+ + [X]  consider `try catch` or provide a inside function `pcall`:
+        ```
+        local doThing = function(a, b) ... return d, e; end;
+        local exception, d, e = pcall(doThing, a, b); -- call this function in protect mode.
+        ```
+ + [X]  provide a inside function `throw`
+        ```
+        local inner_doThing = function(a) if ... then throw(something); end end;
+        local doThing = function(a, b) inner_doThing(a); return d, e; end;
+        local exception, d, e = pcall(doThing, a, b); -- exception == something
+        ```
+ + [X]  GC
+
+2017/04/16
+ + [ ]  function's arguments
+ + [ ]  tab.true == tab['true'];
+ + [ ]  [GC] `return {};`

@@ -2,7 +2,7 @@
 #include "luax_api.h"
 
 
-void lio__print(lx_vm_stack* s, lx_object* called_obj)
+void lio__print(lx_object_stack* s, lx_object* called_obj)
 {
     char tem[1024 * 4];
     lx_object* obj = NULL;

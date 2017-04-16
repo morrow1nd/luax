@@ -2,4 +2,4 @@
 
 [TODO]
 
-see [vm_run_test.luax](../test/vm_run_test.luax).
+see [basic_usage.luax](../example/basic_usage.luax).

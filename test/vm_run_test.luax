@@ -1,130 +1,125 @@
 --[[ 
     This is luax code for testing luax VM.
-
-inside functions:
- + meta_table(tab)  - return the meta table of tab
- + set_meta_table(tab, new_meta_table)
- + table_get(tab, key)  - raw get, don't use the "_get" function of tab's meta table
- + table_set(tab, key, value)  - raw set
- + new_table(meta_table)  - create a table using the provided meta table
-
-template debug functions:
- + print(obj)  - show one obj to standard output
- + dump_stack()  - dump runtime stack to standard output
- + emit_VS_breakpoint()  - emit visual studio breakpoint, so we can use visual studio's debug tool begin from here!
-
+    see example/*.luax for usage example
 ]]
 
-
---[[
-    basic type
-]]
-print('=== basic type ===');
+-- test `print` function
+print("luax VM test begin");
+print(no_exist_variable); -- nil
+print(); -- no output
 print(nil);
-print(true); -- boolean: true, false
-print(3.1415); -- real number
-print('hello, world!'); -- string
-print({}); -- table(something like Javascript's Object)
-print(print); -- function achieved in luax or C
-
---[[
-    variable declare
-]]
-local foo; -- init to nil
-local a, b, c = 1, 2; -- c equals to nil
-
-
---[[
-    table
-]]
-print('=== table ===');
-local tab = {};
-tab.name = 'Tom';
-tab["key 1"] = 123;
-tab[1] = "number";
-tab.subtab = {};
-tab.subtab.a = a;
-tab.subtab.b = b;
-print(tab); -- show every key-value of tab to standard output
-local meta_tab = tab[tab];
+print(true);
+print(false);
+print(1);
+print(0);
+print(-1);
+print(0.000000001); -- 0.0
+print('string');
+print('\nnext line\t \\\'hello\'\\');
+print("'hi'");
+print({});
+-- multi arguments
+print(nil, true, false, 123.456, {}, 'string');
 
 
---[[
-    function
-]]
-print('=== function ===');
-table_set(meta_tab, "_get", function(tab, key) return key; end);
-print(tab["this is a key"]);
-table_set(meta_tab, "_set", function(tab, key, value) print("this table is readonly"); end);
-tab.name = "new name";
+-- variable declaration
+local _a;
+local a, b, c;
+a = 1;
+-- try
+--     print(a); -- 1
+--     local a;
+--     print(a); -- can't come to here
+-- catch(e)
+--     print(e);
+-- end
+local num, str, bool, nilv = 123, 'a string', false;
+print(num, str, bool, nilv);
 
-local a, b, c = 1, 2;
-local func = function(a, b) return a + b, a, b; end;
-a, b, c = func(a, b);
-print(a, b, c); -- 3, 1, 2
-
-local func1 = function(a, b, c) print('function arguments:', a, b, c); return c, b, a; end;
-print(func1(1, 2));
-print(func1(1, 2, 3, 4));
-print(func1(1, 2, 3));
+-- try
+--     no_exist_variable = 1;  -- using undeclared variable
+-- catch(e)
+--     print(e);
+-- end
 
 
---[[
-    closure
-]]
-print('=== closure ===');
-local createCounter = function(init_number) 
-    local _inner = init_number; 
-    return function()  _inner = _inner + 1; return _inner; end; 
+-- function define and call
+local func_ret_true = function() print('call func_ret_true'); return true; end;
+print(func_ret_true());
+print(func_ret_true(1, '2'));
+--print()  TODO
+local funcRetFunc = function()
+    return function() return 'hello'; end;
 end;
+print(funcRetFunc()());
+local funcRetTable__tab;
+local funcRetTable = function()
+    funcRetTable__tab = {};
+    return funcRetTable__tab;
+end;
+funcRetTable().name = 'aa';
+print(funcRetTable__tab.name);
 
-local counter = createCounter(5);
-counter();
-print(counter()); -- 7
-print(counter()); -- 8
+
+-- operator on nil, boolean, numebr, string
+a = 1; print(a);
+-- a += 1; print(a);
+-- a *= 2; print(a);
+-- a /= 4; print(a);
+a = 1 + 5 * 6.5 * (1 - 0.986); print(a);
+bool = a == 1 and b == nil; print(bool);
 
 
---[[
-    if-else, while
-]]
-a = 3;
-print('=== if-else, while ===');
-if true then
-    print(true);
-end
-if a == 3 then
-    print(true);
-else
-    print('error');
-end
-if a == 2 then
-    print('error1');
-else
-    if a == 3 then
-        print(true);
-    else
-        print('error2');
+-- table
+local tab = {'key' : "value", 'key 2' : 56, 'key3': {}, 'key4' : function (a,b)return a+b; end};
+
+local a = 1;
+local b = 'hi';
+local tab = {'key' : "value", 'key 2' : 56, 'subtab' : { 1: 'hi', 'tt' : 'kkk'}};
+print(tab);
+-- when the key of a table is `nil`
+local tab_key_is_nil = {};
+tab_key_is_nil[nil] = 'aaa';
+print(tab_key_is_nil);
+-- test case 30: `tab[func()]` == `tab[nil]` when func() doesn't return any value
+local func30 = function() end;
+local tab30 = {};
+tab30[func30()] = 'aaa';
+print(tab30);
+
+
+
+-- ## inside function test
+
+-- pcall throw test
+print(pcall);
+local pcall_func = function(t, a, b)
+    if t then throw('error'); end
+    print('pcall_func return');
+    return a + b;
+end;
+print(pcall(pcall_func, false, 1, 2)); -- 3
+print(pcall(pcall_func, true, 1, 2)); -- error
+local pcall_func2 = function(t, a, b)
+    if t <= 1 then
+        print(pcall(pcall_func, true, 1, 2));
+        print('t<=1');
     end
-end
+    if t >= 2 then
+        print(pcall(pcall_func, false, 1, 2));
+        print('t>=2');
+    end
+    if t == 0 then
+        throw('1 error');
+    end
+    print('pcall_func2 return');
+    return a - b;
+end;
+print(pcall(pcall_func2, 1, 2, 1));
+print('---');
+print(pcall(pcall_func2, 2, 2, 1));
+print('---');
+print(pcall(pcall_func2, 0, 2, 1));
 
-local numbers = {};
-numbers[0] = 20;
-numbers[1] = 15;
-numbers[2] = 50;
-numbers[3] = 3;
-
-a = 0;
-emit_VS_breakpoint();
-while a < 4 then
-    print(numbers[a]);
-    a = a + 1;
-end
-
-
---[[
-    _E: you can access the current environment by variable _E.
-        local a = 123; <==> _E.a = 123;
-        By the way, _E["_E"] == _E
-]]
-print('=== show variable _E');
-print(_E); -- notice the <SELF> node. it means this table has a key-value points to itself.
+local func_return_multi = function() return 1, 2; end;
+print(pcall(func_return_multi));

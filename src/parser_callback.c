@@ -134,6 +134,8 @@ lx_opcodes* genBytecode(lx_syntax_node* root)
     opcodes->capacity = 0;
     opcodes->size = 0;
     opcodes->arr = NULL;
+    if(root->opcodes == NULL)
+        return opcodes;
     for (struct opcode_w* n = root->opcodes->front; n != NULL; n = n->next){
         if (opcodes->size == opcodes->capacity) {
             // enarge it
@@ -864,8 +866,9 @@ LX_CALLBACK_DECLARE5(function_define, FUNCTION, SL, SR, stmt_sequence, END)
     debuglog("function_define  ->  FUNCTION SL SR stmt_sequence END");
     append(_self, __new_op(OP_FUNC_DEF_BEGIN));
     append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_local_declare);
-    append(_self, __new_op(OP_LOCAL_INIT)); // init expr(s) have been pushed to stack by caller
+    append(_self, __new_op(OP_LOCAL_INIT)); /* init expr(s) have been pushed to stack by caller */
     move(_self, _4);
+    append(_self, __new_op(OP_RETURN)); /* we make sure there has at least one `return` */
     append(_self, __new_op(OP_FUNC_DEF_END));
     append(_self, __new_op(OP_PUSHC_FUNC));
     FREE_SYNTAX_NODE(_5);

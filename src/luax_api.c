@@ -2,14 +2,14 @@
 #include "./base.h"
 
 
-void lx_push_tag(lx_vm_stack* stack)
+void lx_push_tag(lx_object_stack* stack)
 {
-    lx_vm_stack_push(stack, LX_OBJECT_tag());
+    lx_object_stack_push(stack, LX_OBJECT_tag());
 }
 
-lx_object* lx_pop(lx_vm_stack* stack)
+lx_object* lx_pop(lx_object_stack* stack)
 {
-    return lx_vm_stack_pop(stack);
+    return lx_object_stack_pop(stack);
 }
 
 //void lx_function_return(lx_vm_stack* s)

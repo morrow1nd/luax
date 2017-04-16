@@ -11,7 +11,7 @@
 ## value
 
  - nil
- - boolean
+ - bool
  - number - real number in math
  - string - read only string
  - table
@@ -59,22 +59,9 @@ When a function was created, it store it's current environment as it's father en
 **reverse**: 
 
             situation               |   type  |   explain
-------------------------------------|---------|------------
-`func(1, 2)`                        | reverse |
-`return 1, 2`                       | reverse | `func = function() return 1, 2; end; local a, b = func();`
-`local a, b`                        | reverse |
-`local a, b = 1, 2, 3`              | reverse |
+------------------------------------|---------|------------------------------------------------------------
+ `func(1, 2)`                       | reverse |
+ `return 1, 2`                      | reverse | `func = function() return 1, 2; end; local a, b = func();`
+ `local a, b`                       | reverse | 
+ `local a, b = 1, 2, 3`             | reverse | 
 
-
-
-**inside functions**:
- + meta_table(tab)  - return the meta table of tab
- + set_meta_table(tab, new_meta_table)
- + table_get(tab, key)  - raw get, don't use the "_get" function of tab's meta table
- + table_set(tab, key, value)  - raw set
- + new_table(meta_table)  - create a table using the provided meta table
-
-**template debug functions**:
- + print(obj)  - show one obj to standard output
- + dump_stack()  - dump runtime stack to standard output
- + emit_VS_breakpoint()  - emit visual studio breakpoint, so we can use visual studio's debug tool begin from here!

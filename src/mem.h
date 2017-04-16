@@ -3,6 +3,14 @@
 
 #include "./base.h"
 
+#if LX_PRINT_MALLOC_INFO
+extern int lx_call_lx_malloc_number;
+extern int lx_call_lx_free_number;
+#endif
+#if LX_MALLOC_STATISTICS
+extern int lx_memory_usage; /* byte */
+#endif
+
 void * lx_malloc(size_t len);
 void lx_free(void * ptr);
 

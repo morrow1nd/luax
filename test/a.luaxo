@@ -1,18 +1,19 @@
 ; opcode generated from: .vm_run_test.luax
 ;============ show readable opcode ===============
     tag                                 ; local declare(init part)
-    func_def_begin
+    tag                                 ; immediate table
+    pushc_str key 2
+    pushc_number 56.000000
+    pushc_str key
+    pushc_str value
+    pushc_table
     tag                                 ; local declare
-    pushc_str b
-    pushc_str a
+    pushc_str tab
     local_init
-    g_table_get a
-    g_table_get b
-    add
-    return
-    func_def_end
-    pushc_func
-    tag                                 ; local declare
-    pushc_str func
-    local_init
+    tag                                 ; expr_stmt
+    g_table_get print
+    tag                                 ; func call argc
+    g_table_get tab
+    call
+    pop_to_tag
 ;=========== readable opcode end =====================
