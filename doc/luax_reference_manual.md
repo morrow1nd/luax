@@ -4,7 +4,7 @@
 
 ## Introduction
 
- Luax is one kind of dynamic type languages. It's core concepts is keeping thing simple.
+ Luax is one kind of dynamic type languages. It's core concept is keeping thing simple.
 
 
 
@@ -12,11 +12,11 @@
 
 ### value and type
 
- There are six kinds of values in luax. **nil**, **bool**, **number**, **string**, **function**, **table**. Type **nil** only has one value `nil`. Type **number** means the value is a number, there is no *int number* in luax. **string** is real-only string. As for **table**, it's a container containing several key-values. The key of key-values can be any kind of types list above, so do it's value. **function** can be achieved in luax code or C code.
+ There are six kinds of values in luax. **nil**, **bool**, **number**, **string**, **function**, **table**. Type **nil** only has one value `nil`. Type **number** means the value is a number, there is no *int number* in luax. **string** is real-only string. As for **table**, it's a container containing several key-values. The key of key-values can be any kind of types list above, so does it's value. **function** can be achieved in luax code or C code.
 
 ### variable
 
- Luax's variable can refer to any kinds of values, which is why it's called a dynamic type languages. Unlike lua, luax's variable must be declared before using. This means a inner function calling can't pollute the global environment. It can't add several new variables to the caller's environment. Let's see a example.
+ Luax's variable can refer to any kinds of values, which is why it's called a dynamic type languages. Unlike lua, luax's variable must be declared before using. This means a inner function calling can't pollute the global environment. It can't add new variables to the caller's environment. Let's see a example.
 
  In lua, you can write this:
 ```lua
@@ -51,12 +51,12 @@ tab[true] = 'using a bool as a key';
 
 #### meta table
 
- Every normal table has a meta table, the meta table's a table is recorded in `tab[tab]`. Yes, using itself as a key to get it's meta table. Meta table stores some meta function.
+ Every normal table has a meta table, the meta table's a table is recorded in `tab[tab]`. Yes, using itself as a key to get it's meta table. Meta table stores some **meta function**s.
 
- **meta function**:
- + "_get"  - function(tab, key): called when get value from a table `print(tab.name)`
- + "_set"  - function(tab, key, new_value): called when set value to a table `tab.name = 'new name'`
- + "_call"  - called when call a table `tab(1, 2)`
+ meta function:
+ + "_get"  - function(tab, key):  called when get value from a table. `print(tab.name)`
+ + "_set"  - function(tab, key, new_value):  called when set value to a table. `tab.name = 'new name'`
+ + "_call"  - called when call a table. `tab[tab]._call = function(tab, arg1, arg2) ... end; tab(arg1, ang2);`
  + "_delete"  - called when GC collects this table
 
  When a table is created, it has a default meta table, the meta functions in default meta table are achieved in C code. You can define a function to override it. Meta function can be achieved in luax code or C code. Let's show how to create a read-only table.
@@ -85,13 +85,13 @@ print(rtab.name); -- new name
  + **bool** has two values `true` and `false`
  + **number** store real number(in math)
  + **string** read-only string
-    - 'this is a string'
-    - "this is another string"
-    - "say 'hi', \t\n\r\\\""
+    - `'this is a string'`
+    - `"this is another string"`
+    - `"say 'hi', \t\n\r\\\""`
  + **table** container containing key-value mapping
-    - {}
-    - {'key': 'value', 1 : 'value2'}
-    - { 'subtab' : { 0 : 123 }}
+    - `{}`
+    - `{'key': 'value', 1 : 'value2'}`
+    - `{ 'subtab' : { 0 : 123 }}`
  + **function** function achieved in luax code or C code
 
 ### conversion
@@ -106,8 +106,9 @@ print(str * 5); -- 10.5
 ### expression
 
 #### operators
+
           type        |    operators 
-----------------------|-----------------
+----------------------|--------------------
  Arithmetic operators | `+ - * /`
  Relational operators | `< > <= >= == !=`
   Logical operators   | `and or not`
@@ -137,7 +138,7 @@ func(1, 2);
 
 print(function(a, b)
     return a > b;
-end(1, 2));
+end(1, 2)); -- false
 ```
 
 ### statement
@@ -156,7 +157,7 @@ local a, b, c;
 local str = 'John';
 local s1, s2, s3 = 'hi', 123; -- s3 -> nil
 
-varUndeclared = 123;  -- error in luax. Lua treats it as a new global 
+var_undeclared = 123;  -- error in luax. Lua treats it as a new global 
                       -- variable declaration and exposures it to everywhere. 
 ```
 
@@ -194,8 +195,11 @@ end
 #### Jump statements
  * **The break statement**
  * **The continue statement**
+
 `break` and `continue` function the same as c language.
+
  * **The return statement**
+ 
 In luax, function can return multi values.
 ```lua
 return; -- the same as `return nil;`
@@ -215,6 +219,25 @@ end
 print(g); -- 1
 -- while-statement functions the same as if-statement
 ```
+
+### luax standard libraries
+
+inside functions:
+ + typeof(obj)  - return the type of `obj` in string
+ + meta_table(tab)  - return the meta table of tab
+ + set_meta_table(tab, new_meta_table)
+ + table_get(tab, key)  - raw get, don't use the "_get" function of tab's meta table
+ + table_set(tab, key, value)  - raw set
+ + new_table(meta_table)  - create a table using the provided meta table
+ + pcall(func, args...)  - call `func` in protected mode
+ + throw(expection)  - throw a expection
+ + collectgarbage([opt [, arg]])  - see: <http://www.lua.org/manual/5.3/manual.html#pdf-collectgarbage>
+
+template debug functions:
+ + print(obj)  - show one obj to standard output
+ + dump_stack()  - dump runtime stack to standard output
+ + emit_VS_breakpoint()  - emit visual studio breakpoint, so we can use visual studio's debug tool begin from here!
+ + show_gc_info()  - show gc info to stdout
 
 
 
