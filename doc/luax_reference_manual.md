@@ -107,11 +107,11 @@ print(str * 5); -- 10.5
 
 #### operators
 
-          type        |    operators 
+          type        |    operators   
 ----------------------|--------------------
- Arithmetic operators | `+ - * /`
- Relational operators | `< > <= >= == !=`
-  Logical operators   | `and or not`
+ Arithmetic operators | `+ - * /` 
+ Relational operators | `< > <= >= == !=` 
+  Logical operators   | `and or not` 
 
 #### The table assess expression
 
@@ -238,7 +238,7 @@ inside functions:
     local e, result = pcall(pcall_func, false, 1, 2); -- nil 3.0
     e, result = pcall(pcall_func, true, 1, 2); -- error nil
     ```
- + throw(expection)  - throw a expection
+ + throw(exception)  - throw a exception
  + collectgarbage([opt [, arg]])  - see: <http://www.lua.org/manual/5.3/manual.html#pdf-collectgarbage>
 
 template debug functions:
