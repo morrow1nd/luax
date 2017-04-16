@@ -199,7 +199,7 @@ end
 `break` and `continue` function the same as c language.
 
  * **The return statement**
- 
+
 In luax, function can return multi values.
 ```lua
 return; -- the same as `return nil;`
@@ -229,7 +229,15 @@ inside functions:
  + table_get(tab, key)  - raw get, don't use the "_get" function of tab's meta table
  + table_set(tab, key, value)  - raw set
  + new_table(meta_table)  - create a table using the provided meta table
- + pcall(func, args...)  - call `func` in protected mode
+ + pcall(func, args...)  - call `func` in protected mode, example:
+    ```lua
+    local pcall_func = function(t, a, b)
+        if t then throw('error'); end
+        return a + b;
+    end;
+    local e, result = pcall(pcall_func, false, 1, 2); -- nil 3.0
+    e, result = pcall(pcall_func, true, 1, 2); -- error nil
+    ```
  + throw(expection)  - throw a expection
  + collectgarbage([opt [, arg]])  - see: <http://www.lua.org/manual/5.3/manual.html#pdf-collectgarbage>
 
