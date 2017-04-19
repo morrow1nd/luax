@@ -4,7 +4,7 @@
 
 ## Introduction
 
- Luax is one kind of dynamic type languages. It's core concept is keeping thing simple.
+ Luax is one kind of dynamic type languages. It's core concept is keeping things simple. If you have programming experience, you only need to know several concepts before using luax.
 
 
 
@@ -252,3 +252,37 @@ template debug functions:
 
 ## Luax API
 [TODO]
+
+lx_vm*      lx_run_code(const char* luax_code, lx_object_table* env, lx_object** exception);
+lx_vm*      lx_run_text_opcode(const char* luax_opcodes, lx_object_table* env, lx_object** exception);
+
+char *      lx_compile_code(const char* luax_code);
+
+            lx_push(lx_vm* vm, lx_object* obj);
+lx_object*  lx_pop(lx_vm* vm);
+lx_object*  lx_stack_at(lx_vm* vm, int i);
+
+            lx_create_table(); // return managed obj
+            lx_create_table_with_meta_table(lx_object_table* meta_table);
+            lx_create_string();
+            lx_create_number();
+            LX_OBJECT_nil();
+            LX_OBJECT_false();
+            LX_OBJECT_true();
+            lx_create_function_p(lx_handler...)
+
+            lx_throw(lx_vm* vm, lx_object* exception)
+
+            lx_table_find(lx_object_table* tab, lx_object* key);
+            lx_table_replace(lx_object_table* tab, lx_object* key, lx_object* new_value)
+            lx_table_for_each(lx_object_table* tab, void (* funcp)(lx_object_table* tab, lx_object* key, lx_object* value))
+
+lx_object*  lx_operator_add(lx_object* a, lx_object* b)
+lx_object*  lx_operator_sub(lx_object* a, lx_object* b)
+lx_object*  lx_operator_mul(...)
+lx_object*  lx_operator_div(...)
+lx_object*  lx_operator_and(...)
+                        or
+                        not
+
+

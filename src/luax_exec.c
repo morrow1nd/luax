@@ -111,7 +111,7 @@ int main(int argc, char * argv[])
             
             lx_vm* vm = lx_create_vm();
             // we use base_env_table now, it doesn't load any Standard lib.
-            lx_object_function* func_obj = lx_create_object_function_ops(p->opcodes, /* env_creator */ lx_create_env_table_with_inside_function());
+            lx_object_function* func_obj = lx_create_object_function_ops(p->opcodes, /* env_creator */ lx_create_env_table_with_inside_function(vm->gc));
 
             lx_object* exception;
             int ret = lx_vm_run(vm, func_obj, &exception);

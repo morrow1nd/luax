@@ -10,7 +10,7 @@
 
 ## 介绍
 
- Luax是一种动态类型语言，它的核心概念是简单。
+ Luax是一种动态类型语言，它的核心概念是简单。如果你有其他语言的编程经验，你只需要学习几个概念就可以开始使用luax了。
 
 
 
@@ -31,7 +31,7 @@ local func = function() g = 123 end
 func()
 print(g) -- 123
 ```
- 但是在luax中，上面的代码会抛出一个异常：**使用未声明的变量**。下面是在luax中的使用方式：
+ 但是在luax中，上面的代码会抛出一个异常：*使用未声明的变量*。下面是在luax中的使用方式：
 ```lua
 local g;
 local func = function() g = 123; end;
@@ -245,14 +245,14 @@ print(g); -- 1
     local e, result = pcall(pcall_func, false, 1, 2); -- nil 3.0
     e, result = pcall(pcall_func, true, 1, 2); -- error nil
     ```
- + throw(exception)  - 抛出异常
+ + throw(exception)  - 抛出异常（被最近的pcall捕获）
  + collectgarbage([opt [, arg]])  - see: <http://www.lua.org/manual/5.3/manual.html#pdf-collectgarbage>
 
 临时的debug内置函数:
- + print(obj)  - show one obj to standard output
- + dump_stack()  - dump runtime stack to standard output
- + emit_VS_breakpoint()  - emit visual studio breakpoint, so we can use visual studio's debug tool begin from here!
- + show_gc_info()  - show gc info to stdout
+ + print(obj)  - 打印一个对象到标准输出（打印表的每一个键值对）
+ + dump_stack()  - 输出运行栈的内容到标准输出
+ + emit_VS_breakpoint()  - 触发Visual Studio的断点，使得可以方便地从此处开始调试
+ + show_gc_info()  - 输出垃圾回收相关信息到标准输出
 
 
 

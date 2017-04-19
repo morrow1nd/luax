@@ -1,0 +1,56 @@
+local data = { 0 : 25, 1 : 56, 2 : 10, 3 : 98, 4 : 47, 5 : 65, 6 : 5, 7 : 6, 'len' : 8 };
+
+local qsort = function(data)
+    if data.len <= 1 then
+        return;
+    end
+    local _swap = function(data, i, j)
+        local backup = data[i];
+        data[i] = data[j];
+        data[j] = backup;
+    end;
+    local _innerqsort = function(data, from, to)
+        if to - from <= 1 then
+            return;
+        end
+        local ki = (to - from) / 2 + from; -- key index   // here is the bug, this is float, but we need a int
+        local l = ki - 1;
+        local r = ki + 1;
+        while true then
+             -- scan left direction
+            while l >= from and data[l] < data[ki] then
+                l = l - 1;
+            end
+            -- scan right direnction
+            while r < to and data[ki] < data[r] then
+                r = r + 1;
+            end
+            -- swap
+            if l >= from and r < to then
+                _swap(data, l, r);
+            else
+                if l >= from then
+                    _swap(data, ki, ki - 1);
+                    _swap(data, ki, l);
+                    ki = ki - 1;
+                else
+                    if r < to then
+                        _swap(data, ki, ki + 1);
+                        _swap(data, ki, r);
+                        ki = ki + 1;
+                    else
+                        break; -- l < to && r >= to
+                    end
+                end
+            end
+        end
+        _innerqsort(data, from, ki);
+        _innerqsort(data, ki + 1, to);
+    end;
+    _innerqsort(data, 0, data.len);
+end;
+print('before sort:');
+print(data);
+qsort(data);
+print('after sort:');
+print(data);

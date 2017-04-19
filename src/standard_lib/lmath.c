@@ -1,5 +1,4 @@
 #include "./lmath.h"
-#include "luax.h"
 #include "luax_api.h"
 
 #include <math.h>
@@ -24,9 +23,12 @@ void lmath__abs(lx_vm_stack* s, lx_object* call_obj)
     ////... todo
 }
 
+
+
+
 lx_object_table* lx_lmath_load()
 {
-    lx_object_table* io = lx_create_object_table();
+    lx_object_table* io = lx_create_object_table(NULL);
     //lx_object_table_replace_s(io, "print", -1, lx_create_object_function_p(&lmath__abs));
 
     return io;

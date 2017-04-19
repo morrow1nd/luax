@@ -1219,13 +1219,6 @@ static int single_expr(lx_parser *p, lx_syntax_node *self)
             self, true_node);
         return 0;
     }
-    NEW_SYNTAX_NODE(immediate_node);
-    if (immediate(p, immediate_node) == 0) {
-        LX_CALLBACK_CALL1(single_expr, immediate,
-            self, immediate_node);
-        return 0;
-    }
-    FREE_SYNTAX_NODE(immediate_node);
     if (NEXT_TYPE_EQUAL(p, LX_TOKEN_IDENTIFIER)) {
         GOTO_NEXT(p);
         NEW_SYNTAX_NODE_T(identifier_node, CURR(p));
@@ -1233,6 +1226,13 @@ static int single_expr(lx_parser *p, lx_syntax_node *self)
             self, identifier_node);
         return 0;
     }
+    NEW_SYNTAX_NODE(immediate_node);
+    if (immediate(p, immediate_node) == 0) {
+        LX_CALLBACK_CALL1(single_expr, immediate,
+            self, immediate_node);
+        return 0;
+    }
+    FREE_SYNTAX_NODE(immediate_node);
 
     lx_token_scanner_recover_state(p->scanner, backup_state);
     return -1;

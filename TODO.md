@@ -1,10 +1,7 @@
-2016/12/20
-
- + [ ] use nginx-like string rather traditional c-str.
-
 2016/12/21
 
- + [ ] support `for ; ; then end`. Here are two way to do it.
+ + [ ]  support `for ; ; then end`. Here are two way to do it.
+    ```
     1. for_stmt ->
           FOR expr ';' expr ';' expr THEN stmt_sequence END
           FOR ';' expr ';' expr THEN stmt_sequence END
@@ -12,20 +9,17 @@
     2. expr ->
               ε
             | ...
- + [ ] lost `local` statement...
- + [X] use Stack Allocator in parser's frequently alloc&free. Stack allocator can be used at this situation just right.
+    ```
+ + [ ]  use Stack Allocator in parser's frequently alloc&free. Stack allocator can be used at this situation just right.
 
  2016/12/22
 
-  + [ ] support more feadom in object_immediate syntax.
+  + [ ] support more freedom in object_immediate syntax.
         + [ ] consider this situation: `aa = { aa : {} };`, should we support it?
         + [ ] we don't support `str = 'key1'; tab = { str : 'value1' }; ` now.
   + [ ] dynamic realloc in scan tokens: select one suitable LX_CONFIG_IDENTIFIER_MAX_LENGTH to fit big source code file and small source code file both.
 
 2016/12/23
-
- + [X] support 'a string' type string.
- + [X] add `local var_name;` support.
  + [ ] maybe we should change:
 ```
 single_expr ->
@@ -106,5 +100,18 @@ stmt  ->  expr_stmt
 
 2017/04/16
  + [ ]  function's arguments
- + [ ]  tab.true == tab['true'];
+ + [ ]  [parser] tab.true == tab["true"]
  + [ ]  [GC] `return {};`
+
+2017/04/17
+ + [X]  recursive calling
+ + [ ]  尾递归优化
+
+2017/04/18
+ + [ ]  [opcode] shift to one value: \(expr\)
+ + [ ]  [VM] continue statement
+ + [ ]  [parser] if-elseif statement
+ + [ ]  [standard lib] next, prev(used to iterate a table's key-value)
+ + [ ]  [GC] collect key of a table
+ + [ ]  [object] using a id to be the hash key
+ + [ ]  [doc] luax design document

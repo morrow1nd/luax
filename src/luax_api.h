@@ -1,42 +1,26 @@
 #ifndef __LUAX_API__H_
 #define __LUAX_API__H_
 
-/*
- standard lib achiever only call function declared in this file.
-
-*/
-
-#include "./base.h"
-#include "vm.h"
+#include "object.h"
 
 
-void lx_push_number(lx_vm* vm, ...);
-void lx_push_string();
-void lx_push_bool();
-void lx_push_nil(lx_object_stack* stack);
-void lx_push_table();
-
-void lx_push_tag(lx_object_stack* stack);
+//typedef struct lx_object lx_object;
+//typedef struct lx_vm lx_vm;
+//typedef struct lx_object_table lx_object_table;
 
 
-lx_object* lx_pop(lx_object_stack* stack);
 
-/*
- * i: 0  -> the top of the stack
- *    -1 -> ...
- *    -N -> ...
- */
-lx_object* lx_stack(lx_vm* vm, int i);
+lx_object* lx_push(lx_vm* vm, lx_object* obj);
+lx_object* lx_pop(lx_vm* vm);
+lx_object* lx_stack_at(lx_vm* vm, int i);
 
-/* clean the func_obj in the stack */
-// void lx_function_return(lx_object_stack* stack);
+lx_object_table* lx_create_table(); // return managed obj
+lx_object_table* lx_create_table_with_meta_table(lx_object_table* meta_table);
+lx_object_string* lx_create_string(); // todo
+lx_object* lx_create_number(float number);
 
 
-//
-// Standard Library: Basic Functions
-//
 
-lx_object_table* lx_require();
 
 
 #endif // !__LUAX_API__H_

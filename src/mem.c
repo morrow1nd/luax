@@ -6,6 +6,7 @@ int lx_call_lx_free_number = 0;
 #endif
 #if LX_MALLOC_STATISTICS
 int lx_memory_usage = 0; /* byte */
+int lx_memory_max_usage = 0; /* byte */
 #endif
 
 
@@ -14,6 +15,8 @@ void * lx_malloc(size_t len)
     int * ret = NULL;
 #if LX_MALLOC_STATISTICS
     lx_memory_usage += len;
+    if(lx_memory_usage > lx_memory_max_usage)
+        lx_memory_max_usage = lx_memory_usage;
     ret = (int*)malloc(len + sizeof(int));
     *ret = len;
     ++ret;

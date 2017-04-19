@@ -49,7 +49,7 @@ int _op_call(lx_vm* vm, lx_object* obj) // obj -> called_obj(function or table)
     if (obj->type == LX_OBJECT_FUNCTION) {
         lx_object_function* obj_func = CAST_F obj;
         if (obj_func->func_opcodes) {
-            lx_object_table* _env = CAST_T managed_with_gc(vm->gc, CAST_O lx_create_object_env_table_with_father_env(obj_func->env_creator));
+            lx_object_table* _env = CAST_T managed_with_gc(vm->gc, CAST_O lx_create_object_env_table_with_father_env(obj_func->env_creator, vm->gc));
             lx_object_stack_push(vm->call_stack, CAST_O _env);
             _vm_run_opcodes(vm, obj_func, _env);
             lx_object_stack_pop(vm->call_stack);
@@ -157,7 +157,7 @@ void _new_table(lx_vm* vm, lx_object* _called_obj)
     lx_object_stack* s = vm->stack;
     lx_object* obj = lx_object_stack_pop(s);
     if(obj->type == LX_OBJECT_TAG)
-        lx_object_stack_push(s, managed_with_gc(vm->gc, CAST_O lx_create_object_table()));
+        lx_object_stack_push(s, managed_with_gc(vm->gc, CAST_O lx_create_object_table(vm->gc)));
     else{
         lx_object* meta_table = lx_object_stack_pop(s);
         if(meta_table->type != LX_OBJECT_TABLE)
@@ -201,14 +201,51 @@ void _collectgarbage(lx_vm* vm, lx_object* _called_obj)
 {
     lx_object* opt = lx_object_stack_pop(vm->stack);
     if(opt->type == LX_OBJECT_TAG){
-        lx_gc_collect(vm->call_stack, vm->gc);
+        lx_gc_collect(vm->gc);
         return;
     }
     lx_object* arg = lx_object_stack_pop(vm->stack);
     lx_object* o = arg;
     while(o && o->type != LX_OBJECT_NIL)
         o = lx_object_stack_pop(vm->stack);
-    // todo
+    // we haven't achieved other functions
+}
+void _require(lx_vm* vm, lx_object* _called_obj)
+{
+    lx_object* obj = lx_object_stack_pop(vm->stack);
+    lx_object* o  = obj;
+    while( o && o->type != LX_OBJECT_NIL)
+        o = lx_object_stack_pop(vm->stack);
+    if (obj && obj->type == LX_OBJECT_STRING) {
+        lx_object_string* sobj = CAST_S obj;
+        char * str = (char*)lx_malloc(sobj->text_len + 1);
+        memcpy(str, sobj->text, sobj->text_len);
+        str[sobj->text_len] = '\0';
+        FILE* fp = fopen(str, "rb");
+        if (fp == NULL) {
+            /* this is not a file path */
+            if (strcmp(str, "math") == 0) {
+
+            }
+        } else {
+            /* file path */
+            fseek(fp, 0, SEEK_END);
+            int filelength = ftell(fp);
+            printf("filelength:%d\n", filelength);
+
+            char* data = (char*)lx_malloc(filelength + 1);
+            fseek(fp, 0, SEEK_SET);
+            int ret;
+            if ((ret = fread(data, 1, filelength, fp)) <= 0) {
+                printf("fail: can't read file:%s\n", str);
+                fclose(fp);
+                return;
+            }
+            *(data + ret) = '\0';
+            fclose(fp);
+            //... todo
+        }
+    }
 }
 // print(tab)
 // print('this is debug info')
@@ -249,12 +286,7 @@ void _emit_VS_breakpoint(lx_vm* vm, lx_object* _called_obj)
 void _show_gc_info(lx_vm* vm, lx_object* _called_obj)
 {
     _op_pop_to_tag(vm);
-    printf("=== show gc info ===\n");
-    printf("object number: %d\n", vm->gc->arr->curr + 1);
-#if LX_MALLOC_STATISTICS
-    printf("memory usage: %d bytes\n", lx_memory_usage);
-#endif
-    printf("=== end of gc info ===\n");
+    lx_dump_vm_gc_status(vm);
 }
 
 //
@@ -308,7 +340,7 @@ void default_env_meta_func__get(lx_vm* vm, lx_object* _called_obj)
         lx_object_function* _get = lx_meta_function_get(CAST_T _father_env, "_get");
         _get->func_ptr(vm, CAST_O _get);
     } else {
-        lx_object_stack_push(s, LX_OBJECT_nil());
+        lx_throw_s(vm, "using undeclared variable XXX"); // todo
     }
 }
 // set(tab, key, value)
@@ -433,7 +465,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_RETURN: {
-            //lx_gc_collect(vm->call_stack, vm->gc); // todo: return {}; gc would collect this table
+            lx_gc_collect(vm->gc);
             return 0; // end this luax function
         }
         case OP_FUNC_RET_VALUE_SHIFT_TO_1: {
@@ -545,13 +577,13 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_PUSH_ENV: {
-            _env = CAST_T managed_with_gc(vm->gc, CAST_O lx_create_object_env_table_with_father_env(_env));
+            _env = CAST_T managed_with_gc(vm->gc, CAST_O lx_create_object_env_table_with_father_env(_env, vm->gc));
             lx_object_stack_push(vm->call_stack, CAST_O _env);
             continue;
         }
         case OP_POP_ENV: {
             lx_object_table* prev_env = CAST_T lx_meta_element_get(_env, "_father_env");
-            lx_meta_element_set(_env, "_father_env", LX_OBJECT_nil()); // let the GC to collect it
+            lx_meta_element_set(_env, "_father_env", LX_OBJECT_nil(), vm->gc); // let the GC to collect it
             _env = prev_env;
             lx_object_stack_pop(vm->call_stack);
             continue;
@@ -570,7 +602,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_PUSHC_EMPTY_TABLE: {
-            lx_object* table = managed_with_gc(vm->gc, CAST_O lx_create_object_table());
+            lx_object* table = managed_with_gc(vm->gc, CAST_O lx_create_object_table(vm->gc));
             lx_object_stack_push(stack, table);
             continue;
         }
@@ -584,7 +616,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_PUSHC_TABLE: {
-            lx_object_table* tab = CAST_T managed_with_gc(vm->gc, CAST_O lx_create_object_table());
+            lx_object_table* tab = CAST_T managed_with_gc(vm->gc, CAST_O lx_create_object_table(vm->gc));
             lx_object* value = lx_object_stack_pop(stack);
             while (value->type != LX_OBJECT_TAG) {
                 lx_object_table_replace(tab, lx_object_stack_pop(stack), value);
@@ -954,7 +986,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             assert(false && "VM ERROR: vm_run comes to default\n");
         }
     }
-    //lx_gc_collect(vm->call_stack, vm->gc);  todo
+    lx_gc_collect(vm->gc);
     return 0;
 }
 
@@ -962,10 +994,10 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
 lx_vm* lx_create_vm ()
 {
     lx_vm* vm = LX_NEW(lx_vm);
-    vm->stack = lx_create_object_stack(32);
     vm->curr_jmp_buf = NULL;
-    vm->gc = lx_create_gc_info();
+    vm->stack = lx_create_object_stack(32);
     vm->call_stack = lx_create_object_stack(32);
+    vm->gc = lx_create_gc_info(vm->stack, vm->call_stack);
     return vm;
 }
 
@@ -976,6 +1008,7 @@ int lx_vm_run (lx_vm* vm, lx_object_function* func_obj, lx_object** exception)
 #endif
 
 #if LX_VM_DEBUG_LOG
+    lx_dump_vm_gc_status(vm);
     printf("~~~~~~~~~~~ VM START ~~~~~~~~~~~~~\n");
 #endif
     
@@ -985,7 +1018,7 @@ int lx_vm_run (lx_vm* vm, lx_object_function* func_obj, lx_object** exception)
     int res = setjmp(_jmp);
     if (res == 0) {
         vm->curr_jmp_buf = &_jmp;
-        lx_object_table* _env = CAST_T managed_with_gc(vm->gc, CAST_O lx_create_object_env_table_with_father_env(func_obj->env_creator));
+        lx_object_table* _env = CAST_T managed_with_gc(vm->gc, CAST_O lx_create_object_env_table_with_father_env(func_obj->env_creator, vm->gc));
         lx_object_stack_push(vm->call_stack, CAST_O _env);
         ret = _vm_run_opcodes(vm, func_obj, _env);
     } else {
@@ -993,9 +1026,11 @@ int lx_vm_run (lx_vm* vm, lx_object_function* func_obj, lx_object** exception)
         ret = res;
     }
     lx_object_stack_pop(vm->call_stack);
+    lx_gc_collect(vm->gc);
 
 #if LX_VM_DEBUG_LOG
     printf("~~~~~~~~~~~ VM END(ret:%d) ~~~~~~~~~~~~~\n", ret);
+    lx_dump_vm_gc_status(vm);
     lx_dump_object_stack(vm->stack);
     lx_dump_vm_status(vm);
 #endif
@@ -1013,9 +1048,9 @@ void lx_delete_vm (lx_vm* vm)
 
 void lx_throw_s(lx_vm* vm, const char* str)
 {
-//#if LX_DEBUG && LX_VM_DEBUG
-//    assert(false); // only useful in Visual Studio's Debug mode
-//#endif
+#if LX_DEBUG && LX_VM_DEBUG
+    assert(false); // only useful in Visual Studio's Debug mode
+#endif
     lx_object* s = managed_with_gc(vm->gc, CAST_O lx_create_object_string(str));
     lx_object_stack_push(vm->stack, LX_OBJECT_tag());
     lx_object_stack_push(vm->stack, LX_OBJECT_tag());
@@ -1025,6 +1060,10 @@ void lx_throw_s(lx_vm* vm, const char* str)
 
 void lx_dump_object_stack(lx_object_stack* s)
 {
+    if (s->curr <= -1) {
+        printf("==== dump stack: %p is empty ====\n", s);
+        return;
+    }
     char tem[1024 * 4]; // todo
     printf("=========== dump stack =============\n");
     printf("            ---------------\n");
@@ -1045,4 +1084,14 @@ void lx_dump_vm_status(lx_vm* vm)
     printf("vm:%p\n", vm);
     printf("vm->call_stack number: %d\n", vm->call_stack->curr + 1);
     printf("=============== dump end ===============\n");
+}
+void lx_dump_vm_gc_status(lx_vm* vm)
+{
+    printf("=== show gc info ===\n");
+    printf("object number: %d\n", vm->gc->arr->curr + 1);
+#if LX_MALLOC_STATISTICS
+    printf("memory usage: %d bytes\n", lx_memory_usage);
+    printf("memory max usage: %d bytes\n", lx_memory_max_usage);
+#endif
+    printf("=== end of gc info ===\n");
 }

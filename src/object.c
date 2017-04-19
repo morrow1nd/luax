@@ -11,8 +11,9 @@ void _table_get(lx_vm* vm, lx_object* _called_obj);
 void _table_set(lx_vm* vm, lx_object* _called_obj);
 void _new_table(lx_vm* vm, lx_object* _called_obj);
 void _throw(lx_vm* vm, lx_object* _called_obj);
-void _collectgarbage(lx_vm* vm, lx_object* _called_obj);
 void _pcall(lx_vm* vm, lx_object* _called_obj);
+void _collectgarbage(lx_vm* vm, lx_object* _called_obj);
+void _require(lx_vm* vm, lx_object* _called_obj);
 void _print(lx_vm* vm, lx_object* _called_obj);
 void _dump_stack(lx_vm* vm, lx_object* _called_obj);
 void _emit_VS_breakpoint(lx_vm* vm, lx_object* _called_obj);
@@ -89,10 +90,10 @@ lx_object_table* lx_create_object_table_raw()
     tab->keyvalue_map = NULL; /* important! initialize to NULL (needed by hash lib) */
     return tab;
 }
-lx_object_table* lx_create_object_table()
+lx_object_table* lx_create_object_table(lx_gc_info* gc)
 {
     lx_object_table* tab = lx_create_object_table_raw();
-    lx_object_table_set_meta_table(tab, lx_create_default_meta_table());
+    lx_object_table_set_meta_table(tab, CAST_T managed_with_gc(gc, CAST_O lx_create_default_meta_table(gc))); // todo: managed by gc
     return tab;
 }
 lx_object_table* lx_create_object_table_with_meta_table(lx_object_table* meta_table)
@@ -101,39 +102,39 @@ lx_object_table* lx_create_object_table_with_meta_table(lx_object_table* meta_ta
     lx_object_table_set_meta_table(tab, meta_table);
     return tab;
 }
-lx_object_table* lx_create_object_env_table()
+lx_object_table* lx_create_object_env_table(lx_gc_info* gc)
 {
     lx_object_table* tab = lx_create_object_table_raw();
-    lx_object_table_set_meta_table(tab, lx_create_default_env_meta_table());
+    lx_object_table_set_meta_table(tab, CAST_T managed_with_gc(gc, CAST_O lx_create_default_env_meta_table(gc)));
     return tab;
 }
-lx_object_table* lx_create_object_env_table_with_father_env(lx_object_table* _father_env)
+lx_object_table* lx_create_object_env_table_with_father_env(lx_object_table* _father_env, lx_gc_info* gc)
 {
-    lx_object_table* env_table = lx_create_object_env_table();
-    lx_object_table_replace_s(env_table, "_E", 2, CAST_O env_table); // store `_E` to itself
+    lx_object_table* env_table = lx_create_object_env_table(gc);
+    lx_object_table_replace_s(env_table, "_E", 2, CAST_O env_table, gc); // store `_E` to itself
 
-    lx_meta_element_set(env_table, "_father_env", CAST_O _father_env);
+    lx_meta_element_set(env_table, "_father_env", CAST_O _father_env, gc);
     return env_table;
 }
-lx_object_table* lx_create_env_table_with_inside_function()
+lx_object_table* lx_create_env_table_with_inside_function(lx_gc_info* gc)
 {
-    lx_object_table* env_table = lx_create_object_env_table();
+    lx_object_table* env_table = lx_create_object_env_table(gc);
     // inside functions
-    lx_object_table_replace_s(env_table, "typeof", 6, CAST_O lx_create_object_function_p(_typeof, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "meta_table", 10, CAST_O lx_create_object_function_p(_meta_table, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "set_meta_table", 14, CAST_O lx_create_object_function_p(_set_meta_table, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "table_get", 9, CAST_O lx_create_object_function_p(_table_get, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "table_set", 9, CAST_O lx_create_object_function_p(_table_set, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "new_table", 9, CAST_O lx_create_object_function_p(_new_table, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "pcall", 5, CAST_O lx_create_object_function_p(_pcall, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "throw", 5, CAST_O lx_create_object_function_p(_throw, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "collectgarbage", 14, CAST_O lx_create_object_function_p(_collectgarbage, lx_create_object_env_table()));
+    lx_object_table_replace_s(env_table, "typeof", 6, CAST_O lx_create_object_function_p(_typeof, lx_create_object_env_table(gc)), gc);
+    lx_object_table_replace_s(env_table, "meta_table", 10, CAST_O lx_create_object_function_p(_meta_table, lx_create_object_env_table(gc)), gc);
+    lx_object_table_replace_s(env_table, "set_meta_table", 14, CAST_O lx_create_object_function_p(_set_meta_table, lx_create_object_env_table(gc)), gc);
+    lx_object_table_replace_s(env_table, "table_get", 9, CAST_O lx_create_object_function_p(_table_get, lx_create_object_env_table(gc)), gc);
+    lx_object_table_replace_s(env_table, "table_set", 9, CAST_O lx_create_object_function_p(_table_set, lx_create_object_env_table(gc)), gc);
+    lx_object_table_replace_s(env_table, "new_table", 9, CAST_O lx_create_object_function_p(_new_table, lx_create_object_env_table(gc)), gc);
+    lx_object_table_replace_s(env_table, "pcall", 5, CAST_O lx_create_object_function_p(_pcall, lx_create_object_env_table(gc)), gc);
+    lx_object_table_replace_s(env_table, "throw", 5, CAST_O lx_create_object_function_p(_throw, lx_create_object_env_table(gc)), gc);
+    lx_object_table_replace_s(env_table, "collectgarbage", 14, CAST_O lx_create_object_function_p(_collectgarbage, lx_create_object_env_table(gc)), gc);
 
     // template debug functions
-    lx_object_table_replace_s(env_table, "print", 5, CAST_O lx_create_object_function_p(_print, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "dump_stack", 10, CAST_O lx_create_object_function_p(_dump_stack, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "emit_VS_breakpoint", 18, CAST_O lx_create_object_function_p(_emit_VS_breakpoint, lx_create_object_env_table()));
-    lx_object_table_replace_s(env_table, "show_gc_info", 18, CAST_O lx_create_object_function_p(_show_gc_info, lx_create_object_env_table()));
+    lx_object_table_replace_s(env_table, "print", 5, CAST_O lx_create_object_function_p(_print, lx_create_object_env_table(gc)), gc);
+    lx_object_table_replace_s(env_table, "dump_stack", 10, CAST_O lx_create_object_function_p(_dump_stack, lx_create_object_env_table(gc)), gc);
+    lx_object_table_replace_s(env_table, "emit_VS_breakpoint", 18, CAST_O lx_create_object_function_p(_emit_VS_breakpoint, lx_create_object_env_table(gc)), gc);
+    lx_object_table_replace_s(env_table, "show_gc_info", 18, CAST_O lx_create_object_function_p(_show_gc_info, lx_create_object_env_table(gc)), gc);
 
     return env_table;
 }
@@ -142,29 +143,34 @@ void lx_delete_object_table(lx_object_table* tab)
     _object_table_kv *current, *tmp;
 
     HASH_ITER(hh, tab->keyvalue_map, current, tmp) {
+#if LX_DEBUG
+        current->key = NULL;
+        current->value = NULL;
+#endif
         HASH_DEL(tab->keyvalue_map, current);  /* delete it (users advances to next) */
-        lx_free(current);             /* free it */ // todo?
+        lx_free(current->hash_key);
+        lx_free(current);
     }
     lx_free(tab);
 }
-lx_object_table* lx_create_default_meta_table()
+lx_object_table* lx_create_default_meta_table(lx_gc_info* gc)
 {
     lx_object_table* default_meta_table = lx_create_object_table_raw();
-    lx_object_table_replace_s(default_meta_table, "_get", 4, CAST_O lx_create_object_function_p(default_meta_func__get, CAST_T LX_OBJECT_nil()));
-    lx_object_table_replace_s(default_meta_table, "_set", 4, CAST_O lx_create_object_function_p(default_meta_func__set, CAST_T LX_OBJECT_nil()));
-    lx_object_table_replace_s(default_meta_table, "_call", 5, CAST_O lx_create_object_function_p(default_meta_func__call, CAST_T LX_OBJECT_nil()));
-    lx_object_table_replace_s(default_meta_table, "_delete", 7, CAST_O lx_create_object_function_p(default_meta_func__delete, CAST_T LX_OBJECT_nil()));
+    lx_object_table_replace_s(default_meta_table, "_get", 4, CAST_O lx_create_object_function_p(default_meta_func__get, CAST_T LX_OBJECT_nil()), gc);
+    lx_object_table_replace_s(default_meta_table, "_set", 4, CAST_O lx_create_object_function_p(default_meta_func__set, CAST_T LX_OBJECT_nil()), gc);
+    lx_object_table_replace_s(default_meta_table, "_call", 5, CAST_O lx_create_object_function_p(default_meta_func__call, CAST_T LX_OBJECT_nil()), gc);
+    lx_object_table_replace_s(default_meta_table, "_delete", 7, CAST_O lx_create_object_function_p(default_meta_func__delete, CAST_T LX_OBJECT_nil()), gc);
     return default_meta_table;
 }
-lx_object_table* lx_create_default_env_meta_table()
+lx_object_table* lx_create_default_env_meta_table(lx_gc_info* gc)
 {
     lx_object_table* default_env_meta_table = lx_create_object_table_raw();
-    lx_object_table_replace_s(default_env_meta_table, "_get", 4, CAST_O lx_create_object_function_p(default_env_meta_func__get, CAST_T LX_OBJECT_nil()));
-    lx_object_table_replace_s(default_env_meta_table, "_set", 4, CAST_O lx_create_object_function_p(default_env_meta_func__set, CAST_T LX_OBJECT_nil()));
-    lx_object_table_replace_s(default_env_meta_table, "_call", 5, CAST_O lx_create_object_function_p(default_env_meta_func__call, CAST_T LX_OBJECT_nil()));
-    lx_object_table_replace_s(default_env_meta_table, "_delete", 7, CAST_O lx_create_object_function_p(default_env_meta_func__delete, CAST_T LX_OBJECT_nil()));
+    lx_object_table_replace_s(default_env_meta_table, "_get", 4, CAST_O lx_create_object_function_p(default_env_meta_func__get, CAST_T LX_OBJECT_nil()), gc);
+    lx_object_table_replace_s(default_env_meta_table, "_set", 4, CAST_O lx_create_object_function_p(default_env_meta_func__set, CAST_T LX_OBJECT_nil()), gc);
+    lx_object_table_replace_s(default_env_meta_table, "_call", 5, CAST_O lx_create_object_function_p(default_env_meta_func__call, CAST_T LX_OBJECT_nil()), gc);
+    lx_object_table_replace_s(default_env_meta_table, "_delete", 7, CAST_O lx_create_object_function_p(default_env_meta_func__delete, CAST_T LX_OBJECT_nil()), gc);
     // .._find(tab, "_father_env") return NULL
-    lx_object_table_replace_s(default_env_meta_table, "_father_env", 11, LX_OBJECT_nil() /* LX_OBJECT_ENV_TABLE_empty() */);
+    lx_object_table_replace_s(default_env_meta_table, "_father_env", 11, LX_OBJECT_nil() /* LX_OBJECT_ENV_TABLE_empty() */, gc);
     return default_env_meta_table;
 }
 
@@ -212,17 +218,17 @@ lx_object* lx_meta_element_get(lx_object_table* tab, const char* str)
 {
     return lx_object_table_find_s(lx_object_table_get_meta_table(tab), str, strlen(str))->value;
 }
-void lx_meta_element_set(lx_object_table* tab, const char* str, lx_object* _element)
+void lx_meta_element_set(lx_object_table* tab, const char* str, lx_object* _element, lx_gc_info* gc)
 {
-    lx_object_table_replace_s(lx_object_table_get_meta_table(tab), str, strlen(str), _element);
+    lx_object_table_replace_s(lx_object_table_get_meta_table(tab), str, strlen(str), _element, gc);
 }
 lx_object_function* lx_meta_function_get(lx_object_table* tab, const char* str)
 {
     return CAST_F lx_object_table_find_s(lx_object_table_get_meta_table(tab), str, strlen(str))->value;
 }
-void lx_meta_function_set(lx_object_table* tab, const char* str, lx_object_function* _functor)
+void lx_meta_function_set(lx_object_table* tab, const char* str, lx_object_function* _functor, lx_gc_info* gc)
 {
-    lx_object_table_replace_s(lx_object_table_get_meta_table(tab), str, strlen(str), CAST_O _functor);
+    lx_object_table_replace_s(lx_object_table_get_meta_table(tab), str, strlen(str), CAST_O _functor, gc);
 }
 
 _object_table_kv* lx_object_table_find(lx_object_table* tab, lx_object* k)
@@ -248,17 +254,17 @@ _object_table_kv* lx_object_table_always_found(lx_object_table* tab, lx_object* 
 {
     _object_table_kv* kv = lx_object_table_find(tab, k);
     if (kv == NULL) {
-        //lx_object_table_replace(tab, k, &LX_OBJECT_nil);
         char id[LX_CONFIG_IDENTIFIER_MAX_LENGTH + 1];
         lx_object_get_id(k, id);
         int id_len = strlen(id);
 
         kv = LX_NEW(_object_table_kv);
-        kv->key = lx_malloc(id_len + 1);
-        memcpy(kv->key, id, id_len + 1);
+        kv->hash_key = lx_malloc(id_len + 1);
+        memcpy(kv->hash_key, id, id_len + 1);
+        kv->key = k;
         kv->value = LX_OBJECT_nil();
 
-        HASH_ADD_KEYPTR(hh, tab->keyvalue_map, kv->key, id_len, kv);
+        HASH_ADD_KEYPTR(hh, tab->keyvalue_map, kv->hash_key, id_len, kv);
     }
     return kv;
 }
@@ -276,32 +282,30 @@ lx_object* lx_object_table_replace(lx_object_table* tab, lx_object* k, lx_object
     HASH_FIND_STR(tab->keyvalue_map, id, result);
     if (result) {
         HASH_DEL(tab->keyvalue_map, result);
-        if (id_len > strlen(result->key)) {
-            lx_free(result->key);
-            result->key = lx_malloc(id_len + 1);
+        if (id_len > strlen(result->hash_key)) {
+            lx_free(result->hash_key);
+            result->hash_key = lx_malloc(id_len + 1);
         }
         kv = result;
         old = result->value;
     } else {
         old = LX_OBJECT_nil(); // no old
         kv = LX_NEW(_object_table_kv);
-        kv->key = lx_malloc(id_len + 1);
+        kv->hash_key = lx_malloc(id_len + 1);
     }
-    memcpy(kv->key, id, id_len + 1);
+    memcpy(kv->hash_key, id, id_len + 1);
     kv->value = v;
+    kv->key = k;
 
-    HASH_ADD_KEYPTR(hh, tab->keyvalue_map, kv->key, id_len, kv);
+    HASH_ADD_KEYPTR(hh, tab->keyvalue_map, kv->hash_key, id_len, kv);
     return old;
 }
-lx_object* lx_object_table_replace_s(lx_object_table* tab, const char* text, int text_len, lx_object* v)
+lx_object* lx_object_table_replace_s(lx_object_table* tab, const char* text, int text_len, lx_object* v, lx_gc_info* gc)
 {
     if (text_len == -1)
         text_len = strlen(text);
-    lx_object_string key;
-    key.base.type = LX_OBJECT_STRING;
-    key.text = text;
-    key.text_len = text_len;
-    return lx_object_table_replace(tab, CAST_O &key, v);
+    lx_object_string* key = lx_create_object_string_s(text, text_len);
+    return lx_object_table_replace(tab, managed_with_gc(gc, CAST_O key), v);
 }
 
 lx_object_string* lx_create_object_string_s(const char * text, int text_len)
@@ -425,12 +429,12 @@ static void lx_dump_object_table(lx_object_table* tab, FILE* fp, const char* lin
     char tem[1024];
     _object_table_kv *current, *tmp;
     HASH_ITER(hh, tab->keyvalue_map, current, tmp) {
-        fprintf(fp, "%s|- %s: ", line_before, current->key);
+        fprintf(fp, "%s|- %s: ", line_before, current->hash_key);
         if (current->value->type == LX_OBJECT_TABLE) {
             if (current->value == CAST_O tab) {
                 fprintf(fp, "<SELF> table(%p)\n", current->value);
             } else {
-                int i = strlen(current->key);
+                int i = strlen(current->hash_key);
                 tem[i] = '\0';
                 for (--i; i >= 0; --i) {
                     tem[i] = ' ';
@@ -557,10 +561,12 @@ void lx_delete_object_by_type(lx_object* obj)
     }
 }
 
-lx_gc_info* lx_create_gc_info()
+lx_gc_info* lx_create_gc_info(lx_object_stack* runtime_stack, lx_object_stack* call_stack)
 {
     lx_gc_info* gc = LX_NEW(lx_gc_info);
     gc->arr = lx_create_object_stack(32);
+    gc->runtime_stack = runtime_stack;
+    gc->call_stack = call_stack;
     return gc;
 }
 void lx_delete_gc_info(lx_gc_info* gc)
@@ -573,15 +579,36 @@ lx_object* managed_with_gc(lx_gc_info* gc, lx_object* obj)
     obj->marked = false;
     return lx_object_stack_push(gc->arr, obj);
 }
-void lx_gc_collect(lx_object_stack* call_stack, lx_gc_info* gc)
+static void mark_object(lx_object* obj)
 {
-    /* mark */
-    for (int i = 0; i <= call_stack->curr; ++i) {
-        lx_object_table* env = CAST_T call_stack->arr[i];
+    if (obj->type == LX_OBJECT_TABLE) {
+        lx_object_table* tab = CAST_T obj;
         _object_table_kv *current, *tmp;
-        HASH_ITER(hh, env->keyvalue_map, current, tmp) {
+        HASH_ITER(hh, tab->keyvalue_map, current, tmp) {
+            if (current->key->type == LX_OBJECT_TABLE && current->key->marked == false && current->key != CAST_O tab)
+                mark_object(current->key);
+            current->key->marked = true;
+            if(current->value->type == LX_OBJECT_TABLE && current->value->marked == false && current->value != CAST_O tab)
+                mark_object(current->value);
             current->value->marked = true;
         }
+    } else {
+        obj->marked = true;
+    }
+}
+void lx_gc_collect(lx_gc_info* gc)
+{
+    /* mark */
+    for (int i = 0; i <= gc->call_stack->curr; ++i) {
+        lx_object_table* env = CAST_T gc->call_stack->arr[i];
+        _object_table_kv *current, *tmp;
+        HASH_ITER(hh, env->keyvalue_map, current, tmp) {
+            mark_object(current->key);
+            mark_object(current->value);
+        }
+    }
+    for (int i = 0; i <= gc->runtime_stack->curr; ++i) {
+        mark_object(gc->runtime_stack->arr[i]);
     }
     /* sweep */
     lx_object_stack* new_objs = lx_create_object_stack(32);

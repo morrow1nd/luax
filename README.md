@@ -9,18 +9,6 @@
  Luax is distributed in source code, which contains the bytecode generator, luax virtual machine, standard library, a standalone executable interpreter, a syntax-standardlization tool, and full documentation.
 
 
-# Features
-
-The luax programming language itself:
- + easy-to-learn: [5-minites-tour](./doc/5-minites-tour.md)
- + powerful data description constructs
-
-The C achieve of luax:
- + lightwight arch: [source code structure](./doc/source_code_structure.md)
- + using subset of c++ and c
- + full-commented
-
-
 # Documentation
 
 ## For Language User
@@ -32,6 +20,18 @@ The C achieve of luax:
 ## For Language Hacker
 
  + [Luax Design Document](./doc/luax_design_document.md)
+
+
+# Features
+
+The luax programming language itself:
+ + easy-to-learn: [5-minites-tour](./doc/5-minites-tour.md)
+ + powerful data description constructs
+
+The C achieve of luax:
+ + lightwight arch: [source code structure](./doc/source_code_structure.md)
+ + using subset of c++ and c
+ + full-commented
 
 
 # Build
