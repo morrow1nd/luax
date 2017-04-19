@@ -433,23 +433,43 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
 
         case OP_BREAK: {
             int f = i;
+            int count = 1;
             for (; f < ops->size; ++f) {
-                if(ops->arr[f]->type == OP_LABEL_WHILE_END || ops->arr[f]->type == OP_LABEL_FOR_END)
-                    break;
+                if (ops->arr[f]->type == OP_LABEL_WHILE_BEGIN)
+                    count++;
+                if (ops->arr[f]->type == OP_LABEL_WHILE_END) {
+                    count--;
+                    if(count == 0)
+                        break;
+                }
             }
             if (f < ops->size) {
-                i = f - 1;
+                i = f;
                 continue;
-            } else {
+            } else
                 lx_throw_s(vm, "VM ERROR: can't find a while_end or for_end to break");
+            continue;
+        }
+        case OP_CONTINUE: {
+            int f = i;
+            int count = 1;
+            for (; f >= 0; --f) {
+                if (ops->arr[f]->type == OP_LABEL_WHILE_END)
+                    count++;
+                if (ops->arr[f]->type == OP_LABEL_WHILE_BEGIN) {
+                    count--;
+                    if(count == 0)
+                        break;
+                }
             }
+            if (f >= 0) {
+                i = f;
+                continue;
+            }else
+                lx_throw_s(vm, "VM ERROR: can't find a while_begin or for_body to continue");
             continue;
         }
-        case OP_CONTINUE: {// todo
-            
-            continue;
-        }
-        case OP_CALL: {// todo
+        case OP_CALL: {
             int tagi = stack->curr;
             while (tagi >= 0 && stack->arr[tagi]->type != LX_OBJECT_TAG) {
                 tagi--;
