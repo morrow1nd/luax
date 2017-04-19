@@ -617,7 +617,9 @@ LX_CALLBACK_DECLARE1(suffix_expr, single_expr)
 LX_CALLBACK_DECLARE3(single_expr, SL, expr, SR)
 {
     debuglog("single_expr  ->  SL expr SR");
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_function_return_values_shift_to_1);
     move(_self, _2);
+    append(_self, __new_op(OP_FUNC_RET_VALUE_SHIFT_TO_1)); /* actually, this is not a function. Example: `a, b = (func()), 2;`, () makes sure b is assigned to 2 */
     FREE_SYNTAX_NODE(_3);
     FREE_SYNTAX_NODE(_2);
     FREE_SYNTAX_NODE(_1);

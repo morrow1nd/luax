@@ -55,12 +55,12 @@ typedef struct lx_object_function {
 
     lx_object_table* env_creator; // the _env table when this function was created
     lx_object_function_ptr_handle func_ptr; // achieved in C
-    lx_opcodes* func_opcodes; // achieved in luax code
+    const lx_opcodes* func_opcodes; // achieved in luax code
 } lx_object_function;
 
 lx_object_function* lx_create_object_function(lx_object_table *env_creator);
 lx_object_function* lx_create_object_function_p(lx_object_function_ptr_handle func_ptr, lx_object_table *env_creator);
-lx_object_function* lx_create_object_function_ops(lx_opcodes* func_opcodes, lx_object_table *env_creator);
+lx_object_function* lx_create_object_function_ops(const lx_opcodes* func_opcodes, lx_object_table *env_creator);
 void lx_delete_object_function(lx_object_function* obj_func);
 
 
@@ -167,6 +167,7 @@ typedef struct lx_gc_info {
 
     lx_object_stack* runtime_stack;
     lx_object_stack* call_stack;
+    lx_object_stack* always_in_mem;
 } lx_gc_info;
 
 lx_gc_info* lx_create_gc_info(lx_object_stack* runtime_stack, lx_object_stack* call_stack);

@@ -419,7 +419,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
         return -1;
     }
     lx_object_stack* stack = vm->stack;
-    lx_opcodes* ops = func_obj->func_opcodes;
+    const lx_opcodes* ops = func_obj->func_opcodes;
     for (int i = 0; i < ops->size && i >= 0; ++i) {
         switch (ops->arr[i]->type)
         {
@@ -469,14 +469,13 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             return 0; // end this luax function
         }
         case OP_FUNC_RET_VALUE_SHIFT_TO_1: {
-            lx_object *value = NULL;
-            for (lx_object* obj = lx_object_stack_pop(stack); obj->type != LX_OBJECT_TAG; obj = lx_object_stack_pop(stack)) {
-                value = obj;
-            }
-            if(value == NULL)
-                lx_object_stack_push(stack, LX_OBJECT_nil());
-            else
-                lx_object_stack_push(stack, value);
+            lx_object* value = lx_object_stack_pop(stack);
+            lx_object* obj = value;
+            for (; obj && obj->type != LX_OBJECT_TAG; obj = lx_object_stack_pop(stack))
+                ;
+            if(obj == NULL)
+                lx_throw_s(vm, "VM ERROR: can't find the tag of OP...SHIFT_TO_1");
+            lx_object_stack_push(stack, value->type == LX_OBJECT_TAG ? LX_OBJECT_nil() : value);
             continue;
         }
         case OP_JMP: { // todo: consider env push and pop
@@ -1020,11 +1019,13 @@ int lx_vm_run (lx_vm* vm, lx_object_function* func_obj, lx_object** exception)
         vm->curr_jmp_buf = &_jmp;
         lx_object_table* _env = CAST_T managed_with_gc(vm->gc, CAST_O lx_create_object_env_table_with_father_env(func_obj->env_creator, vm->gc));
         lx_object_stack_push(vm->call_stack, CAST_O _env);
+        lx_object_stack_push(vm->gc->always_in_mem, CAST_O func_obj);
         ret = _vm_run_opcodes(vm, func_obj, _env);
     } else {
         *exception = lx_object_stack_pop(vm->stack);
         ret = res;
     }
+    lx_object_stack_pop(vm->gc->always_in_mem);
     lx_object_stack_pop(vm->call_stack);
     lx_gc_collect(vm->gc);
 

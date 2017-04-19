@@ -69,7 +69,7 @@ lx_object_function* lx_create_object_function_p(lx_object_function_ptr_handle fu
     ret->func_opcodes = NULL;
     return ret;
 }
-lx_object_function* lx_create_object_function_ops(lx_opcodes* func_opcodes, lx_object_table* env_creator)
+lx_object_function* lx_create_object_function_ops(const lx_opcodes* func_opcodes, lx_object_table* env_creator)
 {
     lx_object_function* ret = lx_create_object_function(env_creator);
     ret->func_opcodes = func_opcodes;
@@ -565,6 +565,7 @@ lx_gc_info* lx_create_gc_info(lx_object_stack* runtime_stack, lx_object_stack* c
 {
     lx_gc_info* gc = LX_NEW(lx_gc_info);
     gc->arr = lx_create_object_stack(32);
+    gc->always_in_mem = lx_create_object_stack(16);
     gc->runtime_stack = runtime_stack;
     gc->call_stack = call_stack;
     return gc;
@@ -572,6 +573,7 @@ lx_gc_info* lx_create_gc_info(lx_object_stack* runtime_stack, lx_object_stack* c
 void lx_delete_gc_info(lx_gc_info* gc)
 {
     lx_delete_object_stack(gc->arr);
+    lx_delete_object_stack(gc->always_in_mem);
     lx_free(gc);
 }
 lx_object* managed_with_gc(lx_gc_info* gc, lx_object* obj)
@@ -592,24 +594,20 @@ static void mark_object(lx_object* obj)
                 mark_object(current->value);
             current->value->marked = true;
         }
-    } else {
-        obj->marked = true;
+    } else if(obj->type == LX_OBJECT_FUNCTION){
+        mark_object(CAST_O ((lx_object_function*)obj)->env_creator);
     }
+    obj->marked = true;
 }
 void lx_gc_collect(lx_gc_info* gc)
 {
     /* mark */
-    for (int i = 0; i <= gc->call_stack->curr; ++i) {
-        lx_object_table* env = CAST_T gc->call_stack->arr[i];
-        _object_table_kv *current, *tmp;
-        HASH_ITER(hh, env->keyvalue_map, current, tmp) {
-            mark_object(current->key);
-            mark_object(current->value);
-        }
-    }
-    for (int i = 0; i <= gc->runtime_stack->curr; ++i) {
+    for (int i = 0; i <= gc->call_stack->curr; ++i)
+        mark_object(gc->call_stack->arr[i]);
+    for (int i = 0; i <= gc->runtime_stack->curr; ++i)
         mark_object(gc->runtime_stack->arr[i]);
-    }
+    for (int i = 0; i <= gc->always_in_mem->curr; ++i)
+        mark_object(gc->always_in_mem->arr[i]);
     /* sweep */
     lx_object_stack* new_objs = lx_create_object_stack(32);
     lx_object_stack* objs = gc->arr;

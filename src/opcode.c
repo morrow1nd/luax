@@ -171,7 +171,7 @@ const char* lx_opcode_expr_info_to_string(int type)
     }
 }
 
-void lx_helper_dump_opcode(lx_opcodes* ops, FILE* fp)
+void lx_helper_dump_opcode(const lx_opcodes* ops, FILE* fp)
 {
     char tem[1024];
     char tem2[1024];
