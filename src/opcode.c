@@ -25,7 +25,7 @@ const char* lx_opcode_type_to_string(unsigned char type)
     case OP_CONTINUE: return "continue";
     case OP_CALL: return "call";
     case OP_RETURN: return "return";
-    case OP_FUNC_RET_VALUE_SHIFT_TO_1: return "func_ret_value_shift_to_1";
+    case OP_VALUES_SHIFT_TO_1: return "values_shift_to_1";
     case OP_JMP: return "jmp";
     case OP_JZ: return "jz";
 
@@ -96,7 +96,7 @@ const char* lx_opcode_to_string(lx_opcode_x* op, char* str)
     case OP_CONTINUE: return "continue";
     case OP_CALL: return "call";
     case OP_RETURN: return "return";
-    case OP_FUNC_RET_VALUE_SHIFT_TO_1: return "func_ret_value_shift_to_1";
+    case OP_VALUES_SHIFT_TO_1: return "values_shift_to_1";
     case OP_JMP: sprintf(str, "jmp %d", op->inumber); return str;
     case OP_JZ: sprintf(str, "jz %d", op->inumber); return str;
 
@@ -156,7 +156,6 @@ const char* lx_opcode_expr_info_to_string(int type)
 {
     switch ((enum LX_OP_EXTRA_INFO)type) {
     case OPINFO_tag_for_expr_stmt: return "expr_stmt";
-    //case OPINFO_tag_for_function_define_argc_end: return "func define argc";
     case OPINFO_tag_for_function_call_argc: return "func call argc";
     case OPINFO_tag_for_function_call_argc_empty: return "func call argc(empty)";
     case OPINFO_tag_for_assign_stmt_lvalue: return "assign_stmt lvalue";
@@ -166,7 +165,7 @@ const char* lx_opcode_expr_info_to_string(int type)
     case OPINFO_tag_for_local_declare: return "local declare";
     case OPINFO_tag_for_local_declare_with_init: return "local declare(init part)";
     case OPINFO_tag_for_table_index_ML_expr_MR: return "`tab[expr]`: label for table index";
-    case OPINFO_tag_for_function_return_values_shift_to_1: return "shift func ret value to one value";
+    case OPINFO_tag_for_values_shift_to_1: return "shift values to one value";
     default: assert(false); return "lx_opcode_expr_info_to_string error";
     }
 }
@@ -179,7 +178,7 @@ void lx_helper_dump_opcode(const lx_opcodes* ops, FILE* fp)
     for (int i = 0; i < ops->size; ++i) {
         tem[0] = '\0';
         if (!lx_opcode_is_label(ops->arr[i]->type))
-            sprintf(tem, "    "); // use 4 spaces to replace \t
+            sprintf(tem, "    ");
         sprintf(tem + strlen(tem), "%s", lx_opcode_to_string((lx_opcode_x*)(ops->arr[i]), tem2));
         if (ops->arr[i]->extra_info != -1) {
             if (strlen(tem) < 40) {

@@ -10,7 +10,11 @@ extern int lx_call_lx_free_number;
 #if LX_MALLOC_STATISTICS
 extern int lx_memory_usage; /* byte */
 extern int lx_memory_max_usage;
+extern int lx_memory_malloc_times;
+extern int lx_memory_free_times;
+void lx_dump_memory_usage();
 #endif
+
 
 void * lx_malloc(size_t len);
 void lx_free(void * ptr);

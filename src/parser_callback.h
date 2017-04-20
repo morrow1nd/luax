@@ -15,7 +15,7 @@
 
 enum lx_syntax_node_tag
 {
-    lx_syntax_node_tag__end
+    lx_syntax_node_tag__end = 1
 };
 
 struct opcode_list;
@@ -31,13 +31,20 @@ typedef struct lx_syntax_node
 /* helper function for init lx_syntax_node */
 void lx_syntax_node_init(lx_syntax_node* n);
 
-// generate the final bytecode
-lx_opcodes* genBytecode(lx_syntax_node* root);
+/* generate the final bytecode */
+lx_opcodes* gen_opcodes(lx_syntax_node* root);
+void delete_opcodes(lx_opcodes* ops);
 
 typedef void ret;
 typedef lx_syntax_node* par;
 struct lx_parser;
 
+/*
+** generate the callback function's name.
+** Example:
+**   LX_CALLBACK_FUNCTION_NAME1(stmt, if_stmt) would generates:
+**   lx_callback_function__stmt__to__if_stmt
+*/
 #define LX_CALLBACK_FUNCTION_NAME1(self_name, _1_name)           lx_callback_function__##self_name##__to__##_1_name
 #define LX_CALLBACK_FUNCTION_NAME2(self_name, _1_name, _2_name)           lx_callback_function__##self_name##__to__##_1_name##__##_2_name
 #define LX_CALLBACK_FUNCTION_NAME3(self_name, _1_name, _2_name, _3_name)           lx_callback_function__##self_name##__to__##_1_name##__##_2_name##__##_3_name
@@ -47,7 +54,12 @@ struct lx_parser;
 #define LX_CALLBACK_FUNCTION_NAME7(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name)           lx_callback_function__##self_name##__to__##_1_name##__##_2_name##__##_3_name##__##_4_name##__##_5_name##__##_6_name##__##_7_name
 #define LX_CALLBACK_FUNCTION_NAME9(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name, _8_name, _9_name)           lx_callback_function__##self_name##__to__##_1_name##__##_2_name##__##_3_name##__##_4_name##__##_5_name##__##_6_name##__##_7_name##__##_8_name##__##_9_name
 
-
+/*
+** generate the callback function's declaration.
+** Example:
+**   LX_CALLBACK_DECLARE1(stmt, if_stmt) would generates:
+**   ret lx_callback_function__stmt__to__if_stmt(lx_parser* p, par _self, par _1)
+*/
 #define LX_CALLBACK_DECLARE1(self_name, _1_name)           ret LX_CALLBACK_FUNCTION_NAME1(self_name, _1_name)(lx_parser * p, par _self, par _1)
 #define LX_CALLBACK_DECLARE2(self_name, _1_name, _2_name)           ret LX_CALLBACK_FUNCTION_NAME2(self_name, _1_name, _2_name)(lx_parser * p, par _self, par _1, par _2)
 #define LX_CALLBACK_DECLARE3(self_name, _1_name, _2_name, _3_name)           ret LX_CALLBACK_FUNCTION_NAME3(self_name, _1_name, _2_name, _3_name)(lx_parser * p, par _self, par _1, par _2, par _3)
@@ -57,7 +69,12 @@ struct lx_parser;
 #define LX_CALLBACK_DECLARE7(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name)           ret LX_CALLBACK_FUNCTION_NAME7(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name)(lx_parser * p, par _self, par _1, par _2, par _3, par _4, par _5, par _6, par _7)
 #define LX_CALLBACK_DECLARE9(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name, _8_name, _9_name)           ret LX_CALLBACK_FUNCTION_NAME9(self_name, _1_name, _2_name, _3_name, _4_name, _5_name, _6_name, _7_name, _8_name, _9_name)(lx_parser * p, par _self, par _1, par _2, par _3, par _4, par _5, par _6, par _7, par _8, par _9)
 
-
+/*
+** call the callback function.
+** Example:
+**   LX_CALLBACK_CALL1(stmt, if_stmt, self_node, if_stmt_node) would generates:
+**   lx_callback_function__stmt__to__if_stmt(p, self_node, if_stmt_node)
+*/
 #define LX_CALLBACK_CALL1(self_name, _1_name, ...)           LX_CALLBACK_FUNCTION_NAME1(self_name, _1_name)(p, __VA_ARGS__)
 #define LX_CALLBACK_CALL2(self_name, _1_name, _2_name, ...)           LX_CALLBACK_FUNCTION_NAME2(self_name, _1_name, _2_name)(p, __VA_ARGS__)
 #define LX_CALLBACK_CALL3(self_name, _1_name, _2_name, _3_name, ...)           LX_CALLBACK_FUNCTION_NAME3(self_name, _1_name, _2_name, _3_name)(p, __VA_ARGS__)

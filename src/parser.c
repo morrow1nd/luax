@@ -63,7 +63,7 @@ void lx_delete_token_scanner(lx_token_scanner * s)
     for (int i = 0; i < s->token_number; ++i) {
         lx_free(s->tokens[i]);
     }
-    lx_free(s->tokens);
+    if(s->tokens) lx_free(s->tokens);
     lx_free(s);
 }
 
@@ -469,9 +469,9 @@ int lx_token_scanner_get_curr_state(lx_token_scanner *s)
 {
     return s->curr;
 }
-/**
- * return: the state before apply this new state.
- */
+/*
+** return: the state before apply this new state.
+*/
 int lx_token_scanner_recover_state(lx_token_scanner *s, int new_state) {
     if (new_state < -1){
         assert(false && "new_statem must >= -1");
@@ -546,7 +546,7 @@ static int lx_parser_begin(lx_parser * p, lx_parser *parser)
 
 }
 
-lx_parser* lx_genBytecode(const char* _source_code, const int source_code_length)
+lx_parser* lx_gen_opcodes(const char* _source_code, const int source_code_length)
 {
     char * source_code = (char*)lx_malloc(source_code_length + 1);
     memcpy(source_code, _source_code, source_code_length);
@@ -558,6 +558,7 @@ lx_parser* lx_genBytecode(const char* _source_code, const int source_code_length
         return NULL;
     }
     lx_parser* p = LX_NEW(lx_parser);
+    p->opcodes = NULL;
 #if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
     p->stack_allocator = lx_create_stack_allocator(1024 * 4);
 #endif
@@ -566,19 +567,16 @@ lx_parser* lx_genBytecode(const char* _source_code, const int source_code_length
     int ret = compile_unit(p, compile_unit_node);
     if(p->scanner->curr != p->scanner->token_number - 1){
         lx_token* curr = lx_token_nextN(p->scanner, 1);
-        printf("Parser unfinished: stop at L%d: text_len:%d type:%d %s\n", curr->linenum, curr->text_len, curr->type, curr->text);
-        ret = -1; // todo
+        ret = -1;
     }
     if(ret != 0){
-        debuglog("compile_unit didn't return 0");
-        // todo:
         lx_token* curr = lx_token_nextN(p->scanner, 1);
         printf("Parsr Error: parser failed at L%d: text_len:%d type:%d %s\n", curr->linenum, curr->text_len, curr->type, curr->text);
         FREE_SYNTAX_NODE(compile_unit_node);
         lx_delete_parser(p);
         return NULL;
     }
-    p->opcodes = genBytecode(compile_unit_node);
+    p->opcodes = gen_opcodes(compile_unit_node);
     FREE_SYNTAX_NODE(compile_unit_node);
     return p;
 }
@@ -588,6 +586,7 @@ void lx_delete_parser(lx_parser* p)
     lx_delete_stack_allocator(p->stack_allocator);
 #endif
     lx_delete_token_scanner(p->scanner);
+    if(p->opcodes) delete_opcodes(p->opcodes);
     lx_free(p);
 }
 

@@ -7,6 +7,19 @@ int lx_call_lx_free_number = 0;
 #if LX_MALLOC_STATISTICS
 int lx_memory_usage = 0; /* byte */
 int lx_memory_max_usage = 0; /* byte */
+int lx_memory_malloc_times = 0;
+int lx_memory_free_times = 0;
+void lx_dump_memory_usage()
+{
+    printf("=== dump memory usage:\n");
+    printf("\tmemory usage: %d bytes\n", lx_memory_usage);
+    printf("\tmemory max usage: %d bytes\n", lx_memory_max_usage);
+    int sub = lx_memory_malloc_times - lx_memory_free_times;
+    if(sub >= 0)
+        printf("\tmalloc times:%d, free times:%d. (+%d)\n", lx_memory_malloc_times, lx_memory_free_times, sub);
+    else
+        printf("\tmalloc times:%d, free times:%d. (%d)\n", lx_memory_malloc_times, lx_memory_free_times, sub);
+}
 #endif
 
 
@@ -14,6 +27,7 @@ void * lx_malloc(size_t len)
 {
     int * ret = NULL;
 #if LX_MALLOC_STATISTICS
+    ++lx_memory_malloc_times;
     lx_memory_usage += len;
     if(lx_memory_usage > lx_memory_max_usage)
         lx_memory_max_usage = lx_memory_usage;
@@ -25,19 +39,22 @@ void * lx_malloc(size_t len)
 #endif
 #if(LX_PRINT_MALLOC_INFO)
     ++lx_call_lx_malloc_number;
-    printf("lx_malloc:%d %p size:%d\n", lx_call_lx_malloc_number, ret, (int)len);
+    //printf("lx_malloc:%d %p size:%d\n", lx_call_lx_malloc_number, ret, (int)len);
+    printf("lx_malloc %p\n", ret);
 #endif
     return ret;
 }
 void lx_free(void * ptr)
 {
 #if LX_MALLOC_STATISTICS
+    ++lx_memory_free_times;
     lx_memory_usage -= *((int*)ptr - 1);
     ptr = (int*)ptr - 1;
 #endif
 #if(LX_PRINT_MALLOC_INFO)
     ++lx_call_lx_free_number;
-    printf("lx_free:%d %p\n", lx_call_lx_free_number, ptr);
+    //printf("lx_free:%d %p\n", lx_call_lx_free_number, ptr);
+    printf("lx_free %p\n", ptr);
 #else
     free(ptr);
 #endif

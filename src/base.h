@@ -7,16 +7,10 @@
 #include <ctype.h> // isdigit, isalpha, isalnum
 #include <stdbool.h> // bool, false, true
 #include <assert.h> // assert
-
+# include <stdio.h> // printf, sprintf, fprintf
 
 #include "./config.h"
 #include "./gen_config.h.in"
-
-
-#if(LX_DEBUG)
-# include <stdio.h> // printf, sprintf, fprintf
-#endif
-# include <stdio.h> // todo:remove this
 
 
 #ifdef _WIN32
@@ -33,8 +27,7 @@ void debuglog(const char * one_line);
 void debuglog_l(int linenum, const char * one_line);
 void debuglog_luax_str(int text_len, char * ptr);
 
-void vm_debuglog(const char* one_line);
-
 #define UNUSED_ARGUMENT(argv) (argv)
+
 
 #endif // end of __LX_BASE__H_

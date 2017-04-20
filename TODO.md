@@ -1,10 +1,12 @@
+
+
 2017/04/18
  + [X]  [opcode] shift to one value: \(expr\)
  + [X]  [VM] continue statement
- + [ ]  [parser] if-elseif statement
+ + [ ]  [new function][parser] if-elseif statement
  + [ ]  [standard lib] next, prev(used to iterate a table's key-value)
  + [X]  [GC] collect key of a table
- + [ ]  [object] using a id to be the hash key
+ + [ ]  [object] using a id to be the hash key?
  + [ ]  [doc] luax design document
 
 2017/04/16

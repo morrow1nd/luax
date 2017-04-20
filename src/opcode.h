@@ -5,7 +5,7 @@
 
 
 enum LX_OPCODE_TYPE {
-    // label: used as aim position for `jmp`, `jz`, `break`, `continue`
+    /* label: used as aim position for `jmp`, `jz`, `break`, `continue` */
     OP_LABEL = 1,
     OP_LABEL_WHILE_BEGIN,
     OP_LABEL_WHILE_END,
@@ -22,26 +22,26 @@ enum LX_OPCODE_TYPE {
 
     OP_TAG,                         // push a tag to the stack
     OP_POP_TO_TAG,                  // pop elements from the stack, until meet the first tag, pop the tag too.
-    OP_FUNC_RET_VALUE_SHIFT_TO_1,   // shift the values of function returning to one value(ended by a tag, this tag is pushed by caller)
+    OP_VALUES_SHIFT_TO_1,           // shift the values in the runtime stack to one value(ended by a tag, this tag is pushed by caller)
                                     // if there is no value, use a nil to be the one
 
-    OP_LOCAL,                       // used to declare variable(s) in current function's local variable table.
+    OP_LOCAL,                       // used to declare variable(s) in current function's local variable table, these variables are inited to nil
     OP_LOCAL_INIT,                  // declare variable(s) and init them with some values.
-    OP_PUSH_ENV,                    // todo
+    OP_PUSH_ENV,                    // used to achieve if-while-statement's local namespace
     OP_POP_ENV,
     
     OP_PUSHC_NIL,                   // push a `nil` to the stack
-    OP_PUSHC_FALSE,                 // ... `false`
-    OP_PUSHC_TRUE,                  // ... `true`
-    OP_PUSHC_EMPTY_TABLE,           // push a empty table to the stack
+    OP_PUSHC_FALSE,                 // push a `false` to the stack
+    OP_PUSHC_TRUE,                  // push a `true` to the stack
+    OP_PUSHC_EMPTY_TABLE,           // push a new empty table to the stack, example: {}
     OP_PUSHC_STR,                   // create a string from a immediate string and push it to the stack
     OP_PUSHC_NUMBER,                // push a number to the stack
-    OP_PUSHC_TABLE,                 // todo
-    OP_FUNC_DEF_BEGIN,
-    OP_FUNC_DEF_END,
+    OP_PUSHC_TABLE,                 // push a inited table to the stack, example: { 'key1' : 123, 'subtab' : {} }
+    OP_FUNC_DEF_BEGIN,              // mark the start of a function's opcodes
+    OP_FUNC_DEF_END,                // mark the end of a function's opcodes
     OP_PUSHC_FUNC,                  // push a function to the stack
 
-    // table access
+    /* table access */
     OP_TABLE_GET,                   // push the value, got by a specify key in a table, to the stack
     OP_TABLE_SET_TKT,               // modify the stack to meet the requirement of calling `table_set(tab, key, value)`
     OP_G_TABLE_GET,                 // access variable from current environment
@@ -55,25 +55,24 @@ enum LX_OPCODE_TYPE {
     OP_MUL_ASSIGN,
     OP_DIV_ASSIGN,
 
-    OP_AND,
-    OP_OR,
-    OP_NOT,
-    OP_LESS,
-    OP_GREATER,
-    OP_LESS_EQL,
-    OP_GREATER_EQL,
-    OP_EQL_EQL,
-    OP_NOT_EQL,
-    OP_ADD,
-    OP_SUB,
-    OP_MUL,
-    OP_DIV,
-    OP_INVERST,
+    OP_AND,                         // a != nil and a.name == 'hi'
+    OP_OR,                          // a == nil or b > 2
+    OP_NOT,                         // not a == nil
+    OP_LESS,                        // a < b
+    OP_GREATER,                     // a > b
+    OP_LESS_EQL,                    // a <= b
+    OP_GREATER_EQL,                 // a >= b
+    OP_EQL_EQL,                     // a == b
+    OP_NOT_EQL,                     // a != b
+    OP_ADD,                         // a + b
+    OP_SUB,                         // a - b
+    OP_MUL,                         // a * b
+    OP_DIV,                         // a / b
+    OP_INVERST,                     // -a
 };
 
 enum LX_OP_EXTRA_INFO {
     OPINFO_tag_for_expr_stmt = 1,
-    // OPINFO_tag_for_function_define_argc_end,
     OPINFO_tag_for_function_call_argc,
     OPINFO_tag_for_function_call_argc_empty,
     OPINFO_tag_for_assign_stmt_lvalue,
@@ -83,12 +82,12 @@ enum LX_OP_EXTRA_INFO {
     OPINFO_tag_for_local_declare,
     OPINFO_tag_for_local_declare_with_init,
     OPINFO_tag_for_table_index_ML_expr_MR,
-    OPINFO_tag_for_function_return_values_shift_to_1, // this tag is used to shift the values of function returning to one value
+    OPINFO_tag_for_values_shift_to_1,
 };
 
 typedef struct lx_opcode {
     unsigned char type;
-    int extra_info; // used to store extra help info for generate bytecode with good-look comment
+    int extra_info; // stores a LX_OP_EXTRA_INFO, it's used to store extra help info for generate bytecode with good-look comment
 } lx_opcode;
 
 typedef struct lx_opcode_x {

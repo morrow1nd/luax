@@ -3,6 +3,4 @@
 
 #include "luax_api.h"
 
-lx_object_table* lx_lio_load();
-
 #endif

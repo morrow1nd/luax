@@ -1,3 +1,5 @@
+local math = require("math");
+
 local data = { 0 : 25, 1 : 56, 2 : 10, 3 : 98, 4 : 47, 5 : 65, 6 : 5, 7 : 6, 'len' : 8 };
 
 local qsort = function(data)
@@ -13,7 +15,7 @@ local qsort = function(data)
         if to - from <= 1 then
             return;
         end
-        local ki = (to - from) / 2 + from; -- key index   // here is the bug, this is float, but we need a int
+        local ki = math.int((to - from) / 2) + from; -- key index
         local l = ki - 1;
         local r = ki + 1;
         while true then
@@ -30,14 +32,16 @@ local qsort = function(data)
                 _swap(data, l, r);
             else
                 if l >= from then
+                    _swap(data, l, ki - 1);
                     _swap(data, ki, ki - 1);
-                    _swap(data, ki, l);
                     ki = ki - 1;
+                    l = l - 1;
                 else
                     if r < to then
+                        _swap(data, r, ki + 1);
                         _swap(data, ki, ki + 1);
-                        _swap(data, ki, r);
                         ki = ki + 1;
+                        r = r + 1;
                     else
                         break; -- l < to && r >= to
                     end
@@ -54,3 +58,8 @@ print(data);
 qsort(data);
 print('after sort:');
 print(data);
+local i = 0;
+while i < 8 then
+    print(data[i]);
+    i = i + 1;
+end

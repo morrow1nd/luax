@@ -45,7 +45,7 @@ int main(int argc, char * argv[])
     *(data + ret) = '\0';
     fclose(fp);
 
-    lx_parser * p = lx_genBytecode(data, ret);
+    lx_parser * p = lx_gen_opcodes(data, ret);
     lx_helper_dump_opcode(p->opcodes, stdout);
     lx_free(data);
     if (p != NULL) {

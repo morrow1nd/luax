@@ -39,13 +39,13 @@ enum lx_token_type
     LX_TOKEN_STRING_IMMEDIATE,
     LX_TOKEN_NUMBER_IMMEDIATE,
 
-    LX_TOKEN_ERROR, // error happened!
-    LX_TOKEN_NO_MORE// it can remove the check before dereferencing lx_token_next
-                    // without this, we may use this:
-                    //      if(lx_token_next(scanner) && lx_token_next(scanner)->type == LX_TOKEN_IF){
-                    //          ...
-                    //      }
-                    // but now, lx_token_next(scanner) would return LX_TOKEN_NO_MORE when next one is out of range.
+    LX_TOKEN_ERROR,  // error happened!
+    LX_TOKEN_NO_MORE // it can remove the check before dereferencing lx_token_next
+                     // without this, we may use this:
+                     //      if(lx_token_next(scanner) && lx_token_next(scanner)->type == LX_TOKEN_IF){
+                     //          ...
+                     //      }
+                     // but now, lx_token_next(scanner) would return LX_TOKEN_NO_MORE when next one is out of range.
 };
 
 typedef struct
@@ -63,7 +63,7 @@ typedef struct
     int token_number;
     lx_token **tokens;
 
-    int curr; // point to current token
+    int curr; /* point to current token */
 
     int tokens_capacity;
 
@@ -73,14 +73,15 @@ typedef struct
 
 typedef struct lx_parser
 {
-    // config before parser
     lx_token_scanner *scanner;
+#if LX_USING_STACK_ALLOCATOR_IN_PARSER
     lx_stack_allocator * stack_allocator;
+#endif
     lx_opcodes* opcodes;
 } lx_parser;
 
 
-// helper macro for create/delete syntax_node
+/* helper macro for create/delete syntax_node */
 
 #if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
 # define NEW_SYNTAX_NODE(_node) lx_syntax_node * _node = (lx_syntax_node*)lx_stack_allocator_alloc(p->stack_allocator, sizeof(lx_syntax_node)); lx_syntax_node_init(_node)
@@ -92,21 +93,16 @@ typedef struct lx_parser
     _node->token = _token
 
 #if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
-# define FREE_SYNTAX_NODE(_node) lx_stack_allocator_free(p->stack_allocator, _node)
+# define FREE_SYNTAX_NODE(_node) if(_node->opcodes) lx_free(_node->opcodes); lx_stack_allocator_free(p->stack_allocator, _node)
 #else
-# define FREE_SYNTAX_NODE(_node) lx_free(_node)
+# define FREE_SYNTAX_NODE(_node) if(_node->opcodes) lx_free(_node->opcodes); lx_free(_node)
 #endif
 
 
-//
-// Interface to generate bytecode
-//
 
-lx_parser* lx_genBytecode(const char* source_code, const int source_code_length);
+/* Interface to generate opcodes */
+lx_parser* lx_gen_opcodes(const char* source_code, const int source_code_length);
 void lx_delete_parser(lx_parser* p);
-
-// or
-//bytecode* lx_genBytecode__(const char* source_code, const int source_code_length);
 
 
 #endif // end of __LX_PARSER__H_
