@@ -1,5 +1,5 @@
 <div class="out-div" style="font-size: 16px;line-height: 40px;display: inline-block;height: 40px;padding-left: 50px;padding-right: 50px;text-align: center;border-radius: 5px;margin-left: 32px;vertical-align: top;background-color: #fff6bf;">
-    <span><b>注意</b>：同步于<a href="../../README.md" style="text-decoration: none">英文版</a></span>
+    <span><b>注意</b>：落后于<a href="../../README.md" style="text-decoration: none">英文版</a></span>
 </div>
 
 ![Open Source Love](https://badges.frapsoft.com/os/mit/mit.svg?v=102)

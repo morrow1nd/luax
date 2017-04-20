@@ -19,7 +19,7 @@
 
 ## For Language Hacker
 
- + [Luax Design Document](./doc/luax_design_document.md)
+ + [Luax Design Document](./doc/luax_design_document.md)  (Coming soon!)
 
 
 # Features
@@ -32,6 +32,35 @@ The C achieve of luax:
  + lightwight arch: [source code structure](./doc/source_code_structure.md)
  + using subset of c++ and c
  + full-commented
+
+
+# Examples
+
+```lua
+-- table: a container containing several key-values.
+local tab = { 'key' : 'value', 1 : false };
+tab.name = "I'm a table";
+tab["func"] = function() return "I can hold a function"; end; -- tab["func"] equals to tab.func
+tab[true] = "the type of my key can be a boolean";
+tab[another_table] = "or a table";
+--[[
+  luax has six kinds of type, nil, bool, number, string, table, function,
+  table's key-value can be any kind of these types.
+]]
+
+
+-- function
+local func = function(a, b) return a + b, a - b; end;
+tab.a, tab.b = func(1, 2); -- return 3, -1
+print((func(1, 2)), 2); -- 3, 2
+print(func(1, 2), 2); -- 3, -1, 2
+--[[ 
+  luax achieves closure in this way. when a function was created, 
+  it recorded it's current namespace(I call it environment), when
+  this function is called, it can access the environment in runtime. See more 
+  from the closure example from example/basic_usage.luax
+]]
+```
 
 
 # Build
