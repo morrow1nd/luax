@@ -225,6 +225,7 @@ lx_object_string* create_object_string_s(const char * _str)
 {
     int text_len = strlen(_str);
     char * text = (char*)lx_malloc(text_len + 1);
+    memcpy(text, _str, text_len);
 
     lx_object_string* str = LX_NEW(lx_object_string);
     str->base.type = LX_OBJECT_STRING;

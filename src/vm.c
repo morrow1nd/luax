@@ -1239,6 +1239,7 @@ int lx_vm_run (lx_vm* vm, lx_object_function* func_obj, lx_object** exception)
         lx_object_stack_pop(vm->gc->always_in_mem);
     } else {
         *exception = lx_object_stack_pop(vm->stack);
+        vm->stack->curr = -1; /* clean it */
         vm->gc->always_in_mem->curr = -1; /* clean it */
         lx_object_stack_push(vm->gc->always_in_mem, *exception);
         ret = res;
@@ -1268,7 +1269,7 @@ void lx_throw_s(lx_vm* vm, const char* str)
 #if LX_DEBUG && LX_VM_DEBUG
     assert(false); // only useful in Visual Studio's Debug mode
 #endif
-    lx_object* s = managed_with_gc(vm->gc, CAST_O lx_create_string_s(vm, str));
+    lx_object* s = lx_create_string_s(vm, str);
     lx_object_stack_push(vm->stack, LX_OBJECT_tag());
     lx_object_stack_push(vm->stack, LX_OBJECT_tag());
     lx_object_stack_push(vm->stack, s);
