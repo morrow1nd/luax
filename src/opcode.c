@@ -74,7 +74,7 @@ const char* lx_opcode_type_to_string(unsigned char type)
     case OP_SUB: return "sub";
     case OP_MUL: return "mul";
     case OP_DIV: return "div";
-    case OP_INVERST: return "inverst";
+    case OP_INVERSE: return "inverse";
     default:
         assert(false);
     }
@@ -145,7 +145,7 @@ const char* lx_opcode_to_string(lx_opcode_x* op, char* str)
     case OP_SUB: return "sub";
     case OP_MUL: return "mul";
     case OP_DIV: return "div";
-    case OP_INVERST: return "inverst";
+    case OP_INVERSE: return "inverse";
     default:
         assert(false);
     }

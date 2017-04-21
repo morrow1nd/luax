@@ -68,7 +68,7 @@ enum LX_OPCODE_TYPE {
     OP_SUB,                         // a - b
     OP_MUL,                         // a * b
     OP_DIV,                         // a / b
-    OP_INVERST,                     // -a
+    OP_INVERSE,                     // -a
 };
 
 enum LX_OP_EXTRA_INFO {

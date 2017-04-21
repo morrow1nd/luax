@@ -1043,6 +1043,6 @@ LX_CALLBACK_DECLARE1(multiply_op, DIV)
 LX_CALLBACK_DECLARE1(prefix_op, SUB) /* inverst operator */
 {
     debuglog("prefix_op  ->  SUB");
-    append(_self, __new_op(OP_INVERST));
+    append(_self, __new_op(OP_INVERSE));
     FREE_SYNTAX_NODE(_1);
 }

@@ -141,26 +141,134 @@ static lx_object_string Stypeof = {
 
 static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_table* _env);
 
+static bool __object_addable(lx_object* a)
+{
+    return a->type == LX_OBJECT_NUMBER || a->type == LX_OBJECT_BOOL || a->type == LX_OBJECT_STRING;
+}
+/* add two objects, return managed object */
 lx_object* _obj_add(lx_object* a, lx_object* b, lx_vm* vm)
 {
-    if (a->type == LX_OBJECT_NUMBER && b->type == LX_OBJECT_NUMBER) {
-        lx_object* out = lx_create_number(vm, LX_OBJECT_NUMBER); /* todo, add to GC */
-        out->fnumber = a->fnumber + b->fnumber;
-        return out;
+    if (!(__object_addable(a) && (__object_addable(b)))){
+        char e[64];
+        sprintf(e, "can't add a %s and a %s", lx_object_type_to_string(a->type), lx_object_type_to_string(b->type));
+        lx_throw_s(vm, e);
     }
-    // todo: add two string
-    return LX_OBJECT_nil();
+    if (a->type == LX_OBJECT_STRING) {
+        char* end = NULL;
+        float num = strtof((CAST_S a)->text, &end);
+        if(end - (CAST_S a)->text == (CAST_S a)->text_len)
+            a = lx_create_number(vm, num);
+    }
+    if (b->type == LX_OBJECT_STRING) {
+        char* end = NULL;
+        float num = strtof((CAST_S b)->text, &end);
+        if (end - (CAST_S b)->text == (CAST_S b)->text_len)
+            b = lx_create_number(vm, num);
+    }
+    if ((a->type == LX_OBJECT_NUMBER || a->type == LX_OBJECT_BOOL)
+        && (b->type == LX_OBJECT_NUMBER || b->type == LX_OBJECT_BOOL))
+        return lx_create_number(vm, a->fnumber + b->fnumber);
+    char * out = lx_malloc(32);
+    if (a->type == LX_OBJECT_STRING) {
+        lx_object_string* s = CAST_S a;
+        if (s->text_len > 31){
+            lx_free(out);
+            out = (char*)lx_malloc(32 + s->text_len);
+        }
+        memcpy(out, s->text, s->text_len);
+        *(out + s->text_len) = '\0';
+    } else {
+        sprintf(out, "%f", a->fnumber);
+    }
+    lx_object_string* res;
+    if (b->type == LX_OBJECT_STRING) {
+        lx_object_string* s = CAST_S b;
+        char * tem = (char*)lx_malloc(strlen(out) + s->text_len + 1);
+        strcpy(tem, out);
+        memcpy(tem + strlen(out), s->text, s->text_len);
+        *(tem + strlen(out) + s->text_len) = '\0';
+        res = lx_create_string_s(vm, tem);
+        lx_free(tem);
+    } else {
+        sprintf(out + strlen(out), "%f", b->fnumber);
+        res = lx_create_string_s(vm, out);
+    }
+    lx_free(out);
+    return CAST_O res;
 }
 lx_object* _obj_sub(lx_object* a, lx_object* b, lx_vm* vm)
 {
+    if (a->type == LX_OBJECT_STRING) {
+        char* end = NULL;
+        float num = strtof((CAST_S a)->text, &end);
+        if (end - (CAST_S a)->text == (CAST_S a)->text_len)
+            a = lx_create_number(vm, num);
+    }
+    if (b->type == LX_OBJECT_STRING) {
+        char* end = NULL;
+        float num = strtof((CAST_S b)->text, &end);
+        if (end - (CAST_S b)->text == (CAST_S b)->text_len)
+            b = lx_create_number(vm, num);
+    }
+    if((a->type == LX_OBJECT_BOOL || a->type == LX_OBJECT_NUMBER) 
+        && (b->type == LX_OBJECT_BOOL || b->type == LX_OBJECT_NUMBER)){
+        return lx_create_number(vm, a->fnumber - b->fnumber);
+    }else{
+        char e[64];
+        sprintf(e, "can't sub a %s and a %s", lx_object_type_to_string(a->type), lx_object_type_to_string(b->type));
+        lx_throw_s(vm, e);
+    }
     return NULL;
 }
 lx_object* _obj_mul(lx_object* a, lx_object* b, lx_vm* vm)
 {
+    if (a->type == LX_OBJECT_STRING) {
+        char* end = NULL;
+        float num = strtof((CAST_S a)->text, &end);
+        if (end - (CAST_S a)->text == (CAST_S a)->text_len)
+            a = lx_create_number(vm, num);
+    }
+    if (b->type == LX_OBJECT_STRING) {
+        char* end = NULL;
+        float num = strtof((CAST_S b)->text, &end);
+        if (end - (CAST_S b)->text == (CAST_S b)->text_len)
+            b = lx_create_number(vm, num);
+    }
+    if ((a->type == LX_OBJECT_BOOL || a->type == LX_OBJECT_NUMBER)
+        && (b->type == LX_OBJECT_BOOL || b->type == LX_OBJECT_NUMBER)) {
+        return lx_create_number(vm, a->fnumber * b->fnumber);
+    } else {
+        char e[64];
+        sprintf(e, "can't mul a %s and a %s", lx_object_type_to_string(a->type), lx_object_type_to_string(b->type));
+        lx_throw_s(vm, e);
+    }
     return NULL;
 }
 lx_object* _obj_div(lx_object* a, lx_object* b, lx_vm* vm)
 {
+    if (a->type == LX_OBJECT_STRING) {
+        char* end = NULL;
+        float num = strtof((CAST_S a)->text, &end);
+        if (end - (CAST_S a)->text == (CAST_S a)->text_len)
+            a = lx_create_number(vm, num);
+    }
+    if (b->type == LX_OBJECT_STRING) {
+        char* end = NULL;
+        float num = strtof((CAST_S b)->text, &end);
+        if (end - (CAST_S b)->text == (CAST_S b)->text_len)
+            b = lx_create_number(vm, num);
+    }
+    if ((a->type == LX_OBJECT_BOOL || a->type == LX_OBJECT_NUMBER)
+        && (b->type == LX_OBJECT_BOOL || b->type == LX_OBJECT_NUMBER)) {
+        if (b->fnumber == 0.0f) {
+            lx_throw_s(vm, "div by zero");
+        }
+        return lx_create_number(vm, a->fnumber / b->fnumber);
+    } else {
+        char e[64];
+        sprintf(e, "can't div a %s and a %s", lx_object_type_to_string(a->type), lx_object_type_to_string(b->type));
+        lx_throw_s(vm, e);
+    }
     return NULL;
 }
 
@@ -606,7 +714,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             if (f < ops_size) {
                 i = f;
                 vm->call_stack->curr -= pop_env_count;
-                _env = lx_object_stack_top(vm->call_stack);
+                _env = CAST_T lx_object_stack_top(vm->call_stack);
                 continue;
             } else
                 lx_throw_s(vm, "VM ERROR: can't find a while_end or for_end to break");
@@ -632,7 +740,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             if (f >= 0) {
                 i = f;
                 vm->call_stack->curr -= pushed_env_count;
-                _env = lx_object_stack_top(vm->call_stack);
+                _env = CAST_T lx_object_stack_top(vm->call_stack);
                 continue;
             }else
                 lx_throw_s(vm, "VM ERROR: can't find a while_begin or for_body to continue");
@@ -935,87 +1043,135 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             stack->curr = left_tkt - 1;
             continue;
         }
-        case OP_ADD_ASSIGN: { //todo
-            assert(false && " += has not been achieved");
-            //int rvalue_begin = stack->curr;
-            //int opi = rvalue_begin;
-            //while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
-            //    opi--;
-            //}
-            //int left_key_begin = opi - 1;
-            //while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
-            //    if (stack->arr[rvalue_begin]->type != LX_OBJECT_TAG) {
-            //        _op_add_assign((_object_table_kv *)(stack->arr[opi]), stack->arr[rvalue_begin]);
-            //        rvalue_begin--;
-            //    } else
-            //        _op_add_assign((_object_table_kv *)(stack->arr[opi]), &LX_OBJECT_nil);
+        case OP_ADD_ASSIGN: {
+            int rvalue = stack->curr;
+            int opi = rvalue;
+            while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
+                opi--;
+            }
+            int left_tkt = opi - 1;
+            while (left_tkt >= 0 && stack->arr[left_tkt]->type != LX_OBJECT_TAG) {
+                lx_object_stack_push(stack, LX_OBJECT_tag());
 
-            //    opi--;
-            //}
-            //stack->curr = opi - 1;
+                if (stack->arr[rvalue]->type != LX_OBJECT_TAG) // value
+                    lx_object_stack_push(stack, stack->arr[rvalue--]);
+                else
+                    lx_object_stack_push(stack, LX_OBJECT_nil());
+
+                lx_object_stack_push(stack, LX_OBJECT_tag());
+                lx_object_stack_push(stack, stack->arr[left_tkt - 1]); // key
+                lx_object_stack_push(stack, stack->arr[left_tkt]); // tab
+                _op_call(vm, CAST_O table_meta_function_get(CAST_T stack->arr[left_tkt], "_get"));
+
+                lx_object* a = lx_object_stack_pop(stack);
+                lx_object_stack_push(stack, _obj_add(a, lx_object_stack_pop(stack), vm));
+
+                lx_object_stack_push(stack, stack->arr[left_tkt - 1]); // key
+                lx_object_stack_push(stack, stack->arr[left_tkt]); // tab
+                _op_call(vm, CAST_O table_meta_function_get(CAST_T stack->arr[left_tkt], "_set"));
+
+                left_tkt -= 2;
+            }
+            stack->curr = left_tkt - 1;
             continue;
         }
-        case OP_SUB_ASSIGN: { //todo
-            assert(false && "-= has not been achieved");
-            //int rvalue_begin = stack->curr;
-            //int opi = rvalue_begin;
-            //while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
-            //    opi--;
-            //}
-            //int left_key_begin = opi - 1;
-            //while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
-            //    if (stack->arr[rvalue_begin]->type != LX_OBJECT_TAG) {
-            //        _op_sub_assign((_object_table_kv *)(stack->arr[opi]), stack->arr[rvalue_begin]);
-            //        rvalue_begin--;
-            //    } else
-            //        _op_sub_assign((_object_table_kv *)(stack->arr[opi]), &LX_OBJECT_nil);
+        case OP_SUB_ASSIGN: {
+            int rvalue = stack->curr;
+            int opi = rvalue;
+            while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
+                opi--;
+            }
+            int left_tkt = opi - 1;
+            while (left_tkt >= 0 && stack->arr[left_tkt]->type != LX_OBJECT_TAG) {
+                lx_object_stack_push(stack, LX_OBJECT_tag());
 
-            //    opi--;
-            //}
-            //stack->curr = opi - 1;
+                if (stack->arr[rvalue]->type != LX_OBJECT_TAG) // value
+                    lx_object_stack_push(stack, stack->arr[rvalue--]);
+                else
+                    lx_object_stack_push(stack, LX_OBJECT_nil());
+
+                lx_object_stack_push(stack, LX_OBJECT_tag());
+                lx_object_stack_push(stack, stack->arr[left_tkt - 1]); // key
+                lx_object_stack_push(stack, stack->arr[left_tkt]); // tab
+                _op_call(vm, CAST_O table_meta_function_get(CAST_T stack->arr[left_tkt], "_get"));
+
+                lx_object* a = lx_object_stack_pop(stack);
+                lx_object_stack_push(stack, _obj_sub(a, lx_object_stack_pop(stack), vm));
+
+                lx_object_stack_push(stack, stack->arr[left_tkt - 1]); // key
+                lx_object_stack_push(stack, stack->arr[left_tkt]); // tab
+                _op_call(vm, CAST_O table_meta_function_get(CAST_T stack->arr[left_tkt], "_set"));
+
+                left_tkt -= 2;
+            }
+            stack->curr = left_tkt - 1;
             continue;
         }
-        case OP_MUL_ASSIGN: { //todo
-            assert(false && " *= has not been achieved");
-            //int rvalue_begin = stack->curr;
-            //int opi = rvalue_begin;
-            //while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
-            //    opi--;
-            //}
-            //int left_key_begin = opi - 1;
-            //while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
-            //    if (stack->arr[rvalue_begin]->type != LX_OBJECT_TAG) {
-            //        _op_mul_assign((_object_table_kv *)(stack->arr[opi]), stack->arr[rvalue_begin]);
-            //        rvalue_begin--;
-            //    } else
-            //        _op_mul_assign((_object_table_kv *)(stack->arr[opi]), &LX_OBJECT_nil);
+        case OP_MUL_ASSIGN: {
+            int rvalue = stack->curr;
+            int opi = rvalue;
+            while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
+                opi--;
+            }
+            int left_tkt = opi - 1;
+            while (left_tkt >= 0 && stack->arr[left_tkt]->type != LX_OBJECT_TAG) {
+                lx_object_stack_push(stack, LX_OBJECT_tag());
 
-            //    opi--;
-            //}
-            //stack->curr = opi - 1;
+                if (stack->arr[rvalue]->type != LX_OBJECT_TAG) // value
+                    lx_object_stack_push(stack, stack->arr[rvalue--]);
+                else
+                    lx_object_stack_push(stack, LX_OBJECT_nil());
+
+                lx_object_stack_push(stack, LX_OBJECT_tag());
+                lx_object_stack_push(stack, stack->arr[left_tkt - 1]); // key
+                lx_object_stack_push(stack, stack->arr[left_tkt]); // tab
+                _op_call(vm, CAST_O table_meta_function_get(CAST_T stack->arr[left_tkt], "_get"));
+
+                lx_object* a = lx_object_stack_pop(stack);
+                lx_object_stack_push(stack, _obj_mul(a, lx_object_stack_pop(stack), vm));
+
+                lx_object_stack_push(stack, stack->arr[left_tkt - 1]); // key
+                lx_object_stack_push(stack, stack->arr[left_tkt]); // tab
+                _op_call(vm, CAST_O table_meta_function_get(CAST_T stack->arr[left_tkt], "_set"));
+
+                left_tkt -= 2;
+            }
+            stack->curr = left_tkt - 1;
             continue;
         }
-        case OP_DIV_ASSIGN: { //todo
-            assert(false && "/= has not been achieved");
-            //int rvalue_begin = stack->curr;
-            //int opi = rvalue_begin;
-            //while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
-            //    opi--;
-            //}
-            //int left_key_begin = opi - 1;
-            //while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
-            //    if (stack->arr[rvalue_begin]->type != LX_OBJECT_TAG) {
-            //        _op_div_assign((_object_table_kv *)(stack->arr[opi]), stack->arr[rvalue_begin]);
-            //        rvalue_begin--;
-            //    } else
-            //        _op_div_assign((_object_table_kv *)(stack->arr[opi]), &LX_OBJECT_nil);
+        case OP_DIV_ASSIGN: {
+            int rvalue = stack->curr;
+            int opi = rvalue;
+            while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
+                opi--;
+            }
+            int left_tkt = opi - 1;
+            while (left_tkt >= 0 && stack->arr[left_tkt]->type != LX_OBJECT_TAG) {
+                lx_object_stack_push(stack, LX_OBJECT_tag());
 
-            //    opi--;
-            //}
-            //stack->curr = opi - 1;
+                if (stack->arr[rvalue]->type != LX_OBJECT_TAG) // value
+                    lx_object_stack_push(stack, stack->arr[rvalue--]);
+                else
+                    lx_object_stack_push(stack, LX_OBJECT_nil());
+
+                lx_object_stack_push(stack, LX_OBJECT_tag());
+                lx_object_stack_push(stack, stack->arr[left_tkt - 1]); // key
+                lx_object_stack_push(stack, stack->arr[left_tkt]); // tab
+                _op_call(vm, CAST_O table_meta_function_get(CAST_T stack->arr[left_tkt], "_get"));
+
+                lx_object* a = lx_object_stack_pop(stack);
+                lx_object_stack_push(stack, _obj_div(a, lx_object_stack_pop(stack), vm));
+
+                lx_object_stack_push(stack, stack->arr[left_tkt - 1]); // key
+                lx_object_stack_push(stack, stack->arr[left_tkt]); // tab
+                _op_call(vm, CAST_O table_meta_function_get(CAST_T stack->arr[left_tkt], "_set"));
+
+                left_tkt -= 2;
+            }
+            stack->curr = left_tkt - 1;
             continue;
         }
-        case OP_AND: { //todo
+        case OP_AND: {
             lx_object* b = lx_object_stack_pop(stack);
             lx_object* a = lx_object_stack_pop(stack);
             if (a && b) {
@@ -1026,7 +1182,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             }
             continue;
         }
-        case OP_OR: { //todo
+        case OP_OR: {
             lx_object* b = lx_object_stack_pop(stack);
             lx_object* a = lx_object_stack_pop(stack);
             if (a && b) {
@@ -1127,9 +1283,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             lx_object* b = lx_object_stack_pop(stack);
             lx_object* a = lx_object_stack_pop(stack);
             if (a && b) {
-                lx_object* out = lx_create_number(vm, LX_OBJECT_NUMBER);
-                out->fnumber = a->fnumber - b->fnumber;
-                lx_object_stack_push(stack, out);
+                lx_object_stack_push(stack, _obj_sub(a, b, vm));
             } else {
                 lx_throw_s(vm, "VM ERROR: no item in stack");
             }
@@ -1139,9 +1293,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             lx_object* b = lx_object_stack_pop(stack);
             lx_object* a = lx_object_stack_pop(stack);
             if (a && b) {
-                lx_object* out = lx_create_number(vm, LX_OBJECT_NUMBER);
-                out->fnumber = a->fnumber * b->fnumber;
-                lx_object_stack_push(stack, out);
+                lx_object_stack_push(stack, _obj_mul(a, b, vm));
             } else {
                 lx_throw_s(vm, "VM ERROR: no item in stack");
             }
@@ -1151,27 +1303,29 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             lx_object* b = lx_object_stack_pop(stack);
             lx_object* a = lx_object_stack_pop(stack);
             if (a && b) {
-                if (b->fnumber == 0.0f) {
-                    lx_throw_s(vm, "VM ERROR: div by 0 error");
-                }
-                lx_object* out = lx_create_number(vm, LX_OBJECT_NUMBER);
-                out->fnumber = a->fnumber / b->fnumber;
-                lx_object_stack_push(stack, out);
+                lx_object_stack_push(stack, _obj_div(a, b, vm));
             } else {
                 lx_throw_s(vm, "VM ERROR: no item in stack");
             }
             continue;
         }
-        case OP_INVERST: {
+        case OP_INVERSE: {
             if (0 <= stack->curr && stack->curr < stack->capacity) {
-                stack->arr[stack->curr]->fnumber = - stack->arr[stack->curr]->fnumber;
+                lx_object* a = lx_object_stack_pop(stack);
+                if(a->type == LX_OBJECT_NUMBER)
+                    lx_object_stack_push(stack, lx_create_number(vm, - a->fnumber));
+                else {
+                    char e[64];
+                    sprintf(e, "can't inverse a %s", lx_object_type_to_string(a->type));
+                    lx_throw_s(vm, e);
+                }
             } else {
                 lx_throw_s(vm, "VM ERROR: no item in stack");
             }
             continue;
         }
         default:
-            assert(false && "VM ERROR: vm_run comes to default");
+            assert(false && "VM ERROR: _vm_run comes to default");
         }
     }
     lx_gc_collect(vm);
@@ -1301,7 +1455,11 @@ void lx_throw_s(lx_vm* vm, const char* str)
 #if LX_DEBUG && LX_VM_DEBUG
     assert(false); // only useful in Visual Studio's Debug mode
 #endif
-    lx_object* s = CAST_O lx_create_string_s(vm, str);
+    char* e = (char*) lx_malloc(strlen(str) + strlen("luax exception: ") + 1);
+    strcpy(e, "luax exception: ");
+    strcpy(e + strlen(e), str);
+    lx_object* s = CAST_O lx_create_string_s(vm, e);
+    lx_free(e);
     lx_object_stack_push(vm->stack, LX_OBJECT_tag());
     lx_object_stack_push(vm->stack, LX_OBJECT_tag());
     lx_object_stack_push(vm->stack, s);
