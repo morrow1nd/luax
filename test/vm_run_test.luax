@@ -5,7 +5,6 @@
 
 -- test `print` function
 print("luax VM test begin");
-print(no_exist_variable); -- nil
 print(); -- no output
 print(nil);
 print(true);
@@ -22,9 +21,12 @@ print({});
 print(nil, true, false, 123.456, {}, 'string');
 
 
--- variable declaration
+--[[
+  variable declaration
+]]
 local _a;
 local a, b, c;
+local i;
 a = 1;
 -- try
 --     print(a); -- 1
@@ -43,7 +45,9 @@ print(num, str, bool, nilv);
 -- end
 
 
--- function define and call
+--[[
+  function
+]]
 local func_ret_true = function() print('call func_ret_true'); return true; end;
 print(func_ret_true());
 print(func_ret_true(1, '2'));
@@ -60,17 +64,93 @@ end;
 funcRetTable().name = 'aa';
 print(funcRetTable__tab.name);
 
+-- test case 50: () shifts to one value
+local func_ret_two_value = function() return 1, 2; end;
+local a_50, b_50 = func_ret_two_value();
+print(a_50, b_50);
+a_50, b_50 = (func_ret_two_value()), 3;
+print(a_50, b_50);
 
--- operator on nil, boolean, numebr, string
+--test recursive calling
+local func_call_itself = function(a)
+    print(a);
+    if a < 0 then
+        return;
+    end
+    func_call_itself(a - 1);
+    func_call_itself(a - 2);
+end;
+func_call_itself(2);
+
+local func1_call_func2 = function(a)
+    print(a);
+    if a < 0 then
+        return;
+    end
+    func2_call_func1(a - 2);
+    func1_call_func2(a - 1);
+end;
+local func2_call_func1 = function(a)
+    print(a);
+    if a < 0 then
+        return;
+    end
+    func1_call_func2(a - 2);
+    func2_call_func1(a - 1);
+end;
+func1_call_func2(5);
+
+
+
+--[[
+  operator
+]]
 a = 1; print(a);
--- a += 1; print(a);
--- a *= 2; print(a);
--- a /= 4; print(a);
+a += 1; print(a);
+a *= 2; print(a);
+a /= 4; print(a);
 a = 1 + 5 * 6.5 * (1 - 0.986); print(a);
 bool = a == 1 and b == nil; print(bool);
 
+-- test a + b
+print(1 + 2);
+print(1 + "2"); -- 3
+print("number" + "3");
+print(33 + "number");
+print("aa" + ", bb");
+print(33 + true); -- 34
+print(33 + false); -- 33
+print("aa" + true);
+print("33" + true);
+print("123 hi" + 3);
 
--- table
+-- test a - b
+print(1 - 2);
+print(2 - 1);
+print("2" - 1);
+print(1 - "2");
+-- print(1 - "hi"); -- throw a exception
+
+-- test += -= *= /=
+a = 1;
+a += 2;
+print(a);
+a += "3";
+print(a);
+a -= "4";
+print(a);
+local b = 4;
+a *= b;
+print(b);
+print(a);
+a /= 2;
+print(a);
+a += "4 hi";
+print(a);
+
+--[[
+  table
+]]
 local tab = {'key' : "value", 'key 2' : 56, 'key3': {}, 'key4' : function (a,b)return a+b; end};
 
 local a = 1;
@@ -85,11 +165,16 @@ print(tab_key_is_nil);
 local func30 = function() end;
 local tab30 = {};
 tab30[func30()] = 'aaa';
-print(tab30);
+print(tab30[nil]); -- aaa
+-- test case 31
+local func_ret_1_2 = function() return 1, 2; end;
+local c31_tab = { 1 : 1, 2 : 2 };
+print(c31_tab[func_ret_1_2()]); -- 1
 
 
-
--- ## inside function test
+--[[
+  inside function test
+]]
 
 -- pcall throw test
 print(pcall);
@@ -98,7 +183,7 @@ local pcall_func = function(t, a, b)
     print('pcall_func return');
     return a + b;
 end;
-print(pcall(pcall_func, false, 1, 2)); -- 3
+print(pcall(pcall_func, false, 1, 2)); -- nil, 3
 print(pcall(pcall_func, true, 1, 2)); -- error
 local pcall_func2 = function(t, a, b)
     if t <= 1 then
@@ -123,3 +208,69 @@ print(pcall(pcall_func2, 0, 2, 1));
 
 local func_return_multi = function() return 1, 2; end;
 print(pcall(func_return_multi));
+
+--[[
+  if-while
+]]
+if true then
+    local a  =1;
+else
+    local b = 1;
+end
+
+if true then
+    local a = 1;
+else
+    local b = 1;
+    if true then
+        local c = 1;
+    end
+    local d = 1;
+end
+
+a = 1;
+while true then
+    local a = 2;
+    if true then
+        break;
+    else 
+        print(1);
+    end
+    local c = 2;
+end
+
+local func_call_self2 = function(a)
+    print(a);
+    if a <= 0 then
+        return;
+    end
+    local i = 0;
+    while i < 4 then
+        i = i + 1;
+    end
+    while true then
+        i = i - 1;
+        if true then
+            i = i + 1;
+            if true then
+                break;
+            end
+        end
+    end
+    func_call_self2(a - 1);
+    func_call_self2(a - 2);
+end;
+func_call_self2(3);
+
+
+i = 0;
+while i < 10 then
+    i = i + 1;
+    if i == 4 then
+        continue;
+    end
+    if i == 6 then
+        continue;
+    end
+    print(i);
+end
