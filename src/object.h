@@ -18,7 +18,7 @@ enum LX_OBJECT_TYPE {
 
 
 /* type forward declaration */
-typedef struct lx_opcodes lx_opcodes;
+typedef struct lx_opcode lx_opcode;
 typedef struct lx_object_table lx_object_table;
 typedef struct lx_object lx_object;
 typedef struct lx_vm lx_vm;
@@ -43,11 +43,12 @@ typedef struct lx_object_function {
 
     lx_object_table* env_creator; /* the environment table when this function was created */
     lx_object_function_ptr_handle func_ptr; /* achieved in C */
-    const lx_opcodes* func_opcodes; /* achieved in luax code */
+    const lx_opcode** func_opcodes; /* achieved in luax code */
+    int func_opcodes_size;
 } lx_object_function;
 
 lx_object_function* create_object_function_p(lx_object_function_ptr_handle func_ptr, lx_object_table *env_creator);
-lx_object_function* create_object_function_ops(const lx_opcodes* func_opcodes, lx_object_table *env_creator);
+lx_object_function* create_object_function_ops(const lx_opcode** func_opcodes, int func_opcodes_size, lx_object_table *env_creator);
 void delete_object_function(lx_object_function* obj_func);
 
 

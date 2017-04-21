@@ -38,7 +38,7 @@ lx_object_function* create_object_function_p(lx_object_function_ptr_handle func_
     ret->func_opcodes = NULL;
     return ret;
 }
-lx_object_function* create_object_function_ops(const lx_opcodes* func_opcodes, lx_object_table* env_creator)
+lx_object_function* create_object_function_ops(const lx_opcode** func_opcodes, int func_opcodes_size, lx_object_table* env_creator)
 {
     lx_object_function* ret = LX_NEW(lx_object_function);
     ret->base.type = LX_OBJECT_FUNCTION;
@@ -46,6 +46,7 @@ lx_object_function* create_object_function_ops(const lx_opcodes* func_opcodes, l
     ret->base.is_singleton = false;
     ret->env_creator = env_creator;
     ret->func_opcodes = func_opcodes;
+    ret->func_opcodes_size = func_opcodes_size;
     ret->func_ptr = NULL;
     return ret;
 }
@@ -319,7 +320,7 @@ const char* lx_object_to_string(lx_object* obj, char str[])
         }
         return str;
     case LX_OBJECT_STRING: {
-        lx_object_string* obj_s = (lx_object_string*)obj;
+        lx_object_string* obj_s = CAST_S obj;
         memcpy(str, obj_s->text, obj_s->text_len);
         str[obj_s->text_len] = '\0';
         return str;

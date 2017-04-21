@@ -118,7 +118,10 @@ int main(int argc, char * argv[])
             if(show_opcode)
                 lx_helper_dump_opcode(p->opcodes, stdout);
 #endif
-
+#if LX_MALLOC_STATISTICS
+            printf("## before create the VM\n");
+            lx_dump_memory_usage();
+#endif
             lx_vm* vm = lx_create_vm();
 
 #if LX_VM_DEBUG
@@ -126,7 +129,7 @@ int main(int argc, char * argv[])
 #endif
 
             // we use base_env_table now, it doesn't load any Standard lib.
-            lx_object_function* func_obj = lx_create_function_ops(vm, p->opcodes, /* env_creator */ lx_create_env_table_with_inside_function(vm));
+            lx_object_function* func_obj = lx_create_function_ops(vm, p->opcodes->arr, p->opcodes->size, /* env_creator */ lx_create_env_table_with_inside_function(vm));
 
             lx_object* exception;
             int ret = lx_vm_run(vm, func_obj, &exception);
@@ -138,6 +141,10 @@ int main(int argc, char * argv[])
             lx_dump_vm_gc_status(vm);
 #endif
             lx_delete_vm(vm);
+#if LX_MALLOC_STATISTICS
+            printf("## after delete the VM\n");
+            lx_dump_memory_usage();
+#endif
             lx_delete_parser(p);
 #if LX_MALLOC_STATISTICS
             lx_dump_memory_usage();

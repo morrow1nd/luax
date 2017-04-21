@@ -183,7 +183,12 @@ int _op_call(lx_vm* vm, lx_object* obj) // obj -> called_obj(function or table)
             lx_object_table* _env = lx_create_env_table_with_father_env(vm, obj_func->env_creator);
             lx_object_stack_push(vm->call_stack, CAST_O _env);
             _vm_run_opcodes(vm, obj_func, _env);
+#if LX_VM_DEBUG
+            if(lx_object_stack_pop(vm->call_stack) != _env)
+                assert(false && "error in vm->call_stack");
+#else
             lx_object_stack_pop(vm->call_stack);
+#endif
         } else if (obj_func->func_ptr) {
             obj_func->func_ptr(vm, obj);
         } else {
@@ -474,11 +479,16 @@ void default_env_meta_func__get(lx_vm* vm, lx_object* _called_obj)
         lx_object_stack_push(s, LX_OBJECT_tag());
         lx_object_stack_push(s, key);
         lx_object_stack_push(s, _father_env);
-        //_op_call(vm, NULL, table_meta_function_get(_father_env, "_get"));
         lx_object_function* _get = table_meta_function_get(CAST_T _father_env, "_get");
         _get->func_ptr(vm, CAST_O _get);
     } else {
-        lx_throw_s(vm, "using undeclared variable XXX"); // todo
+        lx_object_string* k = CAST_S key;
+        char e[1024];
+        const char str[] = "using undeclared variable ";
+        strcpy(e, str);
+        memcpy(((char*)e) + sizeof(str) - 1, k->text, k->text_len);
+        e[sizeof(str) - 1 + k->text_len] = '\0';
+        lx_throw_s(vm, e);
     }
 }
 // set(tab, key, value)
@@ -496,7 +506,13 @@ void default_env_meta_func__set(lx_vm* vm, lx_object* _called_obj)
             _env = CAST_T table_meta_element_get(_env, "_father_env");
         }
     }
-    lx_throw_s(vm, "using undeclared variable XXX"); // todo
+    lx_object_string* k = CAST_S lx_object_stack_pop(s);
+    char e[1024];
+    const char str[] = "using undeclared variable ";
+    strcpy(e, str);
+    memcpy(((char*)e) + sizeof(str) - 1, k->text, k->text_len);
+    e[sizeof(str) - 1 + k->text_len] = '\0';
+    lx_throw_s(vm, e);
 }
 void default_env_meta_func__call(lx_vm* vm, lx_object* _called_obj)
 {
@@ -557,9 +573,10 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
         return -1;
     }
     lx_object_stack* stack = vm->stack;
-    const lx_opcodes* ops = func_obj->func_opcodes;
-    for (int i = 0; i < ops->size && i >= 0; ++i) {
-        switch (ops->arr[i]->type)
+    const lx_opcode** ops = func_obj->func_opcodes;
+    const int ops_size = func_obj->func_opcodes_size;
+    for (int i = 0; i < ops_size && i >= 0; ++i) {
+        switch (ops[i]->type)
         {
         case OP_LABEL:
         case OP_LABEL_WHILE_BEGIN:
@@ -572,29 +589,41 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
         case OP_BREAK: {
             int f = i;
             int count = 1;
-            for (; f < ops->size; ++f) {
-                if (ops->arr[f]->type == OP_LABEL_WHILE_BEGIN)
+            int pop_env_count = 0;
+            for (; f < ops_size; ++f) {
+                if (ops[f]->type == OP_POP_ENV)
+                    pop_env_count++;
+                else if (ops[f]->type == OP_PUSH_ENV)
+                    pop_env_count--;
+                else if (ops[f]->type == OP_LABEL_WHILE_BEGIN)
                     count++;
-                if (ops->arr[f]->type == OP_LABEL_WHILE_END) {
+                else if (ops[f]->type == OP_LABEL_WHILE_END) {
                     count--;
                     if(count == 0)
                         break;
                 }
             }
-            if (f < ops->size) {
+            if (f < ops_size) {
                 i = f;
+                vm->call_stack->curr -= pop_env_count;
+                _env = lx_object_stack_top(vm->call_stack);
                 continue;
             } else
                 lx_throw_s(vm, "VM ERROR: can't find a while_end or for_end to break");
             continue;
         }
-        case OP_CONTINUE: {
+        case OP_CONTINUE: { /* todo: env pop and push */
             int f = i;
             int count = 1;
+            int pushed_env_count = 0;
             for (; f >= 0; --f) {
-                if (ops->arr[f]->type == OP_LABEL_WHILE_END)
+                if (ops[f]->type == OP_PUSH_ENV)
+                    pushed_env_count++;
+                else if (ops[f]->type == OP_POP_ENV)
+                    pushed_env_count--;
+                else if (ops[f]->type == OP_LABEL_WHILE_END)
                     count++;
-                if (ops->arr[f]->type == OP_LABEL_WHILE_BEGIN) {
+                else if (ops[f]->type == OP_LABEL_WHILE_BEGIN) {
                     count--;
                     if(count == 0)
                         break;
@@ -602,6 +631,8 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             }
             if (f >= 0) {
                 i = f;
+                vm->call_stack->curr -= pushed_env_count;
+                _env = lx_object_stack_top(vm->call_stack);
                 continue;
             }else
                 lx_throw_s(vm, "VM ERROR: can't find a while_begin or for_body to continue");
@@ -623,6 +654,14 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_RETURN: {
+            int pushed_env_count = 0;
+            for (; i >= 0; --i) {
+                if(ops[i]->type == OP_PUSH_ENV)
+                    pushed_env_count++;
+                else if(ops[i]->type == OP_POP_ENV)
+                    pushed_env_count--;
+            }
+            vm->call_stack->curr -= pushed_env_count;
             lx_gc_collect(vm);
             return 0; // end this luax function
         }
@@ -637,16 +676,16 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_JMP: { // todo: consider env push and pop
-            int label_count = ((lx_opcode_x *)ops->arr[i])->inumber;
+            int label_count = ((lx_opcode_x *)ops[i])->inumber;
             int direction = label_count / abs(label_count);
             label_count = abs(label_count);
             int count = 0;
             int f = i;
             for(; count < label_count; f += direction){
-                if (f < 0 || f > ops->size) {
+                if (f < 0 || f > ops_size) {
                     lx_throw_s(vm, "VM ERROR: can't find the destination of jmp");
                 }
-                if(lx_opcode_is_label(ops->arr[f]->type)){
+                if(lx_opcode_is_label(ops[f]->type)){
                     count++;
                     if(count == label_count)
                         break;
@@ -655,19 +694,19 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             i = f;
             continue;
         }
-        case OP_JZ:{ // todo: consider env push and pop
+        case OP_JZ:{
             lx_object* condition = lx_object_stack_pop(stack);
             if (object_is_jz_zero(condition)) {
-                int label_count = ((lx_opcode_x *)ops->arr[i])->inumber;
+                int label_count = ((lx_opcode_x *)ops[i])->inumber;
                 int direction = label_count / abs(label_count);
                 label_count = abs(label_count);
                 int count = 0;
                 int f = i;
                 for (; count < label_count; f += direction) {
-                    if (f < 0 || f > ops->size) {
+                    if (f < 0 || f > ops_size) {
                         lx_throw_s(vm, "VM ERROR: can't find the destination of jz");
                     }
-                    if(lx_opcode_is_label(ops->arr[f]->type)){
+                    if(lx_opcode_is_label(ops[f]->type)){
                         count++;
                         if(count == label_count)
                             break;
@@ -738,10 +777,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_POP_ENV: {
-            lx_object_table* prev_env = CAST_T table_meta_element_get(_env, "_father_env");
-            table_meta_element_set(_env, CAST_O &S_father_env, LX_OBJECT_nil()); // let the GC to collect it
-            _env = prev_env;
-            lx_object_stack_pop(vm->call_stack);
+            _env = CAST_T lx_object_stack_pop(vm->call_stack);
             continue;
         }
 
@@ -763,12 +799,12 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_PUSHC_STR: {
-            lx_opcode_x* op = (lx_opcode_x*) ops->arr[i];
+            lx_opcode_x* op = (lx_opcode_x*) ops[i];
             lx_object_stack_push(stack, CAST_O lx_create_string_t(vm, op->text, op->text_len));
             continue;
         }
         case OP_PUSHC_NUMBER: {
-            lx_object_stack_push(stack, lx_create_number(vm, LX_OBJECT_NUMBER))->fnumber = ((lx_opcode_x *)(ops->arr[i]))->fnumber;
+            lx_object_stack_push(stack, lx_create_number(vm, LX_OBJECT_NUMBER))->fnumber = ((lx_opcode_x *)(ops[i]))->fnumber;
             continue;
         }
         case OP_PUSHC_TABLE: {
@@ -784,23 +820,19 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
         case OP_FUNC_DEF_BEGIN: {
             int func_begin = i + 1;
             int layer = 1;
-            for(++i; i < ops->size; ++i){
-                if (ops->arr[i]->type == OP_FUNC_DEF_END) {
+            for(++i; i < ops_size; ++i){
+                if (ops[i]->type == OP_FUNC_DEF_END) {
                     --layer;
                     if(layer == 0)
                         break;
-                }else if (ops->arr[i]->type == OP_FUNC_DEF_BEGIN) {
+                }else if (ops[i]->type == OP_FUNC_DEF_BEGIN) {
                     ++layer;
                 }
             }
-            if(i == ops->size)
+            if(i == ops_size)
                 lx_throw_s(vm, "VM ERROR: can't find OP_FUNC_DEF_END");
-            lx_opcodes* opcodes = LX_NEW(lx_opcodes);
-            opcodes->size = i - func_begin;
-            opcodes->capacity = opcodes->size;
-            opcodes->arr = ops->arr + func_begin;
-            lx_object* func = managed_with_gc(vm->gc, CAST_O create_object_function_ops(opcodes, _env));
-            lx_object_stack_push(stack, func);
+            lx_object_function* func = lx_create_function_ops(vm, ops + func_begin, i - func_begin, _env);
+            lx_object_stack_push(stack, CAST_O func);
             continue;
         }
         case OP_FUNC_DEF_END: {
@@ -849,7 +881,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_TABLE_GET_IMM: {
-            lx_opcode_x* op = (lx_opcode_x*)ops->arr[i];
+            lx_opcode_x* op = (lx_opcode_x*)ops[i];
             lx_object_table* tab = (lx_object_table*)lx_object_stack_pop(stack);
             lx_object_stack_push(stack, LX_OBJECT_tag());
             lx_object_stack_push(stack, CAST_O lx_create_string_t(vm, op->text, op->text_len));
@@ -858,14 +890,14 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_TABLE_IMM_SET_TKT: {
-            lx_opcode_x* op = (lx_opcode_x*)ops->arr[i];
+            lx_opcode_x* op = (lx_opcode_x*)ops[i];
             lx_object* tab = lx_object_stack_pop(stack);
             lx_object_stack_push(stack, CAST_O lx_create_string_t(vm, op->text, op->text_len));
             lx_object_stack_push(stack, tab);
             continue;
         }
         case OP_G_TABLE_GET: {
-            lx_opcode_x* op = (lx_opcode_x*)ops->arr[i];
+            lx_opcode_x* op = (lx_opcode_x*)ops[i];
             lx_object_stack_push(stack, LX_OBJECT_tag());
             lx_object_stack_push(stack, CAST_O lx_create_string_t(vm, op->text, op->text_len));
             lx_object_stack_push(stack, CAST_O _env);
@@ -873,7 +905,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_G_TABLE_SET_TKT: {
-            lx_opcode_x* op = (lx_opcode_x*)ops->arr[i];
+            lx_opcode_x* op = (lx_opcode_x*)ops[i];
             lx_object_stack_push(stack, CAST_O lx_create_string_t(vm, op->text, op->text_len));
             lx_object_stack_push(stack, CAST_O _env);
             continue;
@@ -1269,7 +1301,7 @@ void lx_throw_s(lx_vm* vm, const char* str)
 #if LX_DEBUG && LX_VM_DEBUG
     assert(false); // only useful in Visual Studio's Debug mode
 #endif
-    lx_object* s = lx_create_string_s(vm, str);
+    lx_object* s = CAST_O lx_create_string_s(vm, str);
     lx_object_stack_push(vm->stack, LX_OBJECT_tag());
     lx_object_stack_push(vm->stack, LX_OBJECT_tag());
     lx_object_stack_push(vm->stack, s);
@@ -1311,22 +1343,22 @@ lx_object_table* lx_create_env_table_with_inside_function(lx_vm* vm)
     lx_gc_info* gc = vm->gc;
     lx_object_table* env_table = lx_create_env_table(vm);
     // inside functions
-    object_table_replace(env_table, CAST_O &Stypeof, managed_with_gc(gc, CAST_O create_object_function_p(_typeof, lx_create_env_table(vm))));
-    object_table_replace(env_table, CAST_O &Smeta_table, managed_with_gc(gc, CAST_O create_object_function_p(_meta_table, lx_create_env_table(vm))));
-    object_table_replace(env_table, CAST_O &Sset_meta_table, managed_with_gc(gc, CAST_O create_object_function_p(_set_meta_table, lx_create_env_table(vm))));
-    object_table_replace(env_table, CAST_O &Stable_get, managed_with_gc(gc, CAST_O create_object_function_p(_table_get, lx_create_env_table(vm))));
-    object_table_replace(env_table, CAST_O &Stable_set, managed_with_gc(gc, CAST_O create_object_function_p(_table_set, lx_create_env_table(vm))));
-    object_table_replace(env_table, CAST_O &Snew_table, managed_with_gc(gc, CAST_O create_object_function_p(_new_table, lx_create_env_table(vm))));
-    object_table_replace(env_table, CAST_O &Spcall, managed_with_gc(gc, CAST_O create_object_function_p(_pcall, lx_create_env_table(vm))));
-    object_table_replace(env_table, CAST_O &Sthrow, managed_with_gc(gc, CAST_O create_object_function_p(_throw, lx_create_env_table(vm))));
-    object_table_replace(env_table, CAST_O &Scollectgarbage, managed_with_gc(gc, CAST_O create_object_function_p(_collectgarbage, lx_create_env_table(vm))));
-    object_table_replace(env_table, CAST_O &Srequire, managed_with_gc(gc, CAST_O create_object_function_p(_require, lx_create_env_table(vm))));
+    object_table_replace(env_table, CAST_O &Stypeof, CAST_O lx_create_function_p(vm, _typeof, lx_create_env_table(vm)));
+    object_table_replace(env_table, CAST_O &Smeta_table, CAST_O lx_create_function_p(vm, _meta_table, lx_create_env_table(vm)));
+    object_table_replace(env_table, CAST_O &Sset_meta_table, CAST_O lx_create_function_p(vm, _set_meta_table, lx_create_env_table(vm)));
+    object_table_replace(env_table, CAST_O &Stable_get,  CAST_O lx_create_function_p(vm, _table_get, lx_create_env_table(vm)));
+    object_table_replace(env_table, CAST_O &Stable_set, CAST_O lx_create_function_p(vm, _table_set, lx_create_env_table(vm)));
+    object_table_replace(env_table, CAST_O &Snew_table,  CAST_O lx_create_function_p(vm, _new_table, lx_create_env_table(vm)));
+    object_table_replace(env_table, CAST_O &Spcall,  CAST_O lx_create_function_p(vm, _pcall, lx_create_env_table(vm)));
+    object_table_replace(env_table, CAST_O &Sthrow,  CAST_O lx_create_function_p(vm, _throw, lx_create_env_table(vm)));
+    object_table_replace(env_table, CAST_O &Scollectgarbage,  CAST_O lx_create_function_p(vm, _collectgarbage, lx_create_env_table(vm)));
+    object_table_replace(env_table, CAST_O &Srequire, CAST_O lx_create_function_p(vm, _require, lx_create_env_table(vm)));
 
     // template debug functions
-    object_table_replace(env_table, CAST_O &Sprint, managed_with_gc(gc, CAST_O create_object_function_p(_print, lx_create_env_table(vm))));
-    object_table_replace(env_table, CAST_O &Sdump_stack, managed_with_gc(gc, CAST_O create_object_function_p(_dump_stack, lx_create_env_table(vm))));
-    object_table_replace(env_table, CAST_O &Semit_VS_breakpoint, managed_with_gc(gc, CAST_O create_object_function_p(_emit_VS_breakpoint, lx_create_env_table(vm))));
-    object_table_replace(env_table, CAST_O &Sshow_gc_info, managed_with_gc(gc, CAST_O create_object_function_p(_show_gc_info, lx_create_env_table(vm))));
+    object_table_replace(env_table, CAST_O &Sprint, CAST_O lx_create_function_p(vm, _print, lx_create_env_table(vm)));
+    object_table_replace(env_table, CAST_O &Sdump_stack, CAST_O lx_create_function_p(vm, _dump_stack, lx_create_env_table(vm)));
+    object_table_replace(env_table, CAST_O &Semit_VS_breakpoint, CAST_O lx_create_function_p(vm, _emit_VS_breakpoint, lx_create_env_table(vm)));
+    object_table_replace(env_table, CAST_O &Sshow_gc_info, CAST_O lx_create_function_p(vm, _show_gc_info, lx_create_env_table(vm)));
 
     return env_table;
 }
@@ -1349,27 +1381,27 @@ lx_object_function* lx_create_function_p(lx_vm* vm, lx_object_function_ptr_handl
     lx_object_function* fun = create_object_function_p(func_ptr, env_creator);
     return CAST_F managed_with_gc(vm->gc, CAST_O fun);
 }
-lx_object_function* lx_create_function_ops(lx_vm* vm, const lx_opcodes* func_opcodes, lx_object_table *env_creator)
+lx_object_function* lx_create_function_ops(lx_vm* vm, const lx_opcode** func_opcodes, int func_opcodes_size, lx_object_table *env_creator)
 {
-    lx_object_function* fun = create_object_function_ops(func_opcodes, env_creator);
+    lx_object_function* fun = create_object_function_ops(func_opcodes, func_opcodes_size, env_creator);
     return CAST_F managed_with_gc(vm->gc, CAST_O fun);
 }
 lx_object_table* lx_create_default_meta_table(lx_vm* vm)
 {
     lx_object_table* default_meta_table = CAST_T managed_with_gc(vm->gc, CAST_O create_object_table_raw());
-    object_table_replace(default_meta_table, CAST_O &S_get, managed_with_gc(vm->gc, CAST_O create_object_function_p(default_meta_func__get, CAST_T LX_OBJECT_nil())));
-    object_table_replace(default_meta_table, CAST_O &S_set, managed_with_gc(vm->gc, CAST_O create_object_function_p(default_meta_func__set, CAST_T LX_OBJECT_nil())));
-    object_table_replace(default_meta_table, CAST_O &S_call, managed_with_gc(vm->gc, CAST_O create_object_function_p(default_meta_func__call, CAST_T LX_OBJECT_nil())));
-    object_table_replace(default_meta_table, CAST_O &S_delete, managed_with_gc(vm->gc, CAST_O create_object_function_p(default_meta_func__delete, CAST_T LX_OBJECT_nil())));
+    object_table_replace(default_meta_table, CAST_O &S_get, CAST_O lx_create_function_p(vm, default_meta_func__get, CAST_T LX_OBJECT_nil()));
+    object_table_replace(default_meta_table, CAST_O &S_set, CAST_O lx_create_function_p(vm, default_meta_func__set, CAST_T LX_OBJECT_nil()));
+    object_table_replace(default_meta_table, CAST_O &S_call, CAST_O lx_create_function_p(vm, default_meta_func__call, CAST_T LX_OBJECT_nil()));
+    object_table_replace(default_meta_table, CAST_O &S_delete, CAST_O lx_create_function_p(vm, default_meta_func__delete, CAST_T LX_OBJECT_nil()));
     return default_meta_table;
 }
 lx_object_table* lx_create_default_env_meta_table(lx_vm* vm)
 {
     lx_object_table* default_env_meta_table = CAST_T managed_with_gc(vm->gc, CAST_O create_object_table_raw());
-    object_table_replace(default_env_meta_table, CAST_O &S_get, managed_with_gc(vm->gc, CAST_O create_object_function_p(default_env_meta_func__get, CAST_T LX_OBJECT_nil())));
-    object_table_replace(default_env_meta_table, CAST_O &S_set, managed_with_gc(vm->gc, CAST_O create_object_function_p(default_env_meta_func__set, CAST_T LX_OBJECT_nil())));
-    object_table_replace(default_env_meta_table, CAST_O &S_call, managed_with_gc(vm->gc, CAST_O create_object_function_p(default_env_meta_func__call, CAST_T LX_OBJECT_nil())));
-    object_table_replace(default_env_meta_table, CAST_O &S_delete, managed_with_gc(vm->gc, CAST_O create_object_function_p(default_env_meta_func__delete, CAST_T LX_OBJECT_nil())));
+    object_table_replace(default_env_meta_table, CAST_O &S_get, CAST_O lx_create_function_p(vm, default_env_meta_func__get, CAST_T LX_OBJECT_nil()));
+    object_table_replace(default_env_meta_table, CAST_O &S_set, CAST_O lx_create_function_p(vm, default_env_meta_func__set, CAST_T LX_OBJECT_nil()));
+    object_table_replace(default_env_meta_table, CAST_O &S_call, CAST_O lx_create_function_p(vm, default_env_meta_func__call, CAST_T LX_OBJECT_nil()));
+    object_table_replace(default_env_meta_table, CAST_O &S_delete, CAST_O lx_create_function_p(vm, default_env_meta_func__delete, CAST_T LX_OBJECT_nil()));
     object_table_replace(default_env_meta_table, CAST_O &S_father_env, LX_OBJECT_nil());
     return default_env_meta_table;
 }
