@@ -30,6 +30,8 @@ typedef struct lx_syntax_node
 
 /* helper function for init lx_syntax_node */
 void lx_syntax_node_init(lx_syntax_node* n);
+void delete_opcode_list(struct opcode_list* op_list);
+
 
 /* generate the final bytecode */
 lx_opcodes* gen_opcodes(lx_syntax_node* root);

@@ -5,7 +5,9 @@
 
 #include "standard_lib/lmath.h"
 
-static lx_object_string S_father_env = { /* this key is not managed by GC */
+
+ /* these strings are not managed by GC */
+static lx_object_string S_father_env = {
     .base.type = LX_OBJECT_STRING,
     .base.is_singleton = true, /* read only */
     .need_free = false,
@@ -272,7 +274,15 @@ lx_object* _obj_div(lx_object* a, lx_object* b, lx_vm* vm)
     return NULL;
 }
 
-
+/*
+** pop several objs from the stack until meet the first tag.
+**
+**   |  A  |    =>  |  A  | <- top
+**   | tag |        |     | 
+**   |  B  |       
+**   |  *  |       
+**   |  C  | <- top
+*/
 void _op_pop_to_tag(lx_vm* vm)
 {
     lx_object* obj;
@@ -283,7 +293,8 @@ void _op_pop_to_tag(lx_vm* vm)
     }
 }
 
-int _op_call(lx_vm* vm, lx_object* obj) // obj -> called_obj(function or table)
+/* call a luax object */
+int _op_call(lx_vm* vm, lx_object* obj)
 {
     if (obj->type == LX_OBJECT_FUNCTION) {
         lx_object_function* obj_func = CAST_F obj;
@@ -292,7 +303,7 @@ int _op_call(lx_vm* vm, lx_object* obj) // obj -> called_obj(function or table)
             lx_object_stack_push(vm->call_stack, CAST_O _env);
             _vm_run_opcodes(vm, obj_func, _env);
 #if LX_VM_DEBUG
-            if(lx_object_stack_pop(vm->call_stack) != _env)
+            if(lx_object_stack_pop(vm->call_stack) != CAST_O _env)
                 assert(false && "error in vm->call_stack");
 #else
             lx_object_stack_pop(vm->call_stack);
@@ -314,10 +325,10 @@ int _op_call(lx_vm* vm, lx_object* obj) // obj -> called_obj(function or table)
 }
 
 
-//
-// inside functions achieved in C
-//
-
+/* 
+** inside functions achieved in C 
+** see luax_reference_manual.md
+*/
 void _typeof(lx_vm* vm, lx_object* _called_obj)
 {
     lx_object* obj = lx_object_stack_pop(vm->stack);
@@ -331,10 +342,10 @@ void _typeof(lx_vm* vm, lx_object* _called_obj)
     }
 }
 
-// return the meta table of tab
-// luax example:
-//      m = meta_table(tab);
-//      m = meta_table(func_ret_mutli_value());
+/*
+** return the meta table of tab
+** luax example: m = meta_table(tab);
+*/
 void _meta_table(lx_vm* vm, lx_object* _called_obj)
 {
     UNUSED_ARGUMENT(_called_obj);
@@ -348,13 +359,15 @@ void _meta_table(lx_vm* vm, lx_object* _called_obj)
     if (tab->base.type != LX_OBJECT_TABLE) {
         lx_object_stack_push(vm->stack, LX_OBJECT_nil());
     } else {
-        lx_object_stack_push(vm->stack, CAST_O table_get_meta_table(tab)); // push it's meta table
+        lx_object_stack_push(vm->stack, CAST_O table_get_meta_table(tab));
     }
 }
-// set meta table
-// luax example:
-//      set_meta_table(tab, new_meta_tab);
-//      set_meta_table(tab1, tab2, tab3, new_meta_tab);
+/*
+** set meta table
+** luax example:
+**      set_meta_table(tab, new_meta_tab);
+**      set_meta_table(tab1, tab2, tab3, new_meta_tab);
+*/
 void _set_meta_table(lx_vm* vm, lx_object* _called_obj)
 {
     UNUSED_ARGUMENT(_called_obj);
@@ -364,8 +377,10 @@ void _set_meta_table(lx_vm* vm, lx_object* _called_obj)
         table_set_meta_table(tab, new_meta_tab);
     }
 }
-// raw get, don't use the "_get" function of tab's meta table
-// table_get(tab, key)
+/*
+** raw get, don't use the "_get" function of tab's meta table
+** table_get(tab, key)
+*/
 void _table_get(lx_vm* vm, lx_object* _called_obj)
 {
     UNUSED_ARGUMENT(_called_obj);
@@ -378,8 +393,10 @@ void _table_get(lx_vm* vm, lx_object* _called_obj)
         lx_throw_s(vm, "luax function table_get needs 2 arguments");
     lx_object_stack_push(s, object_table_always_found((lx_object_table*)tab, key)->value);
 }
-// raw set
-// table_set(tab, key, value)
+/*
+** raw set
+** table_set(tab, key, value)
+*/
 void _table_set(lx_vm* vm, lx_object* _called_obj)
 {
     UNUSED_ARGUMENT(_called_obj);
@@ -393,9 +410,11 @@ void _table_set(lx_vm* vm, lx_object* _called_obj)
         lx_throw_s(vm, "luax function table_get needs 3 arguments");
     object_table_replace((lx_object_table*)tab, key, new_value);
 }
-// create a table using the provided meta table
-// new_table(specify_meta_table)
-// new_table() -- use the default meta table
+/*
+** create a table using the provided meta table
+** new_table(specify_meta_table)
+** new_table() -- use the default meta table
+*/
 void _new_table(lx_vm* vm, lx_object* _called_obj)
 {
     UNUSED_ARGUMENT(_called_obj);
@@ -419,10 +438,10 @@ void _throw(lx_vm* vm, lx_object* _called_obj)
     int i = vm->stack->curr;
     while(vm->stack->arr[i]->type != LX_OBJECT_TAG)
         --i;
-    lx_object_stack_remove(vm->stack, i); // remove arguments tag of function `throw`
+    lx_object_stack_remove(vm->stack, i); /* remove arguments tag of function `throw` */
     while(vm->stack->arr[i]->type != LX_OBJECT_TAG)
         --i;
-    lx_object_stack_remove(vm->stack, i); // remove expr statement tag of `throw(e);`
+    lx_object_stack_remove(vm->stack, i); /* remove expr statement tag of `throw(e);` */
     longjmp(*(vm->curr_jmp_buf), 1);
 }
 void _pcall(lx_vm* vm, lx_object* _called_obj)
@@ -436,9 +455,9 @@ void _pcall(lx_vm* vm, lx_object* _called_obj)
         backup_jmp_buf = vm->curr_jmp_buf;
         vm->curr_jmp_buf = &_jmp;
         _op_call(vm, func);
-        lx_object_stack_push(vm->stack, LX_OBJECT_nil()); // this nil means this function finished successfully
+        lx_object_stack_push(vm->stack, LX_OBJECT_nil()); /* this nil means this function finished successfully */
     } else {
-        
+        /* nothing */
     }
     vm->curr_jmp_buf = backup_jmp_buf;
 }
@@ -453,7 +472,7 @@ void _collectgarbage(lx_vm* vm, lx_object* _called_obj)
     lx_object* o = arg;
     while(o && o->type != LX_OBJECT_NIL)
         o = lx_object_stack_pop(vm->stack);
-    // we haven't achieved other functions
+    /* we haven't achieved other functions */
 }
 void _require(lx_vm* vm, lx_object* _called_obj)
 {
@@ -498,8 +517,10 @@ void _require(lx_vm* vm, lx_object* _called_obj)
         lx_free(str);
     }
 }
-// print(tab)
-// print('this is debug info')
+/*
+** print(tab)
+** print('this is debug info', tab, string)
+*/
 void _print(lx_vm* vm, lx_object* _called_obj)
 {
     UNUSED_ARGUMENT(_called_obj);
@@ -540,9 +561,9 @@ void _show_gc_info(lx_vm* vm, lx_object* _called_obj)
     lx_dump_vm_gc_status(vm);
 }
 
-//
-// meta functions for default table
-//
+
+/* meta functions for default table */
+
 void default_meta_func__get(lx_vm* vm, lx_object* _called_obj)
 {
     _table_get(vm, _called_obj);
@@ -558,15 +579,13 @@ void default_meta_func__call(lx_vm* vm, lx_object* _called_obj)
 }
 void default_meta_func__delete(lx_vm* vm, lx_object* _called_obj)
 {
-    _op_pop_to_tag(vm); // DO nothing
+    _op_pop_to_tag(vm); /* do nothing */
 }
 
 
-//
-// meta functions for env table
-//
+/* meta functions for default env table */
 
-// get(tab, key)
+/* get(tab, key) */
 void default_env_meta_func__get(lx_vm* vm, lx_object* _called_obj)
 {
     UNUSED_ARGUMENT(_called_obj);
@@ -577,11 +596,11 @@ void default_env_meta_func__get(lx_vm* vm, lx_object* _called_obj)
         assert(false && "default_env_meta_func__get argument error");
     }
     _object_table_kv* kv = object_table_find(_env, key);
-    if (kv) { // found in the current env
+    if (kv) { /* found in the current env */
         lx_object_stack_push(s, kv->value);
         return;
     }
-    // not found, search in it's _father_env
+    /* not found, search in it's _father_env */
     lx_object* _father_env = table_meta_element_get(_env, "_father_env");
     if (_father_env && _father_env->type != LX_OBJECT_NIL) {
         lx_object_stack_push(s, LX_OBJECT_tag());
@@ -599,7 +618,7 @@ void default_env_meta_func__get(lx_vm* vm, lx_object* _called_obj)
         lx_throw_s(vm, e);
     }
 }
-// set(tab, key, value)
+/* set(tab, key, value) */
 void default_env_meta_func__set(lx_vm* vm, lx_object* _called_obj)
 {
     lx_object_stack* s = vm->stack;
@@ -609,7 +628,7 @@ void default_env_meta_func__set(lx_vm* vm, lx_object* _called_obj)
         if (object_table_find(_env, s->arr[s->curr])) {
             lx_object_stack_push(s, CAST_O _env);
             _table_set(vm, _called_obj);
-            return; // finished
+            return; /* finished */
         } else {
             _env = CAST_T table_meta_element_get(_env, "_father_env");
         }
@@ -628,16 +647,17 @@ void default_env_meta_func__call(lx_vm* vm, lx_object* _called_obj)
 }
 void default_env_meta_func__delete(lx_vm* vm, lx_object* _called_obj)
 {
-    _op_pop_to_tag(vm); // DO nothing
+    _op_pop_to_tag(vm); /* do nothing */
 }
 
-
+/* global constant luax object instances */
 lx_object* LX_OBJECT_nil()
 {
     static lx_object o =
     {
         .type = LX_OBJECT_NIL,
         .marked = true,
+        .is_singleton = true,
         .fnumber = 0.0f
     };
     return &o;
@@ -648,6 +668,7 @@ lx_object* LX_OBJECT_true()
     {
         .type = LX_OBJECT_BOOL,
         .marked = true,
+        .is_singleton = true,
         .fnumber = 1.0f
     };
     return &o;
@@ -658,6 +679,7 @@ lx_object* LX_OBJECT_false()
     {
         .type = LX_OBJECT_BOOL,
         .marked = true,
+        .is_singleton = true,
         .fnumber = 0.0f
     };
     return &o;
@@ -668,12 +690,13 @@ lx_object* LX_OBJECT_tag()
     {
         .type = LX_OBJECT_TAG,
         .marked = true,
+        .is_singleton = true,
     };
     return &o;
 }
 
 
-// run a luax function achieved in luax code
+/* run a luax function achieved in luax code */
 static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_table* _env)
 {
     if (func_obj->base.type != LX_OBJECT_FUNCTION) {
@@ -720,7 +743,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 lx_throw_s(vm, "VM ERROR: can't find a while_end or for_end to break");
             continue;
         }
-        case OP_CONTINUE: { /* todo: env pop and push */
+        case OP_CONTINUE: {
             int f = i;
             int count = 1;
             int pushed_env_count = 0;
@@ -756,8 +779,8 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             }
             while(stack->arr[tagi]->type == LX_OBJECT_TAG)
                 tagi--;
-            // now tagi points to the called object
-            lx_object* called_obj = lx_object_stack_remove(stack, tagi); // remove the called object
+            /* now tagi points to the called object */
+            lx_object* called_obj = lx_object_stack_remove(stack, tagi); /* remove the called object */
             _op_call(vm, called_obj);
             continue;
         }
@@ -771,7 +794,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             }
             vm->call_stack->curr -= pushed_env_count;
             lx_gc_collect(vm);
-            return 0; // end this luax function
+            return 0; /* end this luax function */
         }
         case OP_VALUES_SHIFT_TO_1: {
             lx_object* value = lx_object_stack_pop(stack);
@@ -783,7 +806,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             lx_object_stack_push(stack, value->type == LX_OBJECT_TAG ? LX_OBJECT_nil() : value);
             continue;
         }
-        case OP_JMP: { // todo: consider env push and pop
+        case OP_JMP: {
             int label_count = ((lx_opcode_x *)ops[i])->inumber;
             int direction = label_count / abs(label_count);
             label_count = abs(label_count);
@@ -865,7 +888,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 if (stack->arr[key]->type != LX_OBJECT_STRING) {
                     lx_throw_s(vm, "VM ERROR: `local` var should be a string (2)");
                 }
-                lx_object_stack_push(stack, LX_OBJECT_tag()); // tag for calling _env's meta function _set
+                lx_object_stack_push(stack, LX_OBJECT_tag()); /* tag for calling _env's meta function _set */
                 if(stack->arr[value]->type != LX_OBJECT_TAG)
                     lx_object_stack_push(stack, stack->arr[value--]);
                 else
@@ -902,8 +925,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_PUSHC_EMPTY_TABLE: {
-            lx_object* table = CAST_O lx_create_table(vm);
-            lx_object_stack_push(stack, table);
+            lx_object_stack_push(stack, CAST_O lx_create_table(vm));
             continue;
         }
         case OP_PUSHC_STR: {
@@ -944,16 +966,21 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_FUNC_DEF_END: {
-            assert(false && "you shouldn't come here!"); // todo
+            assert(false && "you shouldn't come here!");
             continue;
         }
         case OP_PUSHC_FUNC: {
-            // Do nothing
+            /* do nothing! we handle all things in OP_FUNC_DEF_BEGIN */
             continue;
         }
 
         case OP_TABLE_GET: {
-            lx_object* key = lx_object_stack_pop(stack); // in tab[1, "key2"], `key` is 1
+            /*
+            ** we must make sure that in the code below, `key` points to the first returned value.
+            **   local func = function() return 1, 2; end;
+            **   tab[func()]; -- key must equals to 1 rather 2
+            */
+            lx_object* key = lx_object_stack_pop(stack);
             lx_object* o = key;
             while (o && o->type != LX_OBJECT_TAG)
                 o = lx_object_stack_pop(stack);
@@ -983,7 +1010,6 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 key = LX_OBJECT_nil();
             lx_object_table* tab = (lx_object_table*)lx_object_stack_pop(stack);
 
-            //lx_object_stack_push(stack, LX_OBJECT_tag());
             lx_object_stack_push(stack, key);
             lx_object_stack_push(stack, CAST_O tab);
             continue;
@@ -1350,6 +1376,7 @@ lx_object* managed_with_gc(lx_gc_info* gc, lx_object* obj)
     obj->marked = false;
     return lx_object_stack_push(gc->arr, obj);
 }
+/* mark object specifically by it's type. For a table, we mark it's every key-values recursively. For a function, we mark it's env_creator */
 static void mark_object(lx_object* obj)
 {
     if (!obj) return;
@@ -1383,7 +1410,7 @@ void lx_gc_collect(lx_vm* vm)
     lx_object_stack* objs = vm->gc->arr;
     for (int i = 0; i <= objs->curr; ++i) {
         if (objs->arr[i]->marked) {
-            objs->arr[i]->marked = false; /* clean for next GC */
+            objs->arr[i]->marked = false; /* clean for next garbage collection */
             lx_object_stack_push(new_objs, objs->arr[i]);
         } else {
             delete_object_by_type(objs->arr[i]);
@@ -1427,7 +1454,7 @@ int lx_vm_run (lx_vm* vm, lx_object_function* func_obj, lx_object** exception)
         *exception = lx_object_stack_pop(vm->stack);
         vm->stack->curr = -1; /* clean it */
         vm->gc->always_in_mem->curr = -1; /* clean it */
-        lx_object_stack_push(vm->gc->always_in_mem, *exception);
+        lx_object_stack_push(vm->gc->always_in_mem, *exception); /* make sure not collected by GC */
         ret = res;
     }
     lx_object_stack_pop(vm->call_stack);
@@ -1453,7 +1480,7 @@ void lx_delete_vm (lx_vm* vm)
 void lx_throw_s(lx_vm* vm, const char* str)
 {
 #if LX_DEBUG && LX_VM_DEBUG
-    assert(false); // only useful in Visual Studio's Debug mode
+    assert(false);
 #endif
     char* e = (char*) lx_malloc(strlen(str) + strlen("luax exception: ") + 1);
     strcpy(e, "luax exception: ");
@@ -1500,7 +1527,7 @@ lx_object_table* lx_create_env_table_with_inside_function(lx_vm* vm)
 {
     lx_gc_info* gc = vm->gc;
     lx_object_table* env_table = lx_create_env_table(vm);
-    // inside functions
+    /* inside functions */
     object_table_replace(env_table, CAST_O &Stypeof, CAST_O lx_create_function_p(vm, _typeof, lx_create_env_table(vm)));
     object_table_replace(env_table, CAST_O &Smeta_table, CAST_O lx_create_function_p(vm, _meta_table, lx_create_env_table(vm)));
     object_table_replace(env_table, CAST_O &Sset_meta_table, CAST_O lx_create_function_p(vm, _set_meta_table, lx_create_env_table(vm)));
@@ -1512,7 +1539,7 @@ lx_object_table* lx_create_env_table_with_inside_function(lx_vm* vm)
     object_table_replace(env_table, CAST_O &Scollectgarbage,  CAST_O lx_create_function_p(vm, _collectgarbage, lx_create_env_table(vm)));
     object_table_replace(env_table, CAST_O &Srequire, CAST_O lx_create_function_p(vm, _require, lx_create_env_table(vm)));
 
-    // template debug functions
+    /* template debug functions */
     object_table_replace(env_table, CAST_O &Sprint, CAST_O lx_create_function_p(vm, _print, lx_create_env_table(vm)));
     object_table_replace(env_table, CAST_O &Sdump_stack, CAST_O lx_create_function_p(vm, _dump_stack, lx_create_env_table(vm)));
     object_table_replace(env_table, CAST_O &Semit_VS_breakpoint, CAST_O lx_create_function_p(vm, _emit_VS_breakpoint, lx_create_env_table(vm)));

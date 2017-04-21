@@ -553,6 +553,9 @@ lx_parser* lx_gen_opcodes(const char* _source_code, const int source_code_length
     *(source_code + source_code_length) = '\0';
 
     lx_token_scanner* scanner = lx_scan_token(source_code, source_code_length);
+#if LX_DEBUG
+    printf("=== after lx_scan_token\n");
+#endif
     if(scanner == NULL){
         printf("lx_scan_token return NULL\n");
         return NULL;
@@ -576,6 +579,10 @@ lx_parser* lx_gen_opcodes(const char* _source_code, const int source_code_length
         lx_delete_parser(p);
         return NULL;
     }
+#if LX_DEBUG
+    printf("=== after compile_unit\n");
+    lx_dump_memory_usage();
+#endif
     p->opcodes = gen_opcodes(compile_unit_node);
     FREE_SYNTAX_NODE(compile_unit_node);
     return p;
@@ -590,6 +597,15 @@ void lx_delete_parser(lx_parser* p)
     lx_free(p);
 }
 
+static void _free_list_node(par list_node)
+{
+    par node_i = list_node->next;
+    while (node_i != NULL) {
+        par next = node_i->next;
+        FREE_SYNTAX_NODE(node_i);
+        node_i = next;
+    }
+}
 
 static int compile_unit(lx_parser *p, lx_syntax_node *self)
 {
@@ -996,6 +1012,7 @@ static int assign_expr(lx_parser *p, lx_syntax_node *self)
         }
         FREE_SYNTAX_NODE(assign_op_node);
     }
+    _free_list_node(prefix_expr_list_node);
     FREE_SYNTAX_NODE(prefix_expr_list_node);
 
     lx_token_scanner_recover_state(p->scanner, backup_state);

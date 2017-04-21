@@ -31,6 +31,22 @@ struct opcode_list {
     int label_size; /* stores the number of label-type opcode */
 };
 
+static void delete_opcode_w(struct opcode_w* op_w)
+{
+    if(op_w->real_opcode) lx_free(op_w->real_opcode);
+    lx_free(op_w);
+}
+void delete_opcode_list(struct opcode_list* op_list)
+{
+    struct opcode_w* i = op_list->front;
+    struct opcode_w* next;
+    while (i != NULL) {
+        next = i->next;
+        delete_opcode_w(i);
+        i = next;
+    }
+    lx_free(op_list);
+}
 static struct opcode_list* __new_opcodes()
 {
     struct opcode_list* l = LX_NEW(struct opcode_list);
@@ -95,6 +111,9 @@ static void move(lx_syntax_node* _self, lx_syntax_node* _1)
     _self->opcodes->back = _1->opcodes->back;
     if(_self->opcodes->front == NULL)
         _self->opcodes->front = _1->opcodes->front;
+    /* clean _1's opcodes */
+    _1->opcodes->front = NULL;
+    _1->opcodes->back = NULL;
 }
 static void move2(lx_syntax_node* _self, lx_syntax_node* _1, lx_syntax_node* _2)
 {
@@ -135,7 +154,7 @@ lx_opcodes* gen_opcodes(lx_syntax_node* root)
     opcodes->arr = NULL;
     if(root->opcodes == NULL)
         return opcodes;
-    for (struct opcode_w* n = root->opcodes->front, *next = NULL; n != NULL; ){
+    for (struct opcode_w* n = root->opcodes->front; n != NULL; ){
         if (opcodes->size == opcodes->capacity) {
             // enarge it
             lx_opcode** arr = (lx_opcode**)lx_malloc(sizeof(lx_opcode*) * ((opcodes->capacity / 1024 + 1) * 1024));
@@ -146,11 +165,10 @@ lx_opcodes* gen_opcodes(lx_syntax_node* root)
             opcodes->arr = arr;
         }
         opcodes->arr[opcodes->size] = n->real_opcode;
+        n->real_opcode = NULL;
         opcodes->size++;
 
-        next = n->next;
-        lx_free(n);
-        n = next;
+        n = n->next;
     }
     return opcodes;
 }

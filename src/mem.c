@@ -33,7 +33,7 @@ void * lx_malloc(size_t len)
         lx_memory_max_usage = lx_memory_usage;
     ret = (int*)malloc(len + sizeof(int));
     *ret = len;
-    ++ret;
+    ret = (int*)((char*)ret + sizeof(int));
 #else
     ret = (int*)malloc(len);
 #endif
@@ -46,18 +46,17 @@ void * lx_malloc(size_t len)
 }
 void lx_free(void * ptr)
 {
-#if LX_MALLOC_STATISTICS
-    ++lx_memory_free_times;
-    lx_memory_usage -= *((int*)ptr - 1);
-    ptr = (int*)ptr - 1;
-#endif
 #if(LX_PRINT_MALLOC_INFO)
     ++lx_call_lx_free_number;
     //printf("lx_free:%d %p\n", lx_call_lx_free_number, ptr);
     printf("lx_free %p\n", ptr);
-#else
-    free(ptr);
 #endif
+#if LX_MALLOC_STATISTICS
+    ++lx_memory_free_times;
+    ptr = (char*)ptr - sizeof(int);
+    lx_memory_usage -= *((int*)ptr);
+#endif
+    free(ptr);
 }
 
 

@@ -93,9 +93,9 @@ typedef struct lx_parser
     _node->token = _token
 
 #if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
-# define FREE_SYNTAX_NODE(_node) if(_node->opcodes) lx_free(_node->opcodes); lx_stack_allocator_free(p->stack_allocator, _node)
+# define FREE_SYNTAX_NODE(_node) if(_node->opcodes) delete_opcode_list(_node->opcodes); lx_stack_allocator_free(p->stack_allocator, _node)
 #else
-# define FREE_SYNTAX_NODE(_node) if(_node->opcodes) lx_free(_node->opcodes); lx_free(_node)
+# define FREE_SYNTAX_NODE(_node) if(_node->opcodes) delete_opcode_list(_node->opcodes); lx_free(_node)
 #endif
 
 
