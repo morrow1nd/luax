@@ -39,8 +39,7 @@ void * lx_malloc(size_t len)
 #endif
 #if(LX_PRINT_MALLOC_INFO)
     ++lx_call_lx_malloc_number;
-    //printf("lx_malloc:%d %p size:%d\n", lx_call_lx_malloc_number, ret, (int)len);
-    printf("lx_malloc %p\n", ret);
+    printf("lx_malloc:%d %p size:%d\n", lx_call_lx_malloc_number, ret, (int)len);
 #endif
     return ret;
 }
@@ -48,8 +47,7 @@ void lx_free(void * ptr)
 {
 #if(LX_PRINT_MALLOC_INFO)
     ++lx_call_lx_free_number;
-    //printf("lx_free:%d %p\n", lx_call_lx_free_number, ptr);
-    printf("lx_free %p\n", ptr);
+    printf("lx_free:%d %p\n", lx_call_lx_free_number, ptr);
 #endif
 #if LX_MALLOC_STATISTICS
     ++lx_memory_free_times;

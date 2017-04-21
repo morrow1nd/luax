@@ -27,6 +27,7 @@ enum LX_OPCODE_TYPE {
 
     OP_LOCAL,                       // used to declare variable(s) in current function's local variable table, these variables are inited to nil
     OP_LOCAL_INIT,                  // declare variable(s) and init them with some values.
+    OP_FUNC_ARGS_INIT,              // do the same work as OP_LOCAL_INIT, and then create a variable `arguments` with all the arguments
     OP_PUSH_ENV,                    // used to achieve if-while-statement's local namespace
     OP_POP_ENV,
     

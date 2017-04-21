@@ -14,6 +14,27 @@ static lx_object_string S_father_env = {
     .text = "_father_env",
     .text_len = 11
 };
+static lx_object_string S_E = {
+    .base.type = LX_OBJECT_STRING,
+    .base.is_singleton = true,
+    .need_free = false,
+    .text = "_E",
+    .text_len = 2
+};
+static lx_object_string Sarguments = {
+    .base.type = LX_OBJECT_STRING,
+    .base.is_singleton = true,
+    .need_free = false,
+    .text = "arguments",
+    .text_len = 9
+};
+static lx_object_string Ssize = {
+    .base.type = LX_OBJECT_STRING,
+    .base.is_singleton = true,
+    .need_free = false,
+    .text = "size",
+    .text_len = 4
+};
 static lx_object_string S_get = {
     .base.type = LX_OBJECT_STRING,
     .base.is_singleton = true,
@@ -885,7 +906,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                     lx_throw_s(vm, "VM ERROR: `local` var should be a string (2)");
                 }
                 lx_object_stack_push(stack, LX_OBJECT_tag()); /* tag for calling _env's meta function _set */
-                if(stack->arr[value]->type != LX_OBJECT_TAG)
+                if (stack->arr[value]->type != LX_OBJECT_TAG)
                     lx_object_stack_push(stack, stack->arr[value--]);
                 else
                     lx_object_stack_push(stack, LX_OBJECT_nil());
@@ -896,6 +917,42 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             while(stack->arr[value]->type != LX_OBJECT_TAG)
                 value--;
             stack->curr = value - 1;
+            continue;
+        }
+        case OP_FUNC_ARGS_INIT: {
+            lx_object_table* arguments = lx_create_table(vm);
+            object_table_replace(_env, CAST_O &Sarguments, CAST_O arguments);
+            float arguments_size = 0.0f;
+
+            int tag_v = stack->curr;
+            while (stack->arr[tag_v]->type != LX_OBJECT_TAG) {
+                tag_v--;
+                if (tag_v < 0) {
+                    lx_throw_s(vm, "VM ERROR: can't find the tag of local_init in stack");
+                }
+            }
+            int value = tag_v - 1;
+            int key = stack->curr;
+            while (stack->arr[key]->type != LX_OBJECT_TAG) {
+                if (stack->arr[key]->type != LX_OBJECT_STRING) {
+                    lx_throw_s(vm, "VM ERROR: `local` var should be a string (2)");
+                }
+                lx_object_stack_push(stack, LX_OBJECT_tag()); /* tag for calling _env's meta function _set */
+                if (stack->arr[value]->type != LX_OBJECT_TAG){
+                    lx_object_stack_push(stack, stack->arr[value]);
+                    object_table_replace(arguments, lx_create_number(vm, arguments_size++), stack->arr[value]);
+                    value--;
+                } else
+                    lx_object_stack_push(stack, LX_OBJECT_nil());
+
+                lx_object_stack_push(stack, stack->arr[key--]);
+                lx_object_stack_push(stack, CAST_O _env);
+                _table_set(vm, NULL); // todo: optimize this, no need to push and call _table_set, just assign
+            }
+            while (stack->arr[value]->type != LX_OBJECT_TAG)
+                object_table_replace(arguments, lx_create_number(vm, arguments_size++), stack->arr[value--]);
+            stack->curr = value - 1;
+            object_table_replace(arguments, CAST_O &Ssize, lx_create_number(vm, arguments_size));
             continue;
         }
         case OP_PUSH_ENV: {
@@ -1510,6 +1567,7 @@ lx_object_table* lx_create_env_table(lx_vm* vm)
 {
     lx_object_table* env = CAST_T managed_with_gc(vm->gc, CAST_O create_object_table_raw());
     table_set_meta_table(env, lx_create_default_env_meta_table(vm));
+    object_table_replace(env, CAST_O &S_E, CAST_O env);
     return env;
 }
 lx_object_table* lx_create_env_table_with_father_env(lx_vm* vm, lx_object_table* _father_env)

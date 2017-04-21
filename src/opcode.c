@@ -34,6 +34,7 @@ const char* lx_opcode_type_to_string(unsigned char type)
 
     case OP_LOCAL: return "local";
     case OP_LOCAL_INIT: return "local_init";
+    case OP_FUNC_ARGS_INIT: return "func_args_init";
     case OP_PUSH_ENV: return "push_env";
     case OP_POP_ENV: return "pop_env";
 
@@ -105,6 +106,7 @@ const char* lx_opcode_to_string(lx_opcode_x* op, char* str)
 
     case OP_LOCAL: return "local";
     case OP_LOCAL_INIT: return "local_init";
+    case OP_FUNC_ARGS_INIT: return "func_args_init";
     case OP_PUSH_ENV: return "push_env";
     case OP_POP_ENV: return "pop_env";
 

@@ -12,15 +12,15 @@
 2017/04/16
  + [ ]  function's arguments
  + [ ]  [parser] tab.true == tab["true"]
- + [ ]  [GC] `return {};`
+ + [X]  [GC] `return {};`
 
 2017/04/17
  + [X]  recursive calling
  + [ ]  尾递归优化
 
 2017/04/14
- + [ ]  += -= *= /=
- + [ ]  str + str
+ + [X]  += -= *= /=
+ + [X]  str + str
  + [X]  table init: {a: 1, str:"aaa", subtab: {'test': num }}
  + [X]  exception and restore
  + [X]  consider `try catch` or provide a inside function `pcall`:

@@ -100,7 +100,21 @@ local func2_call_func1 = function(a)
 end;
 func1_call_func2(5);
 
-
+-- test arguments
+local func_with_arguments = function(a, b)
+    print(a, b);
+    local i = 0;
+    local sum = 0;
+    print('arguments.size:', arguments.size);
+    while i < arguments.size then
+        print(arguments[i]);
+        sum += arguments[i];
+        i += 1;
+    end
+    return sum;
+end;
+print(func_with_arguments(1, 2, 3, 4));
+print(func_with_arguments(1)); -- arguments.size == 1 now, rather then 2
 
 --[[
   operator

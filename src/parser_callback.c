@@ -898,9 +898,10 @@ LX_CALLBACK_DECLARE5(function_define, FUNCTION, SL, SR, stmt_sequence, END)
     debuglog("function_define  ->  FUNCTION SL SR stmt_sequence END");
     append(_self, __new_op(OP_FUNC_DEF_BEGIN));
     append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_local_declare);
-    append(_self, __new_op(OP_LOCAL_INIT)); /* init expr(s) have been pushed to stack by caller */
+    append(_self, __new_op(OP_FUNC_ARGS_INIT)); /* init expr(s) have been pushed to stack by the caller */
     move(_self, _4);
-    append(_self, __new_op(OP_RETURN)); /* we make sure there has at least one `return` */
+    if(_self->opcodes->back->real_opcode->type != OP_RETURN)
+        append(_self, __new_op(OP_RETURN)); /* we make sure there has at least one `return` */
     append(_self, __new_op(OP_FUNC_DEF_END));
     append(_self, __new_op(OP_PUSHC_FUNC));
     FREE_SYNTAX_NODE(_5);
@@ -920,7 +921,7 @@ LX_CALLBACK_DECLARE6(function_define, FUNCTION, SL, identifier_list, SR, stmt_se
         FREE_SYNTAX_NODE(n);
         n = tem;
     }
-    append(_self, __new_op(OP_LOCAL_INIT)); /* init expr(s) have been pushed to stack by caller */
+    append(_self, __new_op(OP_FUNC_ARGS_INIT)); /* init expr(s) have been pushed to stack by caller */
     move(_self, _5);
     append(_self, __new_op(OP_FUNC_DEF_END));
     append(_self, __new_op(OP_PUSHC_FUNC));
