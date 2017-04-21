@@ -543,7 +543,7 @@ static int prefix_op(lx_parser * p, lx_syntax_node *self);
 
 static int lx_parser_begin(lx_parser * p, lx_parser *parser)
 {
-
+    /* todo: current enter point is compile_unit */
 }
 
 lx_parser* lx_gen_opcodes(const char* _source_code, const int source_code_length)

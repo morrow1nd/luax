@@ -302,12 +302,7 @@ int _op_call(lx_vm* vm, lx_object* obj)
             lx_object_table* _env = lx_create_env_table_with_father_env(vm, obj_func->env_creator);
             lx_object_stack_push(vm->call_stack, CAST_O _env);
             _vm_run_opcodes(vm, obj_func, _env);
-#if LX_VM_DEBUG
-            if(lx_object_stack_pop(vm->call_stack) != CAST_O _env)
-                assert(false && "error in vm->call_stack");
-#else
             lx_object_stack_pop(vm->call_stack);
-#endif
         } else if (obj_func->func_ptr) {
             obj_func->func_ptr(vm, obj);
         } else {
@@ -450,6 +445,7 @@ void _pcall(lx_vm* vm, lx_object* _called_obj)
     lx_object* func = lx_object_stack_pop(vm->stack);
     jmp_buf _jmp;
     jmp_buf* backup_jmp_buf;
+    int backup_call_stack_env = vm->call_stack->curr;
     int ret = setjmp(_jmp);
     if (ret == 0) {
         backup_jmp_buf = vm->curr_jmp_buf;
@@ -457,7 +453,7 @@ void _pcall(lx_vm* vm, lx_object* _called_obj)
         _op_call(vm, func);
         lx_object_stack_push(vm->stack, LX_OBJECT_nil()); /* this nil means this function finished successfully */
     } else {
-        /* nothing */
+        vm->call_stack->curr = backup_call_stack_env;
     }
     vm->curr_jmp_buf = backup_jmp_buf;
 }

@@ -159,10 +159,11 @@ lx_opcodes* gen_opcodes(lx_syntax_node* root)
             // enarge it
             lx_opcode** arr = (lx_opcode**)lx_malloc(sizeof(lx_opcode*) * ((opcodes->capacity / 1024 + 1) * 1024));
             if (opcodes->arr) {
-                memcpy(arr, opcodes->arr, opcodes->capacity);
+                memcpy(arr, opcodes->arr, opcodes->capacity * sizeof(lx_opcode*));
                 lx_free(opcodes->arr);
             }
             opcodes->arr = arr;
+            opcodes->capacity += 1024;
         }
         opcodes->arr[opcodes->size] = n->real_opcode;
         n->real_opcode = NULL;
