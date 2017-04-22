@@ -166,7 +166,7 @@ int main(int argc, char * argv[])
                 continue;
 
             lx_parser * p = lx_gen_opcodes(data, file_len);
-            lx_free(data); // lx_genBytecode has copied data
+            lx_free(data); // lx_gen_opcodes has copied data
             if (p == NULL) {
                 printf("Error: syntax error\n");
                 continue;

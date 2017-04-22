@@ -34,7 +34,7 @@ print(g); -- 123
 
 ### table
 
- If you has learnt Javascript, you must be familiar with Object. Javascript's Object has properties and methords. But **table** is just a container containing several key-values.
+ If you has learnt Javascript, you must be familiar with Object. Javascript's Object has properties and methods. But **table** is just a container containing several key-values.
 
  Basic usage of **table**:
 ```lua
@@ -146,18 +146,18 @@ call func2
 
 ### value and type
 
- + **nil**  has only one value `nil`
- + **bool** has two values `true` and `false`
- + **number** store real number(in math)
- + **string** read-only string
+ + **nil**  - has only one value `nil`
+ + **bool**  - has two values `true` and `false`
+ + **number**  - store real number(in math)
+ + **string**  - read-only string
     - `'this is a string'`
     - `"this is another string"`
     - `"say 'hi', \t\n\r\\\""`
- + **table** container containing key-value mapping
+ + **table**  - container containing key-value mapping
     - `{}`
     - `{'key': 'value', 1 : 'value2'}`
     - `{ 'subtab' : { 0 : 123 }}`
- + **function** function achieved by luax code or C code
+ + **function**  - function achieved by luax code or C code
 
 ### conversion
 
@@ -312,6 +312,16 @@ print(_E._E == _E); -- true
  + typeof(obj)  - return the type of `obj` in string
  + meta_table(tab)  - return the meta table of tab
  + set_meta_table(tab, new_meta_table)
+ + table_get(tab, key)  - raw get, don't use the "_get" function of tab's meta table
+ + table_set(tab, key, value)  - raw set
+ + table_exist(tab, key)  - return a **bool** to tell whether this tab contains this key
+    ```lua
+    local tab = { 0 : 123 };
+    tab[1] = nil;
+    print(table_exist(tab, 0)); -- true
+    print(table_exist(tab, 1)); -- true
+    print(table_exist(tab, 2)); -- false
+    ```
  + table_next(tab, key)  - iterate over all the key-values in a table, example:
     ```lua
     local tab = {};
@@ -326,8 +336,6 @@ print(_E._E == _E); -- true
     end
     ```
  + table_prev(tab, key)  - opposite direction
- + table_get(tab, key)  - raw get, don't use the "_get" function of tab's meta table
- + table_set(tab, key, value)  - raw set
  + new_table(meta_table)  - create a table using the provided meta table
  + pcall(func, args...)  - call `func` in protected mode, example:
     ```lua

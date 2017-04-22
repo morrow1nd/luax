@@ -1,0 +1,150 @@
+--[[
+    OOP simulation
+]]
+
+-- [TODO]  not finished 
+
+--[[
+// we will simulate this c++ code
+
+class car {
+private:
+    string name;
+    int max_speed;
+    int speed;
+public:
+    car(string name, int max_speed)
+        : name(name), max_speed(max_speed) {}
+    string get_name() { return name; }
+    int get_max_speed() { return max_speed; }
+    int get_speed() { return speed; }
+    void set_speed(int speed) { this->speed = speed; }
+    virtual void speed_up() { cout << "I don't know how to speed up" << endl; }
+    ~car() { cout << name << " is destroyed" << endl; }
+};
+class bus : public car {
+public:
+    int passenger_number;
+    bus(string name, int max_speed)
+        : car(name, max_speed) {}
+    void speed_up() override { speed += 2; if(speed > max_speed) speed = max_speed; }
+};
+
+int main()
+{
+    bus* b = new bus("bus's name", 50);
+    b->speed_up();
+    cout << b->get_name() << b->get_speed() << b->get_max_speed() << endl;
+    delete b;
+    return 0;
+}
+]]
+
+-- define object
+local define_class = function(class_name)
+    local tab = {};
+    tab.private_accessor = {};
+    tab.accessor = {};
+    tab.class_name = class_name;
+    return tab;
+end;
+local add_method = function(class_define, method_name, method, pub_or_pri)
+    if pub_or_pri == nil or pub_or_pri == false then
+        class_define.private_accessor[method_name] = method;
+    else
+        class_define.accessor[method_name] = method;
+    end
+end;
+local add_property = function(class_define, property_name, pub_or_pri)
+    if pub_or_pri == nil or pub_or_pri == false then
+        class_define.private_accessor[property_name] = nil;
+    else
+        class_define.accessor[property_name] = nil;
+    end
+end;
+-- only support public inheritance now
+local inherit = function(class_define, base_class_define)
+    class_define.base_class_define = base_class_define;
+end;
+
+
+-- using object
+local new_object = function(class_define)
+    arguments[0] = nil;
+    local obj = {};
+    obj.__class_name = class_define.class_name;
+    obj.__access = class_define.accessor;
+    
+    if class_define.base_class_define then
+        obj.__base = new_object(class_define.base_class_define);
+    end
+
+    local mtab = meta_table(obj);
+    table_set(mtab, "_get", function(tab, key)
+        if table_exist(table_get(tab, "__access"), key) then
+            return table_get(tab, "__access")[key];
+        else
+            if table_get(tab, '__base') != nil then
+                return table_get(tab, '__base')[key];
+            else
+                print("class " + class_define.class_name + " doesn't have a member called " + key);
+            end
+        end
+    end);
+    table_set(mtab, "_set", function(tab, key, value)
+        if table_exist(table_get(tab, "__access"), key) then
+            table_get(tab, "__access")[key] = value;
+        else
+            if table_get(tab, '__base') != nil then
+                table_get(tab, '__base')[key] = value;
+            else
+                print("class " + class_define.class_name + " doesn't have a member called " + key);
+            end
+        end
+    end);
+
+    return obj;
+end;
+local delete_object = function(obj)
+    
+end;
+local type_cast = function(class_define, obj)
+    
+end;
+
+
+
+--[[
+    user code
+]]
+
+
+-- prepare class car and bus
+
+local class_car = define_class("car");
+add_property(class_car, "name"); -- private
+add_property(class_car, "max_speed");
+add_property(class_car, "speed");
+add_method(class_car, "car", function(this, name, max_speed) this.name = name; this.max_speed = max_speed; end, true);
+add_method(class_car, "get_name", function(this) return this.name; end, true);
+add_method(class_car, "get_max_speed", function(this) return this.max_speed; end, true);
+add_method(class_car, "get_speed", function(this) return this.speed; end, true);
+add_method(class_car, "set_speed", function(this, new_speed) this.speed = new_speed; end, true);
+add_method(class_car, "speed_up", function(this) print("I don't know how to speed up"); end, true);
+add_method(class_car, "~", function(this) print(this.name + " is destroyed"); end, true);
+
+local class_bus = define_class("bus");
+inherit(class_bus, class_car);
+add_property(class_bus, "passenger_number", true);
+-- add_method(class_bus, "bus", function(this, name, max_speed) class_bus.__base[table_get(class_bus.__base, "__class_name")](class_bus.__base, name, max_speed); end, true);
+add_method(class_bus, "speed_up", function(this) this.speed += 2; if this.speed > this.max_speed then this.speed = this.max_speed; end end, true);
+
+
+-- use class car and bus
+local mybus = new_object(class_bus, "super bus", 300);
+mybus.set_speed(100);
+mybus.speed_up();
+print(mybus.name + "'s speed is " + mybus.get_speed);
+-- local car = type_cast(class_car, mybus);
+-- car.speed_up();
+-- delete_object(mybus);

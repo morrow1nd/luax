@@ -16,9 +16,9 @@ print(0.000000001); -- 0.0
 print('string');
 print('\nnext line\t \\\'hello\'\\');
 print("'hi'");
-print({});
+-- print({});
 -- multi arguments
-print(nil, true, false, 123.456, {}, 'string');
+print(nil, true, false, 123.456, 'string');
 
 
 --[[
@@ -115,6 +115,15 @@ local func_with_arguments = function(a, b)
 end;
 print(func_with_arguments(1, 2, 3, 4));
 print(func_with_arguments(1)); -- arguments.size == 1 now, rather then 2
+
+local func_with_arguments2 = function(a) 
+    arguments[0] = 2;
+    print(a);
+    a = 3;
+    print(arguments[0]);
+end;
+func_with_arguments2(1); -- 1, 2
+
 
 -- show a array, the number of elements is stored in tab.size
 local show_array = function(tab)
@@ -243,7 +252,7 @@ local tab = {'key' : "value", 'key 2' : 56, 'key3': {}, 'key4' : function (a,b)r
 a = 1;
 b = 'hi';
 tab = {'key' : "value", 'key 2' : 56, 'subtab' : { 1: 'hi', 'tt' : 'kkk'}};
-print(tab);
+-- print(tab);
 -- when the key of a table is `nil`
 local tab_key_is_nil = {};
 tab_key_is_nil[nil] = 'aaa';
@@ -373,16 +382,24 @@ tab[1] = 1;
 tab.lastone = "lastone value";
 
 -- test table_prev
-local i = nil;
-while i = table_prev(tab, i) then
-    if i == tab then continue; end
-    print('key, value:');
-    print(i, tab[i]);
-end
-
+--emit_VS_breakpoint();
 i = nil;
 while i = table_next(tab, i) then
     if i == tab then continue; end
     print('key, value:');
     print(i, tab[i]);
 end
+i = nil;
+while i = table_prev(tab, i) then
+    if i == tab then continue; end
+    print('key, value:');
+    print(i, tab[i]);
+end
+
+
+-- test table_exist
+tab = { 0 : 123 };
+tab[1] = nil;
+print(table_exist(tab, 0)); -- true
+print(table_exist(tab, 1)); -- true
+print(table_exist(tab, 2)); -- false

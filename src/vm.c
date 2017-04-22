@@ -161,6 +161,13 @@ static lx_object_string Stable_next = {
     .text = "table_next",
     .text_len = 10
 };
+static lx_object_string Stable_exist = {
+    .base.type = LX_OBJECT_STRING,
+    .base.is_singleton = true,
+    .need_free = false,
+    .text = "table_exist",
+    .text_len = 11
+};
 static lx_object_string Sset_meta_table = {
     .base.type = LX_OBJECT_STRING,
     .base.is_singleton = true,
@@ -173,7 +180,7 @@ static lx_object_string Smeta_table = {
     .base.is_singleton = true,
     .need_free = false,
     .text = "meta_table",
-    .text_len = 9
+    .text_len = 10
 };
 static lx_object_string Stypeof = {
     .base.type = LX_OBJECT_STRING,
@@ -485,6 +492,22 @@ void _table_set(lx_vm* vm, lx_object* _called_obj)
     if (lx_object_stack_pop(s)->type != LX_OBJECT_TAG)
         lx_throw_s(vm, "luax function table_get needs 3 arguments");
     table_replace((lx_object_table*)tab, key, new_value);
+}
+/* table_exist(tab, key) returns a **bool** to tell whether this tab contains this key */
+void _table_exist(lx_vm* vm, lx_object* _called_obj)
+{
+    UNUSED_ARGUMENT(_called_obj);
+    lx_object_stack* s = vm->stack;
+    lx_object* tab = lx_object_stack_pop(s);
+    if (tab->type != LX_OBJECT_TABLE)
+        lx_throw_s(vm, "`table_get` need a table as it's first argument");
+    lx_object* key = lx_object_stack_pop(s);
+    if (lx_object_stack_pop(s)->type != LX_OBJECT_TAG)
+        lx_throw_s(vm, "luax function table_get needs 2 arguments");
+    if (table_find(CAST_T tab, key))
+        lx_object_stack_push(vm->stack, LX_OBJECT_true());
+    else
+        lx_object_stack_push(vm->stack, LX_OBJECT_false());
 }
 /*
 ** create a table using the provided meta table
@@ -1063,7 +1086,8 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             continue;
         }
         case OP_POP_ENV: {
-            _env = CAST_T lx_object_stack_pop(vm->call_stack);
+            lx_object_stack_pop(vm->call_stack);
+            _env = CAST_T lx_object_stack_top(vm->call_stack);
             continue;
         }
 
@@ -1701,10 +1725,11 @@ lx_object_table* lx_create_env_table_with_inside_function(lx_vm* vm)
     table_replace(env_table, CAST_O &Stypeof, CAST_O lx_create_function_p(vm, _typeof, lx_create_env_table(vm)));
     table_replace(env_table, CAST_O &Smeta_table, CAST_O lx_create_function_p(vm, _meta_table, lx_create_env_table(vm)));
     table_replace(env_table, CAST_O &Sset_meta_table, CAST_O lx_create_function_p(vm, _set_meta_table, lx_create_env_table(vm)));
-    table_replace(env_table, CAST_O &Stable_next, CAST_O lx_create_function_p(vm, _table_next, lx_create_env_table(vm)));
-    table_replace(env_table, CAST_O &Stable_prev, CAST_O lx_create_function_p(vm, _table_prev, lx_create_env_table(vm)));
     table_replace(env_table, CAST_O &Stable_get,  CAST_O lx_create_function_p(vm, _table_get, lx_create_env_table(vm)));
     table_replace(env_table, CAST_O &Stable_set, CAST_O lx_create_function_p(vm, _table_set, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Stable_exist, CAST_O lx_create_function_p(vm, _table_exist, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Stable_next, CAST_O lx_create_function_p(vm, _table_next, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Stable_prev, CAST_O lx_create_function_p(vm, _table_prev, lx_create_env_table(vm)));
     table_replace(env_table, CAST_O &Snew_table,  CAST_O lx_create_function_p(vm, _new_table, lx_create_env_table(vm)));
     table_replace(env_table, CAST_O &Spcall,  CAST_O lx_create_function_p(vm, _pcall, lx_create_env_table(vm)));
     table_replace(env_table, CAST_O &Sthrow,  CAST_O lx_create_function_p(vm, _throw, lx_create_env_table(vm)));
