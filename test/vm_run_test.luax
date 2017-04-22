@@ -219,6 +219,14 @@ print(a);
 a += "4 hi";
 print(a);
 
+-- test = operator
+i = true;
+while i = nil then
+    print('error');
+end
+
+
+
 --[[
   table
 ]]
@@ -344,4 +352,29 @@ while i < 10 then
         continue;
     end
     print(i);
+end
+
+
+-- test table_next
+
+local tab = {};
+tab.name = "I'm a table";
+tab.key = "this is a key";
+tab[2] = "2";
+tab[1] = 1;
+tab.lastone = "lastone value";
+
+local i = nil;
+while i = table_next(tab, i) then
+    if i == tab then continue; end
+    print('key, value:');
+    print(i, tab[i]);
+end
+
+-- test table_prev
+i = nil;
+while i = table_prev(tab, i) then
+    if i == tab then continue; end
+    print('key, value:');
+    print(i, tab[i]);
 end

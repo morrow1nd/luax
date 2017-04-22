@@ -114,7 +114,7 @@ static char* object_get_id(lx_object* obj, char id[])
     assert(false && "VM ERROR: ...\n");
     return "";
 }
-_object_table_kv* object_table_find(lx_object_table* tab, lx_object* k)
+_object_table_kv* table_find(lx_object_table* tab, lx_object* k)
 {
     static char id[LX_CONFIG_IDENTIFIER_MAX_LENGTH + 1];
     _object_table_kv* result = NULL;
@@ -122,7 +122,7 @@ _object_table_kv* object_table_find(lx_object_table* tab, lx_object* k)
     HASH_FIND_STR(tab->keyvalue_map, id, result);
     return result; /* return NULL when not found */
 }
-_object_table_kv* object_table_find_t(lx_object_table* tab, const char* text, int text_len)
+_object_table_kv* table_find_t(lx_object_table* tab, const char* text, int text_len)
 {
     static lx_object_string obj = {
         .base.type = LX_OBJECT_STRING,
@@ -131,11 +131,11 @@ _object_table_kv* object_table_find_t(lx_object_table* tab, const char* text, in
     };
     obj.text = text;
     obj.text_len = text_len;
-    return object_table_find(tab, CAST_O &obj);
+    return table_find(tab, CAST_O &obj);
 }
-_object_table_kv* object_table_always_found(lx_object_table* tab, lx_object* k)
+_object_table_kv* table_always_found(lx_object_table* tab, lx_object* k)
 {
-    _object_table_kv* kv = object_table_find(tab, k);
+    _object_table_kv* kv = table_find(tab, k);
     if (kv == NULL) {
         char id[LX_CONFIG_IDENTIFIER_MAX_LENGTH + 1];
         object_get_id(k, id);
@@ -151,7 +151,7 @@ _object_table_kv* object_table_always_found(lx_object_table* tab, lx_object* k)
     }
     return kv;
 }
-lx_object* object_table_replace(lx_object_table* tab, lx_object* k, lx_object* v)
+lx_object* table_replace(lx_object_table* tab, lx_object* k, lx_object* v)
 {
     if (v == NULL)
         return NULL;
@@ -183,30 +183,57 @@ lx_object* object_table_replace(lx_object_table* tab, lx_object* k, lx_object* v
     HASH_ADD_KEYPTR(hh, tab->keyvalue_map, kv->hash_key, id_len, kv);
     return old;
 }
+lx_object* table_next(lx_object_table* tab, lx_object* k)
+{
+    _object_table_kv* next;
+    if (!k || k->type == LX_OBJECT_NIL) {
+        next = (_object_table_kv*)(tab->keyvalue_map);
+    } else {
+        next = (_object_table_kv*)(table_find(tab, k)->hh.next);
+    }
+    return next ? next->key : LX_OBJECT_nil();
+}
+lx_object* table_prev(lx_object_table* tab, lx_object* k)
+{
+    _object_table_kv* prev;
+    if (!k || k->type == LX_OBJECT_NIL) {
+        _object_table_kv* last_one = tab->keyvalue_map;
+        while (last_one) {
+            if(last_one->hh.next)
+                last_one = (_object_table_kv*)(last_one->hh.next);
+            else
+                break;
+        }
+        prev = last_one;
+    } else {
+        prev = (_object_table_kv*)(table_find(tab, k)->hh.prev);
+    }
+    return prev ? prev->key : LX_OBJECT_nil();
+}
 
 lx_object_table* table_get_meta_table(lx_object_table* tab)
 {
-    return CAST_T object_table_find(tab, CAST_O tab)->value;
+    return CAST_T table_find(tab, CAST_O tab)->value;
 }
 void table_set_meta_table(lx_object_table* tab, lx_object_table* new_meta_table)
 {
-    object_table_replace(tab, CAST_O tab, CAST_O new_meta_table);
+    table_replace(tab, CAST_O tab, CAST_O new_meta_table);
 }
 lx_object* table_meta_element_get(lx_object_table* tab, const char* str)
 {
-    return object_table_find_t(table_get_meta_table(tab), str, strlen(str))->value;
+    return table_find_t(table_get_meta_table(tab), str, strlen(str))->value;
 }
 void table_meta_element_set(lx_object_table* tab, lx_object* k, lx_object* v)
 {
-    object_table_replace(table_get_meta_table(tab), k, v);
+    table_replace(table_get_meta_table(tab), k, v);
 }
 lx_object_function* table_meta_function_get(lx_object_table* tab, const char* str)
 {
-    return CAST_F object_table_find_t(table_get_meta_table(tab), str, strlen(str))->value;
+    return CAST_F table_find_t(table_get_meta_table(tab), str, strlen(str))->value;
 }
 void table_meta_function_set(lx_object_table* tab, lx_object* k, lx_object_function* v)
 {
-    object_table_replace(table_get_meta_table(tab), k, CAST_O v);
+    table_replace(table_get_meta_table(tab), k, CAST_O v);
 }
 
 

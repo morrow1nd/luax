@@ -140,6 +140,20 @@ static lx_object_string Stable_get = {
     .text = "table_get",
     .text_len = 9
 };
+static lx_object_string Stable_prev = {
+    .base.type = LX_OBJECT_STRING,
+    .base.is_singleton = true,
+    .need_free = false,
+    .text = "table_prev",
+    .text_len = 10
+};
+static lx_object_string Stable_next = {
+    .base.type = LX_OBJECT_STRING,
+    .base.is_singleton = true,
+    .need_free = false,
+    .text = "table_next",
+    .text_len = 10
+};
 static lx_object_string Sset_meta_table = {
     .base.type = LX_OBJECT_STRING,
     .base.is_singleton = true,
@@ -294,6 +308,17 @@ lx_object* _obj_div(lx_object* a, lx_object* b, lx_vm* vm)
     }
     return NULL;
 }
+bool _obj_eql_eql(lx_object* a, lx_object* b, lx_vm* vm)
+{
+    if((a->type == LX_OBJECT_NUMBER || a->type == LX_OBJECT_BOOL)
+        && (b->type == LX_OBJECT_NUMBER || b->type == LX_OBJECT_BOOL))
+        return a->fnumber == b->fnumber;
+    else if(a->type == LX_OBJECT_STRING && b->type == LX_OBJECT_STRING)
+        return ((CAST_S a)->text_len == (CAST_S b)->text_len)
+               && (memcmp((CAST_S a)->text, (CAST_S b)->text, (CAST_S a)->text_len) == 0);
+    else
+        return a == b;
+}
 
 /*
 ** pop several objs from the stack until meet the first tag.
@@ -393,6 +418,34 @@ void _set_meta_table(lx_vm* vm, lx_object* _called_obj)
         table_set_meta_table(tab, new_meta_tab);
     }
 }
+void _table_next(lx_vm* vm, lx_object* _called_obj)
+{
+    lx_object_table* tab = CAST_T lx_object_stack_pop(vm->stack);
+    if (tab->base.type == LX_OBJECT_TAG) {
+        lx_throw_s(vm, "table_next need a table as it's first argument");
+    }
+    lx_object* k = lx_object_stack_pop(vm->stack);
+    if (k->type == LX_OBJECT_TAG){
+        lx_object_stack_push(vm->stack, table_next(tab, LX_OBJECT_nil()));
+    } else {
+        _op_pop_to_tag(vm);
+        lx_object_stack_push(vm->stack, table_next(tab, k));
+    }
+}
+void _table_prev(lx_vm* vm, lx_object* _called_obj)
+{
+    lx_object_table* tab = CAST_T lx_object_stack_pop(vm->stack);
+    if (tab->base.type == LX_OBJECT_TAG) {
+        lx_throw_s(vm, "table_next need a table as it's first argument");
+    }
+    lx_object* k = lx_object_stack_pop(vm->stack);
+    if (k->type == LX_OBJECT_TAG) {
+        lx_object_stack_push(vm->stack, table_prev(tab, LX_OBJECT_nil()));
+    } else {
+        _op_pop_to_tag(vm);
+        lx_object_stack_push(vm->stack, table_prev(tab, k));
+    }
+}
 /*
 ** raw get, don't use the "_get" function of tab's meta table
 ** table_get(tab, key)
@@ -407,7 +460,7 @@ void _table_get(lx_vm* vm, lx_object* _called_obj)
     lx_object* key = lx_object_stack_pop(s);
     if(lx_object_stack_pop(s)->type != LX_OBJECT_TAG)
         lx_throw_s(vm, "luax function table_get needs 2 arguments");
-    lx_object_stack_push(s, object_table_always_found((lx_object_table*)tab, key)->value);
+    lx_object_stack_push(s, table_always_found((lx_object_table*)tab, key)->value);
 }
 /*
 ** raw set
@@ -424,7 +477,7 @@ void _table_set(lx_vm* vm, lx_object* _called_obj)
     lx_object* new_value = lx_object_stack_pop(s);
     if (lx_object_stack_pop(s)->type != LX_OBJECT_TAG)
         lx_throw_s(vm, "luax function table_get needs 3 arguments");
-    object_table_replace((lx_object_table*)tab, key, new_value);
+    table_replace((lx_object_table*)tab, key, new_value);
 }
 /*
 ** create a table using the provided meta table
@@ -612,7 +665,7 @@ void default_env_meta_func__get(lx_vm* vm, lx_object* _called_obj)
     if (lx_object_stack_pop(s)->type != LX_OBJECT_TAG) {
         assert(false && "default_env_meta_func__get argument error");
     }
-    _object_table_kv* kv = object_table_find(_env, key);
+    _object_table_kv* kv = table_find(_env, key);
     if (kv) { /* found in the current env */
         lx_object_stack_push(s, kv->value);
         return;
@@ -642,7 +695,7 @@ void default_env_meta_func__set(lx_vm* vm, lx_object* _called_obj)
     lx_object_table* _curr_env = CAST_T lx_object_stack_pop(s);
     lx_object_table* _env = _curr_env;
     while(_env && _env->base.type != LX_OBJECT_NIL){
-        if (object_table_find(_env, s->arr[s->curr])) {
+        if (table_find(_env, s->arr[s->curr])) {
             lx_object_stack_push(s, CAST_O _env);
             _table_set(vm, _called_obj);
             return; /* finished */
@@ -921,7 +974,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
         }
         case OP_FUNC_ARGS_INIT: {
             lx_object_table* arguments = lx_create_table(vm);
-            object_table_replace(_env, CAST_O &Sarguments, CAST_O arguments);
+            table_replace(_env, CAST_O &Sarguments, CAST_O arguments);
             float arguments_size = 0.0f;
 
             int tag_v = stack->curr;
@@ -940,7 +993,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 lx_object_stack_push(stack, LX_OBJECT_tag()); /* tag for calling _env's meta function _set */
                 if (stack->arr[value]->type != LX_OBJECT_TAG){
                     lx_object_stack_push(stack, stack->arr[value]);
-                    object_table_replace(arguments, lx_create_number(vm, arguments_size++), stack->arr[value]);
+                    table_replace(arguments, lx_create_number(vm, arguments_size++), stack->arr[value]);
                     value--;
                 } else
                     lx_object_stack_push(stack, LX_OBJECT_nil());
@@ -950,9 +1003,9 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 _table_set(vm, NULL); // todo: optimize this, no need to push and call _table_set, just assign
             }
             while (stack->arr[value]->type != LX_OBJECT_TAG)
-                object_table_replace(arguments, lx_create_number(vm, arguments_size++), stack->arr[value--]);
+                table_replace(arguments, lx_create_number(vm, arguments_size++), stack->arr[value--]);
             stack->curr = value - 1;
-            object_table_replace(arguments, CAST_O &Ssize, lx_create_number(vm, arguments_size));
+            table_replace(arguments, CAST_O &Ssize, lx_create_number(vm, arguments_size));
             continue;
         }
         case OP_PUSH_ENV: {
@@ -994,7 +1047,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             lx_object_table* tab = CAST_T lx_create_table(vm);
             lx_object* value = lx_object_stack_pop(stack);
             while (value->type != LX_OBJECT_TAG) {
-                object_table_replace(tab, lx_object_stack_pop(stack), value);
+                table_replace(tab, lx_object_stack_pop(stack), value);
                 value = lx_object_stack_pop(stack);
             }
             lx_object_stack_push(stack, CAST_O tab);
@@ -1099,6 +1152,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
         }
 
         case OP_ASSIGN: {
+            lx_object* assign_expr_value = stack->arr[stack->curr]->type != LX_OBJECT_TAG ? stack->arr[stack->curr] : LX_OBJECT_nil();
             int rvalue = stack->curr;
             int opi = rvalue;
             while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
@@ -1120,9 +1174,11 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 left_tkt -= 2;
             }
             stack->curr = left_tkt - 1;
+            lx_object_stack_push(stack, assign_expr_value);
             continue;
         }
         case OP_ADD_ASSIGN: {
+            lx_object* assign_expr_value = stack->arr[stack->curr]->type != LX_OBJECT_TAG ? stack->arr[stack->curr] : LX_OBJECT_nil();
             int rvalue = stack->curr;
             int opi = rvalue;
             while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
@@ -1152,9 +1208,11 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 left_tkt -= 2;
             }
             stack->curr = left_tkt - 1;
+            lx_object_stack_push(stack, assign_expr_value);
             continue;
         }
         case OP_SUB_ASSIGN: {
+            lx_object* assign_expr_value = stack->arr[stack->curr]->type != LX_OBJECT_TAG ? stack->arr[stack->curr] : LX_OBJECT_nil();
             int rvalue = stack->curr;
             int opi = rvalue;
             while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
@@ -1184,9 +1242,11 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 left_tkt -= 2;
             }
             stack->curr = left_tkt - 1;
+            lx_object_stack_push(stack, assign_expr_value);
             continue;
         }
         case OP_MUL_ASSIGN: {
+            lx_object* assign_expr_value = stack->arr[stack->curr]->type != LX_OBJECT_TAG ? stack->arr[stack->curr] : LX_OBJECT_nil();
             int rvalue = stack->curr;
             int opi = rvalue;
             while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
@@ -1216,9 +1276,11 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 left_tkt -= 2;
             }
             stack->curr = left_tkt - 1;
+            lx_object_stack_push(stack, assign_expr_value);
             continue;
         }
         case OP_DIV_ASSIGN: {
+            lx_object* assign_expr_value = stack->arr[stack->curr]->type != LX_OBJECT_TAG ? stack->arr[stack->curr] : LX_OBJECT_nil();
             int rvalue = stack->curr;
             int opi = rvalue;
             while (opi >= 0 && stack->arr[opi]->type != LX_OBJECT_TAG) {
@@ -1248,6 +1310,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 left_tkt -= 2;
             }
             stack->curr = left_tkt - 1;
+            lx_object_stack_push(stack, assign_expr_value);
             continue;
         }
         case OP_AND: {
@@ -1330,8 +1393,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             lx_object* b = lx_object_stack_pop(stack);
             lx_object* a = lx_object_stack_pop(stack);
             if (a && b) {
-                lx_object* out = (a->fnumber == b->fnumber) ? LX_OBJECT_true() : LX_OBJECT_false();
-                lx_object_stack_push(stack, out);
+                lx_object_stack_push(stack, _obj_eql_eql(a, b, vm) ? LX_OBJECT_true() : LX_OBJECT_false());
             } else {
                 lx_throw_s(vm, "VM ERROR: no item in stack");
             }
@@ -1341,8 +1403,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             lx_object* b = lx_object_stack_pop(stack);
             lx_object* a = lx_object_stack_pop(stack);
             if (a && b) {
-                lx_object* out = (a->fnumber != b->fnumber) ? LX_OBJECT_true() : LX_OBJECT_false();
-                lx_object_stack_push(stack, out);
+                lx_object_stack_push(stack, (!_obj_eql_eql(a, b, vm)) ? LX_OBJECT_true() : LX_OBJECT_false());
             } else {
                 lx_throw_s(vm, "VM ERROR: no item in stack");
             }
@@ -1561,13 +1622,13 @@ lx_object_table* lx_create_table_with_meta_table(lx_vm* vm, lx_object_table* met
 lx_object* lx_table_replace_s(lx_vm* vm, lx_object_table* tab, const char* str, lx_object* value)
 {
     lx_object_string* k = lx_create_string_s(vm, str);
-    return object_table_replace(tab, CAST_O k, value);
+    return table_replace(tab, CAST_O k, value);
 }
 lx_object_table* lx_create_env_table(lx_vm* vm)
 {
     lx_object_table* env = CAST_T managed_with_gc(vm->gc, CAST_O create_object_table_raw());
     table_set_meta_table(env, lx_create_default_env_meta_table(vm));
-    object_table_replace(env, CAST_O &S_E, CAST_O env);
+    table_replace(env, CAST_O &S_E, CAST_O env);
     return env;
 }
 lx_object_table* lx_create_env_table_with_father_env(lx_vm* vm, lx_object_table* _father_env)
@@ -1582,22 +1643,24 @@ lx_object_table* lx_create_env_table_with_inside_function(lx_vm* vm)
     lx_gc_info* gc = vm->gc;
     lx_object_table* env_table = lx_create_env_table(vm);
     /* inside functions */
-    object_table_replace(env_table, CAST_O &Stypeof, CAST_O lx_create_function_p(vm, _typeof, lx_create_env_table(vm)));
-    object_table_replace(env_table, CAST_O &Smeta_table, CAST_O lx_create_function_p(vm, _meta_table, lx_create_env_table(vm)));
-    object_table_replace(env_table, CAST_O &Sset_meta_table, CAST_O lx_create_function_p(vm, _set_meta_table, lx_create_env_table(vm)));
-    object_table_replace(env_table, CAST_O &Stable_get,  CAST_O lx_create_function_p(vm, _table_get, lx_create_env_table(vm)));
-    object_table_replace(env_table, CAST_O &Stable_set, CAST_O lx_create_function_p(vm, _table_set, lx_create_env_table(vm)));
-    object_table_replace(env_table, CAST_O &Snew_table,  CAST_O lx_create_function_p(vm, _new_table, lx_create_env_table(vm)));
-    object_table_replace(env_table, CAST_O &Spcall,  CAST_O lx_create_function_p(vm, _pcall, lx_create_env_table(vm)));
-    object_table_replace(env_table, CAST_O &Sthrow,  CAST_O lx_create_function_p(vm, _throw, lx_create_env_table(vm)));
-    object_table_replace(env_table, CAST_O &Scollectgarbage,  CAST_O lx_create_function_p(vm, _collectgarbage, lx_create_env_table(vm)));
-    object_table_replace(env_table, CAST_O &Srequire, CAST_O lx_create_function_p(vm, _require, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Stypeof, CAST_O lx_create_function_p(vm, _typeof, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Smeta_table, CAST_O lx_create_function_p(vm, _meta_table, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Sset_meta_table, CAST_O lx_create_function_p(vm, _set_meta_table, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Stable_next, CAST_O lx_create_function_p(vm, _table_next, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Stable_prev, CAST_O lx_create_function_p(vm, _table_prev, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Stable_get,  CAST_O lx_create_function_p(vm, _table_get, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Stable_set, CAST_O lx_create_function_p(vm, _table_set, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Snew_table,  CAST_O lx_create_function_p(vm, _new_table, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Spcall,  CAST_O lx_create_function_p(vm, _pcall, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Sthrow,  CAST_O lx_create_function_p(vm, _throw, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Scollectgarbage,  CAST_O lx_create_function_p(vm, _collectgarbage, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Srequire, CAST_O lx_create_function_p(vm, _require, lx_create_env_table(vm)));
 
     /* template debug functions */
-    object_table_replace(env_table, CAST_O &Sprint, CAST_O lx_create_function_p(vm, _print, lx_create_env_table(vm)));
-    object_table_replace(env_table, CAST_O &Sdump_stack, CAST_O lx_create_function_p(vm, _dump_stack, lx_create_env_table(vm)));
-    object_table_replace(env_table, CAST_O &Semit_VS_breakpoint, CAST_O lx_create_function_p(vm, _emit_VS_breakpoint, lx_create_env_table(vm)));
-    object_table_replace(env_table, CAST_O &Sshow_gc_info, CAST_O lx_create_function_p(vm, _show_gc_info, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Sprint, CAST_O lx_create_function_p(vm, _print, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Sdump_stack, CAST_O lx_create_function_p(vm, _dump_stack, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Semit_VS_breakpoint, CAST_O lx_create_function_p(vm, _emit_VS_breakpoint, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Sshow_gc_info, CAST_O lx_create_function_p(vm, _show_gc_info, lx_create_env_table(vm)));
 
     return env_table;
 }
@@ -1628,20 +1691,20 @@ lx_object_function* lx_create_function_ops(lx_vm* vm, const lx_opcode** func_opc
 lx_object_table* lx_create_default_meta_table(lx_vm* vm)
 {
     lx_object_table* default_meta_table = CAST_T managed_with_gc(vm->gc, CAST_O create_object_table_raw());
-    object_table_replace(default_meta_table, CAST_O &S_get, CAST_O lx_create_function_p(vm, default_meta_func__get, CAST_T LX_OBJECT_nil()));
-    object_table_replace(default_meta_table, CAST_O &S_set, CAST_O lx_create_function_p(vm, default_meta_func__set, CAST_T LX_OBJECT_nil()));
-    object_table_replace(default_meta_table, CAST_O &S_call, CAST_O lx_create_function_p(vm, default_meta_func__call, CAST_T LX_OBJECT_nil()));
-    object_table_replace(default_meta_table, CAST_O &S_delete, CAST_O lx_create_function_p(vm, default_meta_func__delete, CAST_T LX_OBJECT_nil()));
+    table_replace(default_meta_table, CAST_O &S_get, CAST_O lx_create_function_p(vm, default_meta_func__get, CAST_T LX_OBJECT_nil()));
+    table_replace(default_meta_table, CAST_O &S_set, CAST_O lx_create_function_p(vm, default_meta_func__set, CAST_T LX_OBJECT_nil()));
+    table_replace(default_meta_table, CAST_O &S_call, CAST_O lx_create_function_p(vm, default_meta_func__call, CAST_T LX_OBJECT_nil()));
+    table_replace(default_meta_table, CAST_O &S_delete, CAST_O lx_create_function_p(vm, default_meta_func__delete, CAST_T LX_OBJECT_nil()));
     return default_meta_table;
 }
 lx_object_table* lx_create_default_env_meta_table(lx_vm* vm)
 {
     lx_object_table* default_env_meta_table = CAST_T managed_with_gc(vm->gc, CAST_O create_object_table_raw());
-    object_table_replace(default_env_meta_table, CAST_O &S_get, CAST_O lx_create_function_p(vm, default_env_meta_func__get, CAST_T LX_OBJECT_nil()));
-    object_table_replace(default_env_meta_table, CAST_O &S_set, CAST_O lx_create_function_p(vm, default_env_meta_func__set, CAST_T LX_OBJECT_nil()));
-    object_table_replace(default_env_meta_table, CAST_O &S_call, CAST_O lx_create_function_p(vm, default_env_meta_func__call, CAST_T LX_OBJECT_nil()));
-    object_table_replace(default_env_meta_table, CAST_O &S_delete, CAST_O lx_create_function_p(vm, default_env_meta_func__delete, CAST_T LX_OBJECT_nil()));
-    object_table_replace(default_env_meta_table, CAST_O &S_father_env, LX_OBJECT_nil());
+    table_replace(default_env_meta_table, CAST_O &S_get, CAST_O lx_create_function_p(vm, default_env_meta_func__get, CAST_T LX_OBJECT_nil()));
+    table_replace(default_env_meta_table, CAST_O &S_set, CAST_O lx_create_function_p(vm, default_env_meta_func__set, CAST_T LX_OBJECT_nil()));
+    table_replace(default_env_meta_table, CAST_O &S_call, CAST_O lx_create_function_p(vm, default_env_meta_func__call, CAST_T LX_OBJECT_nil()));
+    table_replace(default_env_meta_table, CAST_O &S_delete, CAST_O lx_create_function_p(vm, default_env_meta_func__delete, CAST_T LX_OBJECT_nil()));
+    table_replace(default_env_meta_table, CAST_O &S_father_env, LX_OBJECT_nil());
     return default_env_meta_table;
 }
 

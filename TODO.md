@@ -10,7 +10,7 @@
  + [ ]  [doc] luax design document
 
 2017/04/16
- + [ ]  function's arguments
+ + [X]  function's arguments
  + [ ]  [parser] tab.true == tab["true"]
  + [X]  [GC] `return {};`
 

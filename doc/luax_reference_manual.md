@@ -289,6 +289,20 @@ inside functions:
  + typeof(obj)  - return the type of `obj` in string
  + meta_table(tab)  - return the meta table of tab
  + set_meta_table(tab, new_meta_table)
+ + table_next(tab, key)  - iterate over all the key-values in a table, example:
+    ```lua
+    local tab = {};
+    tab.name = "I'm a table";
+    tab[2] = "2";
+    tab.key = "this is a key";
+
+    local i = nil;
+    while i = table_next(tab, i) then
+        if i == tab then continue; end
+        print('key: ' + i + ' value: ' + tab[i]);
+    end
+    ```
+ + table_prev(tab, key)  - opposite direction
  + table_get(tab, key)  - raw get, don't use the "_get" function of tab's meta table
  + table_set(tab, key, value)  - raw set
  + new_table(meta_table)  - create a table using the provided meta table

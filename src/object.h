@@ -73,10 +73,13 @@ lx_object_table* create_object_table_raw(); /* create a table with no meta table
 void delete_object_table(lx_object_table* tab);
 
 /* table key-value get and set */
-_object_table_kv* object_table_find(lx_object_table* tab, lx_object* k); /* return NULL when didn't find */
-_object_table_kv* object_table_find_t(lx_object_table* tab, const char* text, int text_len);
-_object_table_kv* object_table_always_found(lx_object_table* tab, lx_object* k); /* return a new key_to_nil when didn't find */
-lx_object* object_table_replace(lx_object_table* tab, lx_object* k, lx_object* v);
+_object_table_kv* table_find(lx_object_table* tab, lx_object* k); /* return NULL when didn't find */
+_object_table_kv* table_find_t(lx_object_table* tab, const char* text, int text_len);
+_object_table_kv* table_always_found(lx_object_table* tab, lx_object* k); /* return a new key_to_nil when didn't find */
+lx_object* table_replace(lx_object_table* tab, lx_object* k, lx_object* v);
+lx_object* table_next(lx_object_table* tab, lx_object* k);
+lx_object* table_prev(lx_object_table* tab, lx_object* k);
+
 
 /* wrapper function for meta table */
 lx_object_table* table_get_meta_table(lx_object_table* tab);

@@ -326,7 +326,9 @@ LX_CALLBACK_DECLARE5(if_stmt, IF, expr, THEN, stmt_sequence, END)
     debuglog_l(_1->token->linenum, "if_stmt  ->  IF expr THEN stmt_sequence END");
     int stmt_sequence_label_size = _4->opcodes ? _4->opcodes->label_size : 0;
 
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_values_shift_to_1);
     move(_self, _2);
+    append(_self, __new_op(OP_VALUES_SHIFT_TO_1));
     append(_self, __new_op_i(OP_JZ, stmt_sequence_label_size + 1));
     append(_self, __new_op(OP_PUSH_ENV));
     move(_self, _4);
@@ -344,7 +346,9 @@ LX_CALLBACK_DECLARE7(if_stmt, IF, expr, THEN, stmt_sequence, ELSE, stmt_sequence
     int stmt_sequence_label_size = _4->opcodes ? _4->opcodes->label_size : 0;
     int else_stmt_sequence_label_size = _6->opcodes ? _6->opcodes->label_size : 0;
 
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_values_shift_to_1);
     move(_self, _2);
+    append(_self, __new_op(OP_VALUES_SHIFT_TO_1));
     append(_self, __new_op_i(OP_JZ, stmt_sequence_label_size + 1));
     append(_self, __new_op(OP_PUSH_ENV));
     move(_self, _4);
@@ -370,7 +374,9 @@ LX_CALLBACK_DECLARE5(while_stmt, WHILE, expr, THEN, stmt_sequence, END)
     int stmt_sequence_label_size = _4->opcodes ? _4->opcodes->label_size : 0;
 
     append(_self, __new_op(OP_LABEL_WHILE_BEGIN));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_values_shift_to_1);
     move(_self, _2);
+    append(_self, __new_op(OP_VALUES_SHIFT_TO_1));
     append(_self, __new_op_i(OP_JZ, stmt_sequence_label_size + 1));
     append(_self, __new_op(OP_PUSH_ENV));
     move(_self, _4);
@@ -391,7 +397,9 @@ LX_CALLBACK_DECLARE9(for_stmt, FOR, expr, EOS, expr, EOS, expr, THEN, stmt_seque
 
     move(_self, _2);
     append(_self, __new_op(OP_LABEL_FOR_BODY));
+    append_with_opinfo(_self, __new_op(OP_TAG), OPINFO_tag_for_values_shift_to_1);
     move(_self, _4);
+    append(_self, __new_op(OP_VALUES_SHIFT_TO_1));
     append(_self, __new_op_i(OP_JZ, stmt_sequence_label_size + 2));
     append(_self, __new_op(OP_PUSH_ENV));
     move(_self, _8);
@@ -454,7 +462,8 @@ static void _table_set_prepare(par expr)
         //      func()["key"] = 1, 2;
         //      tab.name = tab2.name;
         // and tab2.name would generate `table_get` too, but it wouldn't come to here!
-        assert(false && "in prefix_expr, you must find a `table_get`-like opcode. we don't allow this code: `func() = 1`");
+        fprintf(stderr, "syntax error: in prefix_expr, luax must find a `table_get`-like opcode. we don't allow this code: `func() = 1`");
+        assert(false);
         return;
     }
     switch (table_get_op->type) { // todo: maybe we cound use: table_get_op->type ++; // this need the enum LX_OPCODE_TYPE to be sorted well

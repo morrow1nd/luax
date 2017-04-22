@@ -42,8 +42,8 @@ void lmath__int(lx_vm* vm, lx_object* called_obj)
 lx_object_table* lx_lmath_load(lx_vm* vm)
 {
     lx_object_table* tab = lx_create_env_table(vm);
-    object_table_replace(tab, CAST_O &Sabs, managed_with_gc(vm->gc, CAST_O create_object_function_p(lmath__abs, lx_create_env_table(vm))));
-    object_table_replace(tab, CAST_O &Sint, managed_with_gc(vm->gc, CAST_O create_object_function_p(lmath__int, lx_create_env_table(vm))));
+    table_replace(tab, CAST_O &Sabs, managed_with_gc(vm->gc, CAST_O create_object_function_p(lmath__abs, lx_create_env_table(vm))));
+    table_replace(tab, CAST_O &Sint, managed_with_gc(vm->gc, CAST_O create_object_function_p(lmath__int, lx_create_env_table(vm))));
     
     return tab;
 }
