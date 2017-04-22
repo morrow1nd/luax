@@ -4,7 +4,7 @@
 
 ## Introduction
 
- Luax is one kind of dynamic type languages. It's core concept is keeping things simple. If you have programming experience, you only need to know several concepts before using luax.
+ Luax is a dynamic type language, whose core concept is keeping things simple. If you have programming experience, you only need to know several concepts before using luax.
 
 
 
@@ -74,6 +74,69 @@ table_set(meta_tab, '_set', table_set); -- yes, the default meta table use `tabl
 rtab.name = 'new name';
 print(rtab.name); -- new name
 ```
+
+#### function
+
+ In luax, function is first-class citizen. Luax provides only one way to create a function, which is expression `function(...) end`. Function achieved in luax code or C code are both the type **function**, which means you can't know whether a function is achieved in C code. Luax's function provides a variable named `arguments`. `arguments` holds all the real arguments as a array. The number of arguments is stored in `arguments.size`. `arguments` is useful when transport variable parameters.
+
+ Examples:
+```lua
+-- define a function
+local show_array = function(tab)
+    local i = 0;
+    while i < tab.size then
+        print(tab[i]);
+        i += 1;
+    end
+end;
+
+--[[
+  example: closure
+  luax achieves closure in this way. when a function was created, it recorded it's current namespace(I call it environment), when this function is called, it can access the environment in runtime.
+]]
+local createCounter = function(init_number) 
+    local _inner = init_number; 
+    return function()  -- when create this function, it stores a reference to current environment
+        _inner += 1;
+        return _inner; 
+    end; 
+end;
+
+local init_number = 5;
+local counter = createCounter(init_number);
+print(counter()); -- 6, when call this function, it will get `_inner` from the stored environment
+print(counter()); -- 7
+print(init_number); -- 5
+
+
+--[[
+  example: link several functions
+]]
+local func1 = function(arguments) show_array(arguments); print('call func1'); end;
+local func2 = function(arguments) show_array(arguments); print('call func2'); end;
+local add_functions = function()
+    local funcs = arguments;
+    return function()
+        local i = 0;
+        while i < funcs.size then
+            funcs[i](arguments);
+            i += 1;
+        end
+    end;
+end;
+
+local linked_func = add_functions(func1, func2);
+linked_func(123, '456'); -- it will call func1, func2
+--[[  output:
+123.0
+456
+call func1
+123.0
+456
+call func2
+]]
+```
+
 
 
 
@@ -247,7 +310,7 @@ template debug functions:
  + emit_VS_breakpoint()  - emit visual studio breakpoint, so we can use visual studio's debug tool begin from here!
  + show_gc_info()  - show gc info to stdout
 
-
+[TODO]
 
 
 ## Luax API

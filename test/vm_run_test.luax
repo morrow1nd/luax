@@ -116,6 +116,63 @@ end;
 print(func_with_arguments(1, 2, 3, 4));
 print(func_with_arguments(1)); -- arguments.size == 1 now, rather then 2
 
+-- show a array, the number of elements is stored in tab.size
+local show_array = function(tab)
+    local i = 0;
+    while i < tab.size then
+        print(tab[i]);
+        i += 1;
+    end
+end;
+
+--[[
+    example: closure
+]]
+local createCounter = function(init_number) 
+    local _inner = init_number; 
+    return function()  -- when create this function, it stores a reference to current environment
+        _inner += 1;
+        return _inner; 
+    end; 
+end;
+
+local init_number = 5;
+local counter = createCounter(init_number);
+print(counter()); -- 6, when call this function, it will get `_inner` from the stored environment
+print(counter()); -- 7
+print(init_number); -- 5
+
+
+--[[
+  example: link several functions
+]]
+local func1 = function(arguments) show_array(arguments); print('call func1'); end;
+local func2 = function(arguments) show_array(arguments); print('call func2'); end;
+local add_functions = function()
+    local funcs = arguments;
+    return function()
+        local i = 0;
+        while i < funcs.size then
+            funcs[i](arguments);
+            i += 1;
+        end
+    end;
+end;
+
+local linked_func = add_functions(func1, func2);
+linked_func(123, '456'); -- it will call func1, func2
+--[[  output:
+123.0
+456
+call func1
+123.0
+456
+call func2
+]]
+
+
+
+
 --[[
   operator
 ]]

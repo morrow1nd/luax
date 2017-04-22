@@ -106,19 +106,12 @@ int main(int argc, char * argv[])
             char * data = _read_file(script_files[i], &file_len);
             if (data == NULL)
                 continue;
-#if LX_DEBUG
-            printf("=== after reading luax code file:%s\n", script_files[i]);
-#endif
             lx_parser * p = lx_gen_opcodes(data, file_len);
             lx_free(data); /* lx_gen_opcodes has copied data */
             if (p == NULL) {
                 printf("Error: syntax error\n");
                 continue;
             }
-#if LX_DEBUG
-            else
-                printf("=== after generate opcodes\n");
-#endif
 #if LX_VM_OPCODE_SHOW
             lx_helper_dump_opcode(p->opcodes, stdout);
 #else

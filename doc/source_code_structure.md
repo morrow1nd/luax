@@ -14,7 +14,6 @@
     - standard_lib/ - Running time environment.
 
     - luax_exec.c - A standalone executable interpreter.
-    - luax_standard_syntax.c - A syntax-standardlization tool.
 
     - luax.h - All included in one.
     - luax.hpp - Wrapper for c++.

@@ -21,11 +21,11 @@ local qsort = function(data)
         while true then
              -- scan left direction
             while l >= from and data[l] < data[ki] then
-                l = l - 1;
+                l -= 1;
             end
             -- scan right direnction
             while r < to and data[ki] < data[r] then
-                r = r + 1;
+                r += 1;
             end
             -- swap
             if l >= from and r < to then
@@ -34,14 +34,14 @@ local qsort = function(data)
                 if l >= from then
                     _swap(data, l, ki - 1);
                     _swap(data, ki, ki - 1);
-                    ki = ki - 1;
-                    l = l - 1;
+                    ki -= 1;
+                    l -= 1;
                 else
                     if r < to then
                         _swap(data, r, ki + 1);
                         _swap(data, ki, ki + 1);
-                        ki = ki + 1;
-                        r = r + 1;
+                        ki += 1;
+                        r += 1;
                     else
                         break; -- l < to && r >= to
                     end
@@ -61,5 +61,5 @@ print(data);
 local i = 0;
 while i < 8 then
     print(data[i]);
-    i = i + 1;
+    i += 1;
 end

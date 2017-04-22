@@ -2,11 +2,11 @@
 
 # What is Luax?
 
- Luax is a easy-to-learn, concise and powerful programming language. ([Chinese Page](./doc/doc-zh/README.md))
+ Luax is a easy-to-learn, concise and powerful programming language. Luax is a dynamic type language([Chinese Page](./doc/doc-zh/README.md))
 
  Luax provides full documentation(from the language itself to internal design), making it a perfect project for beginner to learn how to make a *interpreter*.
 
- Luax is distributed in source code, which contains the bytecode generator, luax virtual machine, standard library, a standalone executable interpreter, a syntax-standardlization tool, and full documentation.
+ Luax is distributed in source code, which contains the bytecode generator, luax virtual machine, standard library, a standalone executable interpreter, and full documentation.
 
 
 # Documentation
@@ -44,21 +44,31 @@ tab["func"] = function() return "I can hold a function"; end; -- tab["func"] equ
 tab[true] = "the type of my key can be a boolean";
 tab[another_table] = "or a table";
 --[[
-  luax has six kinds of type, nil, bool, number, string, table, function,
-  table's key-value can be any kind of these types.
+  luax has six kinds of type: nil, bool, number, string, table, function. Table's key-value can be any kind of these types.
 ]]
 
 
 -- function
-local func = function(a, b) return a + b, a - b; end;
+local func = function(a, b) -- define a function
+    return a + b, a - b;
+end;
 tab.a, tab.b = func(1, 2); -- return 3, -1
+
+print(func(1, 2), 2);   -- 3, -1, 2
 print((func(1, 2)), 2); -- 3, 2
-print(func(1, 2), 2); -- 3, -1, 2
+
+local func_va = function(a, b)
+    local i, sum = 0, 0;
+    while i < arguments.size then  -- every function has a variable named arguments
+        sum += arguments[i];
+        i += 1;
+    end
+    return sum;
+end
+print(func_va(1, 2, 3)); -- 6
+print(func_va(1)); -- 1, argument b equals to nil now
 --[[ 
-  luax achieves closure in this way. when a function was created, 
-  it recorded it's current namespace(I call it environment), when
-  this function is called, it can access the environment in runtime. See more 
-  from the closure example from example/basic_usage.luax
+  See more examples about function from doc/luax_reference_manual.md#function
 ]]
 ```
 
@@ -69,4 +79,5 @@ print(func(1, 2), 2); -- 3, -1, 2
 mkdir build && cd build
 cmake ..
 make && make test
+# see more from [Get Started]
 ```
