@@ -59,7 +59,7 @@ static lx_token* token_error(lx_token_scanner *s, char *ptr, int linenum)
 
 void lx_delete_token_scanner(lx_token_scanner * s)
 {
-    lx_free(s->raw_source_code);
+    if(s->raw_source_code) lx_free(s->raw_source_code);
     for (int i = 0; i < s->token_number; ++i) {
         lx_free(s->tokens[i]);
     }
@@ -585,7 +585,7 @@ void lx_delete_parser(lx_parser* p)
 #if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
     lx_delete_stack_allocator(p->stack_allocator);
 #endif
-    lx_delete_token_scanner(p->scanner);
+    if(p->scanner) lx_delete_token_scanner(p->scanner);
     if(p->opcodes) delete_opcodes(p->opcodes);
     lx_free(p);
 }

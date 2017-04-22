@@ -79,5 +79,5 @@ print(func_va(1)); -- 1, argument b equals to nil now
 mkdir build && cd build
 cmake ..
 make && make test
-# see more from [Get Started]
+# find more platforms from [Get Started]
 ```

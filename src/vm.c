@@ -14,6 +14,13 @@ static lx_object_string S_father_env = {
     .text = "_father_env",
     .text_len = 11
 };
+static lx_object_string Sexports = {
+    .base.type = LX_OBJECT_STRING,
+    .base.is_singleton = true,
+    .need_free = false,
+    .text = "exports",
+    .text_len = 7
+};
 static lx_object_string S_E = {
     .base.type = LX_OBJECT_STRING,
     .base.is_singleton = true,
@@ -544,6 +551,7 @@ void _collectgarbage(lx_vm* vm, lx_object* _called_obj)
         o = lx_object_stack_pop(vm->stack);
     /* we haven't achieved other functions */
 }
+#include "parser.h"
 void _require(lx_vm* vm, lx_object* _called_obj)
 {
     lx_object* obj = lx_object_stack_pop(vm->stack);
@@ -567,7 +575,6 @@ void _require(lx_vm* vm, lx_object* _called_obj)
             /* file path */
             fseek(fp, 0, SEEK_END);
             int filelength = ftell(fp);
-            printf("filelength:%d\n", filelength);
 
             char* data = (char*)lx_malloc(filelength + 1);
             fseek(fp, 0, SEEK_SET);
@@ -580,9 +587,32 @@ void _require(lx_vm* vm, lx_object* _called_obj)
             }
             *(data + ret) = '\0';
             fclose(fp);
-            //... todo
-
+            
+            lx_parser* p = lx_gen_opcodes(data, ret);
+#if LX_VM_OPCODE_SHOW
+            lx_helper_dump_opcode(p->opcodes, stdout);
+#endif
             lx_free(data);
+            if(p == NULL){
+                lx_free(str);
+                lx_throw_s(vm, "parser: syntax error");
+            }
+            lx_object_table* env_creator = lx_create_env_table_with_inside_function(vm);
+            table_replace(env_creator, CAST_O &Sexports, LX_OBJECT_nil());
+            lx_object_function* func_obj = lx_create_function_ops(vm, p->opcodes->arr, p->opcodes->size, env_creator);
+            lx_object* exception;
+            ret = lx_vm_run(vm, func_obj, &exception);
+            if (exception) {
+                lx_free(str);
+                lx_throw(vm, exception);
+            }
+            lx_object_string* _code = lx_create_string_t(vm, p->scanner->raw_source_code, p->scanner->raw_source_code_length);
+            _code->need_free = true;
+            lx_object_stack_push(vm->gc->always_in_mem, CAST_O _code);
+            p->scanner->raw_source_code = NULL;
+            lx_delete_parser(p);
+            lx_object_stack_push(vm->stack, table_find(env_creator, CAST_O &Sexports)->value);
+            lx_gc_collect(vm);
         }
         lx_free(str);
     }
@@ -936,6 +966,15 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 lx_object_stack_push(stack, LX_OBJECT_tag());
                 lx_object_stack_push(stack, LX_OBJECT_nil());
                 lx_object_stack_push(stack, obj);
+                if(table_find(_env, obj)){
+                    lx_object_string* k = CAST_S obj;
+                    char e[1024];
+                    const char str[] = "this variable has been declared: ";
+                    strcpy(e, str);
+                    memcpy(((char*)e) + sizeof(str) - 1, k->text, k->text_len);
+                    e[sizeof(str) - 1 + k->text_len] = '\0';
+                    lx_throw_s(vm, e);
+                }
                 lx_object_stack_push(stack, CAST_O _env);
                 _table_set(vm, NULL); // todo: optimize this, no need to push and call _table_set, just assign
             }
@@ -963,7 +1002,17 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                     lx_object_stack_push(stack, stack->arr[value--]);
                 else
                     lx_object_stack_push(stack, LX_OBJECT_nil());
-                lx_object_stack_push(stack, stack->arr[key--]);
+                lx_object_stack_push(stack, stack->arr[key]);
+                if (table_find(_env, stack->arr[key])) {
+                    lx_object_string* k = CAST_S stack->arr[key];
+                    char e[1024];
+                    const char str[] = "this variable has been declared: ";
+                    strcpy(e, str);
+                    memcpy(((char*)e) + sizeof(str) - 1, k->text, k->text_len);
+                    e[sizeof(str) - 1 + k->text_len] = '\0';
+                    lx_throw_s(vm, e);
+                }
+                key--;
                 lx_object_stack_push(stack, CAST_O _env);
                 _table_set(vm, NULL); // todo: optimize this, no need to push and call _table_set, just assign
             }
@@ -1555,24 +1604,23 @@ int lx_vm_run (lx_vm* vm, lx_object_function* func_obj, lx_object** exception)
     *exception = NULL;
     jmp_buf _jmp;
     int res = setjmp(_jmp);
+    int i_env, i_func_obj;
     if (res == 0) {
         vm->curr_jmp_buf = &_jmp;
         lx_object_table* _env = lx_create_env_table_with_father_env(vm, func_obj->env_creator);
         lx_object_stack_push(vm->call_stack, CAST_O _env);
+        i_env = vm->call_stack->curr;
         lx_object_stack_push(vm->gc->always_in_mem, CAST_O func_obj);
+        i_func_obj = vm->gc->always_in_mem->curr;
 
         ret = _vm_run_opcodes(vm, func_obj, _env);
 
-        lx_object_stack_pop(vm->gc->always_in_mem);
     } else {
         *exception = lx_object_stack_pop(vm->stack);
-        vm->stack->curr = -1; /* clean it */
-        vm->gc->always_in_mem->curr = -1; /* clean it */
-        lx_object_stack_push(vm->gc->always_in_mem, *exception); /* make sure not collected by GC */
         ret = res;
     }
-    lx_object_stack_pop(vm->call_stack);
-    lx_gc_collect(vm);
+    lx_object_stack_remove(vm->gc->always_in_mem, i_func_obj);
+    lx_object_stack_remove(vm->call_stack, i_env);
 
 #if LX_VM_DEBUG
     printf("=== VM END(ret:%d)\n", ret);
@@ -1604,6 +1652,13 @@ void lx_throw_s(lx_vm* vm, const char* str)
     lx_object_stack_push(vm->stack, LX_OBJECT_tag());
     lx_object_stack_push(vm->stack, LX_OBJECT_tag());
     lx_object_stack_push(vm->stack, s);
+    _throw(vm, NULL);
+}
+void lx_throw(lx_vm* vm, lx_object* e)
+{
+    lx_object_stack_push(vm->stack, LX_OBJECT_tag());
+    lx_object_stack_push(vm->stack, LX_OBJECT_tag());
+    lx_object_stack_push(vm->stack, e);
     _throw(vm, NULL);
 }
 
@@ -1736,4 +1791,5 @@ void lx_dump_vm_gc_status(lx_vm* vm)
 {
     printf("=== show gc info:\n");
     printf("\tobject number: %d\n", vm->gc->arr->curr + 1);
+    printf("\t:always_in_mem number: %d\n", vm->gc->always_in_mem->curr + 1);
 }

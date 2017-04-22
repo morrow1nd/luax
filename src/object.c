@@ -189,7 +189,9 @@ lx_object* table_next(lx_object_table* tab, lx_object* k)
     if (!k || k->type == LX_OBJECT_NIL) {
         next = (_object_table_kv*)(tab->keyvalue_map);
     } else {
-        next = (_object_table_kv*)(table_find(tab, k)->hh.next);
+        next = table_find(tab, k);
+        if(next)
+            next = (_object_table_kv*)(next->hh.next);
     }
     return next ? next->key : LX_OBJECT_nil();
 }
@@ -206,7 +208,9 @@ lx_object* table_prev(lx_object_table* tab, lx_object* k)
         }
         prev = last_one;
     } else {
-        prev = (_object_table_kv*)(table_find(tab, k)->hh.prev);
+        prev = table_find(tab, k);
+        if(prev)
+            prev = (_object_table_kv*)(prev->hh.prev);
     }
     return prev ? prev->key : LX_OBJECT_nil();
 }
@@ -484,6 +488,8 @@ const char* lx_object_type_to_string(int type)
 
 void delete_object_by_type(lx_object* obj)
 {
+    if(obj->is_singleton)
+        return;
     switch (obj->type) {
     case LX_OBJECT_NUMBER:
         delete_object(obj);

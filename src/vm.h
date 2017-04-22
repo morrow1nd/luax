@@ -32,6 +32,7 @@ lx_vm* lx_create_vm();
 int lx_vm_run(lx_vm* vm, lx_object_function* func_obj, lx_object** exception);
 void lx_delete_vm(lx_vm* vm);
 void lx_throw_s(lx_vm* vm, const char* str);
+void lx_throw(lx_vm* vm, lx_object* e);
 
 
 /* managed object operations */

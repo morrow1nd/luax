@@ -210,7 +210,7 @@ a += "3";
 print(a);
 a -= "4";
 print(a);
-local b = 4;
+b = 4;
 a *= b;
 print(b);
 print(a);
@@ -219,12 +219,20 @@ print(a);
 a += "4 hi";
 print(a);
 
--- test = operator
+-- test assginment expression
 i = true;
 while i = nil then
     print('error');
 end
+a, b, c = nil, nil, nil;
+a = (b = 1);
+print(a, b, c);
+a = (b, c = 1, 2, 3);
+print(a, b, c);
 
+counter = createCounter(0);
+a = (b, c = counter(), 123);
+print(a, b, c); -- counter should be called only once.
 
 
 --[[
@@ -232,9 +240,9 @@ end
 ]]
 local tab = {'key' : "value", 'key 2' : 56, 'key3': {}, 'key4' : function (a,b)return a+b; end};
 
-local a = 1;
-local b = 'hi';
-local tab = {'key' : "value", 'key 2' : 56, 'subtab' : { 1: 'hi', 'tt' : 'kkk'}};
+a = 1;
+b = 'hi';
+tab = {'key' : "value", 'key 2' : 56, 'subtab' : { 1: 'hi', 'tt' : 'kkk'}};
 print(tab);
 -- when the key of a table is `nil`
 local tab_key_is_nil = {};
@@ -357,23 +365,23 @@ end
 
 -- test table_next
 
-local tab = {};
+tab = {};
 tab.name = "I'm a table";
 tab.key = "this is a key";
 tab[2] = "2";
 tab[1] = 1;
 tab.lastone = "lastone value";
 
+-- test table_prev
 local i = nil;
-while i = table_next(tab, i) then
+while i = table_prev(tab, i) then
     if i == tab then continue; end
     print('key, value:');
     print(i, tab[i]);
 end
 
--- test table_prev
 i = nil;
-while i = table_prev(tab, i) then
+while i = table_next(tab, i) then
     if i == tab then continue; end
     print('key, value:');
     print(i, tab[i]);

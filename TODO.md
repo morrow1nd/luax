@@ -1,4 +1,6 @@
-
+ + [ ]  require only once
+ + [ ]  [bug] `local i = 0; local i = nil;`
+ + [ ]  [bug] vm_run_test.luax's local i problem
 
 2017/04/18
  + [X]  [opcode] shift to one value: \(expr\)

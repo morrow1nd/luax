@@ -1,0 +1,6 @@
+
+exports = {};
+exports[0] = "Tom";
+exports[1] = "xiao min";
+exports[2] =  "da wei";
+exports.size = 3;

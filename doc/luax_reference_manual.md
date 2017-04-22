@@ -12,7 +12,7 @@
 
 ### value and type
 
- There are six kinds of values in luax. **nil**, **bool**, **number**, **string**, **function**, **table**. Type **nil** only has one value `nil`. Type **number** means the value is a number, there is no *int number* in luax. **string** is real-only string. As for **table**, it's a container containing several key-values. The key of key-values can be any kind of types list above, so does it's value. **function** can be achieved in luax code or C code.
+ There are six kinds of values in luax. **nil**, **bool**, **number**, **string**, **function**, **table**. Type **nil** only has one value `nil`. Type **number** means the value is a number, there is no *int number* in luax. **string** is real-only string. As for **table**, it's a container containing several key-values. The key of key-values can be any kind of types list above, so does it's value. **function** can be achieved by luax code or C code.
 
 ### variable
 
@@ -59,7 +59,7 @@ tab[true] = 'using a bool as a key';
  + "_call"  - called when call a table. `tab[tab]._call = function(tab, arg1, arg2) ... end; tab(arg1, ang2);`
  + "_delete"  - called when GC collects this table
 
- When a table is created, it has a default meta table, the meta functions in default meta table are achieved in C code. You can define a function to override it. Meta function can be achieved in luax code or C code. Let's show how to create a read-only table.
+ When a table is created, it has a default meta table, the meta functions in default meta table are achieved by C code. You can define a function to override it. Meta function can be achieved by luax code or C code. Let's show how to create a read-only table.
 
 ```lua
 local rtab = {};
@@ -77,7 +77,7 @@ print(rtab.name); -- new name
 
 #### function
 
- In luax, function is first-class citizen. Luax provides only one way to create a function, which is expression `function(...) end`. Function achieved in luax code or C code are both the type **function**, which means you can't know whether a function is achieved in C code. Luax's function provides a variable named `arguments`. `arguments` holds all the real arguments as a array. The number of arguments is stored in `arguments.size`. `arguments` is useful when transport variable parameters.
+ In luax, function is first-class citizen. Luax provides only one way to create a function, which is expression `function(...) end`. Function achieved by luax code or C code are both the type **function**, which means you can't know whether a function is achieved by C code in luax code. Luax's function provides a variable named `arguments`. `arguments` holds all the real arguments as a array. The number of arguments is stored in `arguments.size`. `arguments` is useful when transport variable parameters.
 
  Examples:
 ```lua
@@ -92,7 +92,9 @@ end;
 
 --[[
   example: closure
-  luax achieves closure in this way. when a function was created, it recorded it's current namespace(I call it environment), when this function is called, it can access the environment in runtime.
+  luax achieves closure in this way. when a function was created, it recorded 
+  it's current namespace(I call it environment), when this function is called, 
+  it can access the environment in runtime.
 ]]
 local createCounter = function(init_number) 
     local _inner = init_number; 
@@ -155,7 +157,7 @@ call func2
     - `{}`
     - `{'key': 'value', 1 : 'value2'}`
     - `{ 'subtab' : { 0 : 123 }}`
- + **function** function achieved in luax code or C code
+ + **function** function achieved by luax code or C code
 
 ### conversion
 
@@ -175,6 +177,9 @@ type        | operators
 Arithmetic operators | `+ - * /` 
 Relational operators | `< > <= >= == !=` 
 Logical operators   | `and or not` 
+Assignment operators | `= += -= *= /=`
+
+ Yes, assignment is a expression. `a = ( b = 1 );` is the right luax code. `a = ( b, c = func(), 2, 3 );` equals to `b, c = func(), 2, 3; a = b;`. `func` is called only once.
 
 #### table assess expression
 
@@ -201,8 +206,19 @@ func(1, 2);
 
 print(function(a, b)
     return a > b;
-end(1, 2)); -- false
+end(2, 1)); -- true
 ```
+
+#### \(\) expression
+
+ `func_return_multi_values()` is not equal to `(func_return_multi_values())`. Example:
+```lua
+local func = function() return 1, 2; end;
+local a, b = func(); -- a = 1, b = 2
+a, b = (func()); -- a = 1, b = nil
+another_func(func(), "this should be the second argument"); -- actually, the second argument is number 2
+```
+
 
 ### statement
 
@@ -270,6 +286,7 @@ return a;
 return a, b, c;
 ```
 
+
 ### namespace
 
 ```lua
@@ -283,9 +300,15 @@ print(g); -- 1
 -- while-statement functions the same as if-statement
 ```
 
-### luax standard libraries
+ There is a inside variable `_E` in every namespace. `_E` refers to the current environment table. Yes, luax use a table to contain variables. Environment table use a different default meta table.
+```lua
+print(_E); -- dump _E to standard output to see what it contains.
+print(_E._E == _E); -- true
+```
 
-inside functions:
+
+### inside functions
+
  + typeof(obj)  - return the type of `obj` in string
  + meta_table(tab)  - return the meta table of tab
  + set_meta_table(tab, new_meta_table)
@@ -317,6 +340,15 @@ inside functions:
     ```
  + throw(exception)  - throw a exception
  + collectgarbage([opt [, arg]])  - see: <http://www.lua.org/manual/5.3/manual.html#pdf-collectgarbage>
+ + require()  - load a standard library or a luax code file, example:
+    ```lua
+    local math = require('math');
+    print(math.abs(-123)); -- 123.0
+    print(math.int(1.5)); -- 1.0
+    local user = require("data/users.luax");
+    print(user); -- see test/require_test_users.luax
+    ```
+
 
 template debug functions:
  + print(obj)  - show one obj to standard output
@@ -324,7 +356,10 @@ template debug functions:
  + emit_VS_breakpoint()  - emit visual studio breakpoint, so we can use visual studio's debug tool begin from here!
  + show_gc_info()  - show gc info to stdout
 
-[TODO]
+
+### luax standard libraries
+
+ see [Luax Standard Libraries](./luax_standard_library.md)
 
 
 ## Luax API

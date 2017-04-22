@@ -1,29 +1,9 @@
 # Luax Standard Library
 
- Luax standard library provides basic functions for programmer using luax. Some functions of this library can only be achieved in c code, such as ... Other functions can be achieved in c and luax both. But we achieve them in c for performance's reason.
+ Luax standard library provides basic functions for programmer using luax. Some functions can only be achieved in c code, such as `math.int`. Other functions can be achieved in c and luax both. But we achieve them in c for performance's reason.
 
 
-## Basic Functions
-
-## Modules
-
-#### require(str)
- + str: the name of a standard library or the path of a luax file
- + return: a table which contains the importing objects
-```lua
-local io = require("io");
-io.print("hello\n");
-```
-#### import(table, str)
- + table: contains the importing objects
- + str: [@copy require]
-
-```lua
-import(_G, "io");
-print("hello\n");
-```
- Basically, `local io = require("io")` equals to `io = {}; import(_G.io, "io")`.
-
+ [TODO]
 
 ## String Manipulation
 

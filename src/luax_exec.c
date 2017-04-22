@@ -136,8 +136,12 @@ int main(int argc, char * argv[])
             int ret = lx_vm_run(vm, func_obj, &exception);
             if (exception) {
                 lx_dump_object(exception, stderr);
-                delete_object_by_type(exception);
+                fprintf(stderr, "\n");
             }
+            vm->call_stack->curr = -1;
+            vm->gc->always_in_mem->curr = -1;
+            lx_gc_collect(vm);
+
 #if LX_VM_DEBUG
             lx_dump_vm_gc_status(vm);
 #endif
