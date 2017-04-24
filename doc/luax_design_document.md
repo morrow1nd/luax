@@ -7,6 +7,24 @@
     + [opcode generator test](../test/generate_bytecode_test.luax)
     + [Virtual Machine test](../test/vm_run_test.luax)
 
+[TODO]
+
+## syntax parser
+
+## opcode explanation and opcode generator
+
+## VM
+
+### (namespace)environment
+
+### environment table's meta functions
+
+### garbage collection
+
+
+
+
+
 
 ## value
 

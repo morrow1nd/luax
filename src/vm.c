@@ -2,6 +2,7 @@
 #include "base.h"
 #include "mem.h"
 #include "opcode.h"
+#include "parser.h"
 
 #include "standard_lib/lmath.h"
 
@@ -98,6 +99,20 @@ static lx_object_string Sprint = {
     .text = "print",
     .text_len = 5
 };
+static lx_object_string Sdofile = {
+    .base.type = LX_OBJECT_STRING,
+    .base.is_singleton = true,
+    .need_free = false,
+    .text = "dofile",
+    .text_len = 6
+};
+static lx_object_string Sdostring = {
+    .base.type = LX_OBJECT_STRING,
+    .base.is_singleton = true,
+    .need_free = false,
+    .text = "dostring",
+    .text_len = 8
+};
 static lx_object_string Srequire = {
     .base.type = LX_OBJECT_STRING,
     .base.is_singleton = true,
@@ -190,7 +205,7 @@ static lx_object_string Stypeof = {
     .text_len = 6
 };
 
-static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_table* _env);
+static void _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_table* _env);
 
 static bool __object_addable(lx_object* a)
 {
@@ -341,7 +356,7 @@ bool _obj_eql_eql(lx_object* a, lx_object* b, lx_vm* vm)
 **   | tag |        |     | 
 **   |  B  |       
 **   |  *  |       
-**   |  C  | <- top
+**   |  N  | <- top
 */
 void _op_pop_to_tag(lx_vm* vm)
 {
@@ -354,7 +369,7 @@ void _op_pop_to_tag(lx_vm* vm)
 }
 
 /* call a luax object */
-int _op_call(lx_vm* vm, lx_object* obj)
+void _op_call(lx_vm* vm, lx_object* obj)
 {
     if (obj->type == LX_OBJECT_FUNCTION) {
         lx_object_function* obj_func = CAST_F obj;
@@ -368,15 +383,14 @@ int _op_call(lx_vm* vm, lx_object* obj)
         } else {
             lx_throw_s(vm, "error: lx_object_function no callable ptr");
         }
-        return 0;
-    }
-    if (obj->type == LX_OBJECT_TABLE) {
+        return;
+    } else if (obj->type == LX_OBJECT_TABLE) {
         lx_object_stack_push(vm->stack, obj); // `_call` needs this
-        return _op_call(vm, CAST_O table_meta_function_get(CAST_T obj, "_call"));
+        _op_call(vm, CAST_O table_meta_function_get(CAST_T obj, "_call"));
+        return;
     }
 
     lx_throw_s(vm, "error: _op_call: obj is not callable");
-    return -1;
 }
 
 
@@ -547,6 +561,8 @@ void _pcall(lx_vm* vm, lx_object* _called_obj)
 {
     UNUSED_ARGUMENT(_called_obj);
     lx_object* func = lx_object_stack_pop(vm->stack);
+    lx_object_stack_push(vm->gc->always_in_mem, func); /* forbid GC collect func */
+    int func_index = vm->gc->always_in_mem->curr;
     jmp_buf _jmp;
     jmp_buf* backup_jmp_buf;
     int backup_call_stack_env = vm->call_stack->curr;
@@ -559,6 +575,7 @@ void _pcall(lx_vm* vm, lx_object* _called_obj)
     } else {
         vm->call_stack->curr = backup_call_stack_env;
     }
+    lx_object_stack_remove(vm->gc->always_in_mem, func_index);
     vm->curr_jmp_buf = backup_jmp_buf;
 }
 void _collectgarbage(lx_vm* vm, lx_object* _called_obj)
@@ -574,7 +591,6 @@ void _collectgarbage(lx_vm* vm, lx_object* _called_obj)
         o = lx_object_stack_pop(vm->stack);
     /* we haven't achieved other functions */
 }
-#include "parser.h"
 void _require(lx_vm* vm, lx_object* _called_obj)
 {
     lx_object* obj = lx_object_stack_pop(vm->stack);
@@ -594,51 +610,58 @@ void _require(lx_vm* vm, lx_object* _called_obj)
             } else {
                 printf("require fail: unknown %s\n", str);
             }
+            lx_free(str);
         } else {
             /* file path */
-            fseek(fp, 0, SEEK_END);
-            int filelength = ftell(fp);
-
-            char* data = (char*)lx_malloc(filelength + 1);
-            fseek(fp, 0, SEEK_SET);
-            int ret;
-            if ((ret = fread(data, 1, filelength, fp)) <= 0) {
-                printf("require fail: can't read file:%s\n", str);
-                fclose(fp);
-                lx_free(str);
-                return;
-            }
-            *(data + ret) = '\0';
-            fclose(fp);
-            
-            lx_parser* p = lx_gen_opcodes(data, ret);
-#if LX_VM_OPCODE_SHOW
-            lx_helper_dump_opcode(p->opcodes, stdout);
-#endif
-            lx_free(data);
-            if(p == NULL){
-                lx_free(str);
-                lx_throw_s(vm, "parser: syntax error");
-            }
-            lx_object_table* env_creator = lx_create_env_table_with_inside_function(vm);
-            table_replace(env_creator, CAST_O &Sexports, LX_OBJECT_nil());
-            lx_object_function* func_obj = lx_create_function_ops(vm, p->opcodes->arr, p->opcodes->size, env_creator);
-            lx_object* exception;
-            ret = lx_vm_run(vm, func_obj, &exception);
-            if (exception) {
-                lx_free(str);
-                lx_throw(vm, exception);
-            }
-            lx_object_string* _code = lx_create_string_t(vm, p->scanner->raw_source_code, p->scanner->raw_source_code_length);
-            _code->need_free = true;
-            lx_object_stack_push(vm->gc->always_in_mem, CAST_O _code);
-            p->scanner->raw_source_code = NULL;
-            lx_delete_parser(p);
-            lx_object_stack_push(vm->stack, table_find(env_creator, CAST_O &Sexports)->value);
-            lx_gc_collect(vm);
+//            fseek(fp, 0, SEEK_END);
+//            int filelength = ftell(fp);
+//
+//            char* data = (char*)lx_malloc(filelength + 1);
+//            fseek(fp, 0, SEEK_SET);
+//            int ret;
+//            if ((ret = fread(data, 1, filelength, fp)) <= 0) {
+//                printf("require fail: can't read file:%s\n", str);
+//                fclose(fp);
+//                lx_free(str);
+//                return;
+//            }
+//            *(data + ret) = '\0';
+//            fclose(fp);
+//            lx_free(str);
+//            
+//            lx_parser* p = lx_gen_opcodes(data, ret);
+//            lx_free(data);
+//#if LX_VM_OPCODE_SHOW
+//            lx_helper_dump_opcode(p->opcodes, stdout);
+//#endif
+//            if(p == NULL){
+//                lx_throw_s(vm, "parser: syntax error");
+//            }
+//            lx_object_table* env_creator = lx_create_env_table_with_inside_function(vm);
+//            table_replace(env_creator, CAST_O &Sexports, LX_OBJECT_nil());
+//            lx_object_function* func_obj = lx_create_function_ops(vm, p->opcodes->arr, p->opcodes->size, env_creator);
+//            lx_object* exception;
+//            ret = lx_vm_run(vm, func_obj, &exception);
+//            if (exception) {
+//                lx_throw(vm, exception);
+//            }
+//            lx_object_string* _code = lx_create_string_t(vm, p->scanner->raw_source_code, p->scanner->raw_source_code_length);
+//            _code->need_free = true;
+//            lx_object_stack_push(vm->gc->always_in_mem, CAST_O _code);
+//            p->scanner->raw_source_code = NULL;
+//            lx_delete_parser(p);
+//            lx_object_stack_push(vm->stack, table_find(env_creator, CAST_O &Sexports)->value);
+//            lx_gc_collect(vm);
         }
-        lx_free(str);
     }
+}
+void _dostring(lx_vm* vm, lx_object* _called_obj)
+{
+
+}
+void _dofile(lx_vm* vm, lx_object* _called_obj)
+{
+    assert(false && "dofile has not been achieved");
 }
 /*
 ** print(tab)
@@ -820,11 +843,11 @@ lx_object* LX_OBJECT_tag()
 
 
 /* run a luax function achieved in luax code */
-static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_table* _env)
+static void _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_table* _env)
 {
     if (func_obj->base.type != LX_OBJECT_FUNCTION) {
         lx_throw_s(vm, "VM ERROR: func_obj->type != LX_OBJECT_FUNCTION");
-        return -1;
+        return;
     }
     lx_object_stack* stack = vm->stack;
     const lx_opcode** ops = func_obj->func_opcodes;
@@ -904,7 +927,10 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
                 tagi--;
             /* now tagi points to the called object */
             lx_object* called_obj = lx_object_stack_remove(stack, tagi); /* remove the called object */
+            lx_object_stack_push(vm->gc->always_in_mem, called_obj); /* forbid GC collect func */
+            int called_obj_index = vm->gc->always_in_mem->curr;
             _op_call(vm, called_obj);
+            lx_object_stack_remove(vm->gc->always_in_mem, called_obj_index);
             continue;
         }
         case OP_RETURN: {
@@ -917,7 +943,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
             }
             vm->call_stack->curr -= pushed_env_count;
             lx_gc_collect(vm);
-            return 0; /* end this luax function */
+            return; /* end this luax function */
         }
         case OP_VALUES_SHIFT_TO_1: {
             lx_object* value = lx_object_stack_pop(stack);
@@ -1542,7 +1568,7 @@ static int _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_ta
         }
     }
     lx_gc_collect(vm);
-    return 0;
+    return;
 }
 
 lx_gc_info* lx_create_gc_info()
@@ -1616,47 +1642,74 @@ lx_vm* lx_create_vm ()
     vm->gc = lx_create_gc_info(vm->stack, vm->call_stack);
     return vm;
 }
-
-int lx_vm_run (lx_vm* vm, lx_object_function* func_obj, lx_object** exception)
+lx_object* lx_dostring(lx_vm* vm, lx_object_string* str, lx_object_table* env)
 {
+#if LX_MALLOC_STATISTICS
+    printf("before lx_dostring\n");
+    lx_dump_memory_usage();
+#endif
+    lx_object_stack_push(vm->gc->always_in_mem, CAST_O str);
+    int backup_str_index = vm->gc->always_in_mem->curr;
+    lx_parser* p = lx_gen_opcodes(str->text, str->text_len);
+    if (!p) {
+        return CAST_O lx_create_string_t(vm, "parser: syntax error", 20);
+    }
+#if LX_VM_OPCODE_SHOW
+    lx_helper_dump_opcode(p->opcodes, stdout);
+#endif
+#if LX_MALLOC_STATISTICS
+    lx_dump_memory_usage();
+#endif
+#if LX_VM_DEBUG
+    lx_dump_vm_gc_status(vm);
+#endif
+
+    lx_object_function* func_obj = lx_create_function_ops(vm, p->opcodes->arr, p->opcodes->size, /* env_creator */ CAST_T LX_OBJECT_nil());
+
 #if LX_VM_DEBUG
     lx_dump_vm_gc_status(vm);
     printf("=== VM START\n");
 #endif
 
     int ret = -1;
-    *exception = NULL;
+    int i_env, i_func_obj;
+    lx_object* exception = LX_OBJECT_nil();
     jmp_buf _jmp;
     int res = setjmp(_jmp);
-    int i_env, i_func_obj;
     if (res == 0) {
         vm->curr_jmp_buf = &_jmp;
-        lx_object_table* _env = lx_create_env_table_with_father_env(vm, func_obj->env_creator);
-        lx_object_stack_push(vm->call_stack, CAST_O _env);
+
+        lx_object_stack_push(vm->call_stack, CAST_O env);
         i_env = vm->call_stack->curr;
         lx_object_stack_push(vm->gc->always_in_mem, CAST_O func_obj);
         i_func_obj = vm->gc->always_in_mem->curr;
 
-        ret = _vm_run_opcodes(vm, func_obj, _env);
-
+        _vm_run_opcodes(vm, func_obj, env);
+        ret = 0;
     } else {
-        *exception = lx_object_stack_pop(vm->stack);
-        ret = res;
+        exception = lx_object_stack_pop(vm->stack);
     }
     lx_object_stack_remove(vm->gc->always_in_mem, i_func_obj);
     lx_object_stack_remove(vm->call_stack, i_env);
+
+    lx_object_stack_remove(vm->gc->always_in_mem, backup_str_index);
+    lx_delete_parser(p);
 
 #if LX_VM_DEBUG
     printf("=== VM END(ret:%d)\n", ret);
     lx_dump_object_stack(vm->stack);
     lx_dump_vm_status(vm);
 #endif
-
-    return ret;
+    return exception;
 }
 
 void lx_delete_vm (lx_vm* vm)
 {
+    vm->stack->curr = -1;
+    vm->call_stack->curr = -1;
+    vm->gc->always_in_mem->curr = -1;
+    lx_gc_collect(vm);
+
     lx_delete_object_stack(vm->stack);
     lx_delete_gc_info(vm->gc);
     lx_delete_object_stack(vm->call_stack);
@@ -1735,6 +1788,8 @@ lx_object_table* lx_create_env_table_with_inside_function(lx_vm* vm)
     table_replace(env_table, CAST_O &Sthrow,  CAST_O lx_create_function_p(vm, _throw, lx_create_env_table(vm)));
     table_replace(env_table, CAST_O &Scollectgarbage,  CAST_O lx_create_function_p(vm, _collectgarbage, lx_create_env_table(vm)));
     table_replace(env_table, CAST_O &Srequire, CAST_O lx_create_function_p(vm, _require, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Sdostring, CAST_O lx_create_function_p(vm, _dostring, lx_create_env_table(vm)));
+    table_replace(env_table, CAST_O &Sdofile, CAST_O lx_create_function_p(vm, _dofile, lx_create_env_table(vm)));
 
     /* template debug functions */
     table_replace(env_table, CAST_O &Sprint, CAST_O lx_create_function_p(vm, _print, lx_create_env_table(vm)));

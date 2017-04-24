@@ -15,7 +15,6 @@ void usage(char* argv[])
         //"  -e stat    execute string 'stat'\n"
         //"  -i         enter interaction mode after executing 'script'\n"
         //"  -          execute stdin and stop handling options\n"
-        "  --show_opcode  print opcode to standard output\n"
         "  -h --help      show help info\n"
         "  --version      version info\n"
         "\n"
@@ -60,7 +59,6 @@ int main(int argc, char * argv[])
     const char * output_name = "a.luaxo";
     char * script_files[1024];
     int script_file_number = 0;
-    bool show_opcode = false;
 
     // process arguments
     for (int i = 1; i < argc; ++i) {
@@ -71,8 +69,6 @@ int main(int argc, char * argv[])
         else if (strcmp(argv[i], "-o") == 0) {
             output_name = argv[i + 1];
             ++i;
-        } else if(strcmp(argv[i], "--show_opcode") == 0){
-            show_opcode = true;
         } else if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0){
             usage(argv);
             exit(0);
@@ -106,53 +102,28 @@ int main(int argc, char * argv[])
             char * data = _read_file(script_files[i], &file_len);
             if (data == NULL)
                 continue;
-            lx_parser * p = lx_gen_opcodes(data, file_len);
-            lx_free(data); /* lx_gen_opcodes has copied data */
-            if (p == NULL) {
-                printf("Error: syntax error\n");
-                continue;
-            }
-#if LX_VM_OPCODE_SHOW
-            lx_helper_dump_opcode(p->opcodes, stdout);
-#else
-            if(show_opcode)
-                lx_helper_dump_opcode(p->opcodes, stdout);
-#endif
-#if LX_MALLOC_STATISTICS
-            lx_dump_memory_usage();
-            printf(" _\n");
-            printf("  \\_ before create VM\n");
-#endif
+
             lx_vm* vm = lx_create_vm();
 
-#if LX_VM_DEBUG
-            lx_dump_vm_gc_status(vm);
-#endif
-
             // we use base_env_table now, it doesn't load any Standard lib.
-            lx_object_function* func_obj = lx_create_function_ops(vm, p->opcodes->arr, p->opcodes->size, /* env_creator */ lx_create_env_table_with_inside_function(vm));
+            lx_object_table* env = lx_create_env_table_with_inside_function(vm);
 
-            lx_object* exception;
-            int ret = lx_vm_run(vm, func_obj, &exception);
-            if (exception) {
+            lx_object* exception = lx_dostring(vm, lx_create_string_t(vm, data, file_len), env);
+            if (exception->type != LX_OBJECT_NIL) {
                 lx_dump_object(exception, stderr);
                 fprintf(stderr, "\n");
             }
-            vm->call_stack->curr = -1;
-            vm->gc->always_in_mem->curr = -1;
-            lx_gc_collect(vm);
 
 #if LX_VM_DEBUG
+            lx_gc_collect(vm);
             lx_dump_vm_gc_status(vm);
 #endif
+
+            lx_free(data);
             lx_delete_vm(vm);
+
 #if LX_MALLOC_STATISTICS
-            printf(" _\n");
-            printf("  \\_ after delete VM\n");
-            lx_dump_memory_usage();
-#endif
-            lx_delete_parser(p);
-#if LX_MALLOC_STATISTICS
+            printf("==== after delete VM\n");
             lx_dump_memory_usage();
 #endif
         }

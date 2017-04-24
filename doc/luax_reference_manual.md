@@ -356,6 +356,17 @@ print(_E._E == _E); -- true
     local user = require("data/users.luax");
     print(user); -- see test/require_test_users.luax
     ```
+ + dostring(str)  - run luax code from `str` in protected mode, example:
+    ```lua
+    local code = "local a = 1; print(a); return 0; ";
+    local e, res = dostring(code);
+    if e then
+        print('the luax code throws a exception ' + e);
+    end
+    print(res);  -- 0
+    print(dostring('throw("error")')); -- error
+    ```
+ + dofile(filepath)  - run luax code in a file in protected mode
 
 
 template debug functions:

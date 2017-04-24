@@ -29,7 +29,17 @@ typedef struct lx_vm {
 
 
 lx_vm* lx_create_vm();
-int lx_vm_run(lx_vm* vm, lx_object_function* func_obj, lx_object** exception);
+/*
+** run luax code gived by a luax string `str` in VM
+**   str: managed luax string
+**   env: the environment table. After finish, you can get useful info from this table
+**   return: a managed object 
+*/
+lx_object* lx_dostring(lx_vm* vm, lx_object_string* str, lx_object_table* env);
+/*
+** todo: lx_delete_vm should do garbage collection
+**
+*/
 void lx_delete_vm(lx_vm* vm);
 void lx_throw_s(lx_vm* vm, const char* str);
 void lx_throw(lx_vm* vm, lx_object* e);
