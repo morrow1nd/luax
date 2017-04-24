@@ -1,6 +1,11 @@
 
-exports = {};
-exports[0] = "Tom";
-exports[1] = "xiao min";
-exports[2] =  "da wei";
-exports.size = 3;
+local users = {};
+users[0] = "Tom";
+users[1] = "xiao min";
+users[2] =  "da wei";
+users.size = 3;
+
+users.show = function() print("This is a test function."); end;
+users.subtab = { "hi" : "too" };
+
+exports = users;

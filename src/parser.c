@@ -59,7 +59,7 @@ static lx_token* token_error(lx_token_scanner *s, char *ptr, int linenum)
 
 void lx_delete_token_scanner(lx_token_scanner * s)
 {
-    if(s->raw_source_code) lx_free(s->raw_source_code);
+    // if(s->raw_source_code) lx_free(s->raw_source_code);
     for (int i = 0; i < s->token_number; ++i) {
         lx_free(s->tokens[i]);
     }
@@ -546,13 +546,9 @@ static int lx_parser_begin(lx_parser * p, lx_parser *parser)
     /* todo: current enter point is compile_unit */
 }
 
-lx_parser* lx_gen_opcodes(const char* _source_code, const int source_code_length)
+lx_parser* lx_gen_opcodes(char* _source_code, const int source_code_length)
 {
-    char * source_code = (char*)lx_malloc(source_code_length + 1);
-    memcpy(source_code, _source_code, source_code_length);
-    *(source_code + source_code_length) = '\0';
-
-    lx_token_scanner* scanner = lx_scan_token(source_code, source_code_length);
+    lx_token_scanner* scanner = lx_scan_token(_source_code, source_code_length);
     if(scanner == NULL){
         printf("lx_scan_token return NULL\n");
         return NULL;

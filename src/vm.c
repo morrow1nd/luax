@@ -7,7 +7,7 @@
 #include "standard_lib/lmath.h"
 
 
- /* these strings are not managed by GC */
+/* these strings are not managed by GC */
 static lx_object_string S_father_env = {
     .base.type = LX_OBJECT_STRING,
     .base.is_singleton = true, /* read only */
@@ -253,11 +253,11 @@ lx_object* _obj_add(lx_object* a, lx_object* b, lx_vm* vm)
         strcpy(tem, out);
         memcpy(tem + strlen(out), s->text, s->text_len);
         *(tem + strlen(out) + s->text_len) = '\0';
-        res = lx_create_string_s(vm, tem);
+        res = lx_create_string_s_copy(vm, tem);
         lx_free(tem);
     } else {
         sprintf(out + strlen(out), "%f", b->fnumber);
-        res = lx_create_string_s(vm, out);
+        res = lx_create_string_s_copy(vm, out);
     }
     lx_free(out);
     return CAST_O res;
@@ -373,12 +373,12 @@ void _op_call(lx_vm* vm, lx_object* obj)
 {
     if (obj->type == LX_OBJECT_FUNCTION) {
         lx_object_function* obj_func = CAST_F obj;
-        if (obj_func->func_opcodes) {
+        if (obj_func->opcodes_or_ptr == LX_FUNCTION_TYPE_OPCODE) {
             lx_object_table* _env = lx_create_env_table_with_father_env(vm, obj_func->env_creator);
             lx_object_stack_push(vm->call_stack, CAST_O _env);
             _vm_run_opcodes(vm, obj_func, _env);
             lx_object_stack_pop(vm->call_stack);
-        } else if (obj_func->func_ptr) {
+        } else if (obj_func->opcodes_or_ptr == LX_FUNCTION_TYPE_PTR) {
             obj_func->func_ptr(vm, obj);
         } else {
             lx_throw_s(vm, "error: lx_object_function no callable ptr");
@@ -566,6 +566,7 @@ void _pcall(lx_vm* vm, lx_object* _called_obj)
     jmp_buf _jmp;
     jmp_buf* backup_jmp_buf;
     int backup_call_stack_env = vm->call_stack->curr;
+    int backup_always_in_mem_index = vm->gc->always_in_mem->curr;
     int ret = setjmp(_jmp);
     if (ret == 0) {
         backup_jmp_buf = vm->curr_jmp_buf;
@@ -574,6 +575,7 @@ void _pcall(lx_vm* vm, lx_object* _called_obj)
         lx_object_stack_push(vm->stack, LX_OBJECT_nil()); /* this nil means this function finished successfully */
     } else {
         vm->call_stack->curr = backup_call_stack_env;
+        vm->gc->always_in_mem->curr = backup_always_in_mem_index;
     }
     lx_object_stack_remove(vm->gc->always_in_mem, func_index);
     vm->curr_jmp_buf = backup_jmp_buf;
@@ -613,51 +615,50 @@ void _require(lx_vm* vm, lx_object* _called_obj)
             lx_free(str);
         } else {
             /* file path */
-//            fseek(fp, 0, SEEK_END);
-//            int filelength = ftell(fp);
-//
-//            char* data = (char*)lx_malloc(filelength + 1);
-//            fseek(fp, 0, SEEK_SET);
-//            int ret;
-//            if ((ret = fread(data, 1, filelength, fp)) <= 0) {
-//                printf("require fail: can't read file:%s\n", str);
-//                fclose(fp);
-//                lx_free(str);
-//                return;
-//            }
-//            *(data + ret) = '\0';
-//            fclose(fp);
-//            lx_free(str);
-//            
-//            lx_parser* p = lx_gen_opcodes(data, ret);
-//            lx_free(data);
-//#if LX_VM_OPCODE_SHOW
-//            lx_helper_dump_opcode(p->opcodes, stdout);
-//#endif
-//            if(p == NULL){
-//                lx_throw_s(vm, "parser: syntax error");
-//            }
-//            lx_object_table* env_creator = lx_create_env_table_with_inside_function(vm);
-//            table_replace(env_creator, CAST_O &Sexports, LX_OBJECT_nil());
-//            lx_object_function* func_obj = lx_create_function_ops(vm, p->opcodes->arr, p->opcodes->size, env_creator);
-//            lx_object* exception;
-//            ret = lx_vm_run(vm, func_obj, &exception);
-//            if (exception) {
-//                lx_throw(vm, exception);
-//            }
-//            lx_object_string* _code = lx_create_string_t(vm, p->scanner->raw_source_code, p->scanner->raw_source_code_length);
-//            _code->need_free = true;
-//            lx_object_stack_push(vm->gc->always_in_mem, CAST_O _code);
-//            p->scanner->raw_source_code = NULL;
-//            lx_delete_parser(p);
-//            lx_object_stack_push(vm->stack, table_find(env_creator, CAST_O &Sexports)->value);
-//            lx_gc_collect(vm);
+            fseek(fp, 0, SEEK_END);
+            int filelength = ftell(fp);
+            char* data = (char*)lx_malloc(filelength + 1);
+            fseek(fp, 0, SEEK_SET);
+            if ((filelength = fread(data, 1, filelength, fp)) <= 0) {
+                printf("require fail: can't read file:%s\n", str);
+                fclose(fp);
+                lx_free(str);
+                return;
+            }
+            *(data + filelength) = '\0';
+            fclose(fp);
+            lx_free(str);
+            
+            lx_object_string* _code = lx_create_string_s(vm, data); /* reuse data */
+            _code->need_free = true;
+            lx_object_table* env = lx_create_env_table_with_inside_function(vm);
+            table_replace(env, CAST_O &Sexports, CAST_O lx_create_table(vm));
+
+            lx_object* exception = lx_dostring(vm, _code, env);
+            if (exception->type != LX_OBJECT_NIL) {
+                lx_dump_object(exception, stderr);
+                fprintf(stderr, "\n");
+            }
+
+            lx_object_stack_push(vm->stack, table_find(env, CAST_O &Sexports)->value);
+            lx_object_stack_push(vm->gc->always_in_mem, CAST_O _code);
+            lx_object_stack_push(vm->gc->always_in_mem, CAST_O env);
+            lx_gc_collect(vm);
         }
     }
 }
 void _dostring(lx_vm* vm, lx_object* _called_obj)
 {
-
+    lx_object_string* code = CAST_S lx_object_stack_pop(vm->stack);
+    if (code->base.type == LX_OBJECT_TAG)
+        lx_throw_s(vm, "dostring need a string");
+    lx_object_table* env = CAST_T lx_object_stack_pop(vm->stack);
+    if (env->base.type != LX_OBJECT_TAG)
+        _op_pop_to_tag(vm);
+    else
+        env = lx_create_env_table_with_inside_function(vm);
+    lx_object* exception = lx_dostring(vm, code, env);
+    lx_object_stack_push(vm->stack, exception);
 }
 void _dofile(lx_vm* vm, lx_object* _called_obj)
 {
@@ -1135,7 +1136,7 @@ static void _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_t
         }
         case OP_PUSHC_STR: {
             lx_opcode_x* op = (lx_opcode_x*) ops[i];
-            lx_object_stack_push(stack, CAST_O lx_create_string_t(vm, op->text, op->text_len));
+            lx_object_stack_push(stack, CAST_O lx_create_string_t_copy(vm, op->text, op->text_len)); /* oh, this is terrible code */
             continue;
         }
         case OP_PUSHC_NUMBER: {
@@ -1166,7 +1167,7 @@ static void _vm_run_opcodes(lx_vm* vm, lx_object_function* func_obj, lx_object_t
             }
             if(i == ops_size)
                 lx_throw_s(vm, "VM ERROR: can't find OP_FUNC_DEF_END");
-            lx_object_function* func = lx_create_function_ops(vm, ops + func_begin, i - func_begin, _env);
+            lx_object_function* func = lx_create_function_ops_copy(vm, ops + func_begin, i - func_begin, _env); /* terrible code */
             lx_object_stack_push(stack, CAST_O func);
             continue;
         }
@@ -1650,7 +1651,7 @@ lx_object* lx_dostring(lx_vm* vm, lx_object_string* str, lx_object_table* env)
 #endif
     lx_object_stack_push(vm->gc->always_in_mem, CAST_O str);
     int backup_str_index = vm->gc->always_in_mem->curr;
-    lx_parser* p = lx_gen_opcodes(str->text, str->text_len);
+    lx_parser* p = lx_gen_opcodes((char*)(str->text), str->text_len);
     if (!p) {
         return CAST_O lx_create_string_t(vm, "parser: syntax error", 20);
     }
@@ -1664,7 +1665,7 @@ lx_object* lx_dostring(lx_vm* vm, lx_object_string* str, lx_object_table* env)
     lx_dump_vm_gc_status(vm);
 #endif
 
-    lx_object_function* func_obj = lx_create_function_ops(vm, p->opcodes->arr, p->opcodes->size, /* env_creator */ CAST_T LX_OBJECT_nil());
+    lx_object_function* func_obj = lx_create_function_ops_copy(vm, p->opcodes->arr, p->opcodes->size, /* env_creator */ CAST_T LX_OBJECT_nil());
 
 #if LX_VM_DEBUG
     lx_dump_vm_gc_status(vm);
@@ -1699,6 +1700,7 @@ lx_object* lx_dostring(lx_vm* vm, lx_object_string* str, lx_object_table* env)
     printf("=== VM END(ret:%d)\n", ret);
     lx_dump_object_stack(vm->stack);
     lx_dump_vm_status(vm);
+    lx_dump_vm_gc_status(vm);
 #endif
     return exception;
 }
@@ -1724,7 +1726,7 @@ void lx_throw_s(lx_vm* vm, const char* str)
     char* e = (char*) lx_malloc(strlen(str) + strlen("luax exception: ") + 1);
     strcpy(e, "luax exception: ");
     strcpy(e + strlen(e), str);
-    lx_object* s = CAST_O lx_create_string_s(vm, e);
+    lx_object* s = CAST_O lx_create_string_s_copy(vm, e);
     lx_free(e);
     lx_object_stack_push(vm->stack, LX_OBJECT_tag());
     lx_object_stack_push(vm->stack, LX_OBJECT_tag());
@@ -1753,7 +1755,7 @@ lx_object_table* lx_create_table_with_meta_table(lx_vm* vm, lx_object_table* met
 }
 lx_object* lx_table_replace_s(lx_vm* vm, lx_object_table* tab, const char* str, lx_object* value)
 {
-    lx_object_string* k = lx_create_string_s(vm, str);
+    lx_object_string* k = lx_create_string_s_copy(vm, str);
     return table_replace(tab, CAST_O k, value);
 }
 lx_object_table* lx_create_env_table(lx_vm* vm)
@@ -1805,7 +1807,15 @@ lx_object_string* lx_create_string_t(lx_vm* vm, const char* text, int text_len)
 }
 lx_object_string* lx_create_string_s(lx_vm* vm, const char* str)
 {
-    return CAST_S managed_with_gc(vm->gc, CAST_O create_object_string_s(str));
+    return CAST_S managed_with_gc(vm->gc, CAST_O create_object_string_t(str, strlen(str)));
+}
+lx_object_string* lx_create_string_t_copy(lx_vm* vm, const char* text, int text_len)
+{
+    return CAST_S managed_with_gc(vm->gc, CAST_O create_object_string_t_copy(text, text_len));
+}
+lx_object_string* lx_create_string_s_copy(lx_vm* vm, const char* str)
+{
+    return CAST_S managed_with_gc(vm->gc, CAST_O create_object_string_s_copy(str));
 }
 lx_object* lx_create_number(lx_vm* vm, float number)
 {
@@ -1818,10 +1828,20 @@ lx_object_function* lx_create_function_p(lx_vm* vm, lx_object_function_ptr_handl
     lx_object_function* fun = create_object_function_p(func_ptr, env_creator);
     return CAST_F managed_with_gc(vm->gc, CAST_O fun);
 }
-lx_object_function* lx_create_function_ops(lx_vm* vm, const lx_opcode** func_opcodes, int func_opcodes_size, lx_object_table *env_creator)
+//lx_object_function* lx_create_function_ops(lx_vm* vm, const lx_opcode** func_opcodes, int func_opcodes_size, lx_object_table *env_creator)
+//{
+//    lx_object_function* fun = create_object_function_ops(func_opcodes, func_opcodes_size, env_creator);
+//    return CAST_F managed_with_gc(vm->gc, CAST_O fun);
+//}
+lx_object_function* lx_create_function_ops_copy(lx_vm* vm, const lx_opcode** func_opcodes, int func_opcodes_size, lx_object_table *env_creator)
 {
-    lx_object_function* fun = create_object_function_ops(func_opcodes, func_opcodes_size, env_creator);
-    return CAST_F managed_with_gc(vm->gc, CAST_O fun);
+    lx_opcode** _opcodes = (lx_opcode**)lx_malloc(sizeof(const lx_opcode*) * (func_opcodes_size));
+    memcpy((void*)_opcodes, (void*)(func_opcodes), sizeof(const lx_opcode*) * (func_opcodes_size));
+    for (int i = 0; i < func_opcodes_size; ++i)
+        (*(_opcodes + i))->ref_count++;
+    lx_object_function* func = CAST_F managed_with_gc(vm->gc, CAST_O create_object_function_ops(_opcodes, func_opcodes_size, env_creator));
+    func->func_opcodes_need_free = true;
+    return func;
 }
 lx_object_table* lx_create_default_meta_table(lx_vm* vm)
 {

@@ -65,6 +65,7 @@ static struct opcode_w* __wrapper_lx_opcode(lx_opcode* op)
 static struct opcode_w* __new_op(enum LX_OPCODE_TYPE type)
 {
     lx_opcode* op = LX_NEW(lx_opcode);
+    op->ref_count = 1;
     op->type = (unsigned char)type;
     op->extra_info = -1;
     return __wrapper_lx_opcode(op);
@@ -72,6 +73,7 @@ static struct opcode_w* __new_op(enum LX_OPCODE_TYPE type)
 static struct opcode_w* __new_op_x(enum LX_OPCODE_TYPE type, lx_syntax_node* node)
 {
     lx_opcode_x* op_x = LX_NEW(lx_opcode_x);
+    op_x->_.ref_count = 1;
     op_x->text = node->token->text;
     op_x->text_len = node->token->text_len;
     op_x->_.type = (unsigned char)type;
@@ -81,6 +83,7 @@ static struct opcode_w* __new_op_x(enum LX_OPCODE_TYPE type, lx_syntax_node* nod
 static struct opcode_w* __new_op_i(enum LX_OPCODE_TYPE type, int i)
 {
     lx_opcode_x* op_x = LX_NEW(lx_opcode_x);
+    op_x->_.ref_count = 1;
     op_x->inumber = i;
     op_x->_.type = (unsigned char)type;
     op_x->_.extra_info = -1;
@@ -89,6 +92,7 @@ static struct opcode_w* __new_op_i(enum LX_OPCODE_TYPE type, int i)
 static struct opcode_w* __new_op_f(enum LX_OPCODE_TYPE type, float f)
 {
     lx_opcode_x* op_x = LX_NEW(lx_opcode_x);
+    op_x->_.ref_count = 1;
     op_x->fnumber = f;
     op_x->_.type = (unsigned char)type;
     op_x->_.extra_info = -1;
@@ -176,7 +180,9 @@ lx_opcodes* gen_opcodes(lx_syntax_node* root)
 void delete_opcodes(lx_opcodes* ops)
 {
     for (int i = 0; i < ops->size; ++i) {
-        lx_free(ops->arr[i]);
+        ops->arr[i]->ref_count--;
+        if(ops->arr[i]->ref_count <= 0)
+            lx_free(ops->arr[i]);
     }
     if(ops->arr) lx_free(ops->arr);
     lx_free(ops);
@@ -190,6 +196,8 @@ LX_CALLBACK_DECLARE1(compile_unit, stmt_sequence)
 {
     debuglog("compile_unit  ->  stmt_sequence");
     move(_self, _1);
+    if(_self->opcodes && _self->opcodes->back->real_opcode->type != OP_RETURN)
+        append(_self, __new_op(OP_RETURN)); /* make sure it's ended by `return` */
     FREE_SYNTAX_NODE(_1);
 }
 

@@ -37,14 +37,23 @@ void delete_object(lx_object* obj);
 bool object_is_jz_zero(lx_object* obj);
 
 
+enum {
+    LX_FUNCTION_TYPE_OPCODE,
+    LX_FUNCTION_TYPE_PTR,
+};
+
 /* luax function(achieved in C or luax) */
 typedef struct lx_object_function {
     lx_object base; /* simulate class inheritance */
 
     lx_object_table* env_creator; /* the environment table when this function was created */
-    lx_object_function_ptr_handle func_ptr; /* achieved in C */
-    const lx_opcode** func_opcodes; /* achieved in luax code */
-    int func_opcodes_size;
+    char func_opcodes_need_free;
+    char opcodes_or_ptr;
+    union {
+        lx_object_function_ptr_handle func_ptr; /* achieved in C */
+        const lx_opcode** func_opcodes; /* achieved in luax code */
+    };
+    int func_opcodes_size; /* todo: maybe we can store this in func_opcodes' first 4 bytes */
 } lx_object_function;
 
 lx_object_function* create_object_function_p(lx_object_function_ptr_handle func_ptr, lx_object_table *env_creator);
@@ -102,7 +111,8 @@ typedef struct lx_object_string {
 /* need_free set to false */
 lx_object_string* create_object_string_t(const char * text, int text_len);
 /* need_free set to true, we copy the `str` innerlly */
-lx_object_string* create_object_string_s(const char* str);
+lx_object_string* create_object_string_s_copy(const char* str);
+lx_object_string* create_object_string_t_copy(const char* text, int text_len);
 void delete_object_string(lx_object_string* obj);
 
 

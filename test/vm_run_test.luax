@@ -256,11 +256,11 @@ tab = {'key' : "value", 'key 2' : 56, 'subtab' : { 1: 'hi', 'tt' : 'kkk'}};
 -- when the key of a table is `nil`
 local tab_key_is_nil = {};
 tab_key_is_nil[nil] = 'aaa';
-print(tab_key_is_nil);
+print(tab_key_is_nil[nil]);
 -- test case 30: `tab[func()]` == `tab[nil]` when func() doesn't return any value
 local func30 = function() end;
 local tab30 = {};
-tab30[func30()] = 'aaa';
+tab30[func30()] = 'aaab';
 print(tab30[nil]); -- aaa
 -- test case 31
 local func_ret_1_2 = function() return 1, 2; end;
@@ -273,7 +273,6 @@ print(c31_tab[func_ret_1_2()]); -- 1
 ]]
 
 -- pcall throw test
-print(pcall);
 local pcall_func = function(t, a, b)
     if t then throw('error'); end
     print('pcall_func return');
@@ -403,3 +402,18 @@ tab[1] = nil;
 print(table_exist(tab, 0)); -- true
 print(table_exist(tab, 1)); -- true
 print(table_exist(tab, 2)); -- false
+
+-- test dostring
+local dostring_code = "local a = 1; print(a); return 0; ";
+local e, res = dostring(dostring_code);
+if e then
+    print('the luax code throws a exception ' + e);
+end
+print(res);  -- 0
+
+print(dostring("throw('error');")); -- error
+
+-- run code in a provided environment
+local env = { 'exports' : {} };
+dostring(" exports.name = 'hello'; local username = 'a name'; ", env);
+print(env.exports.name, env.username); -- 'hello', 'a name'

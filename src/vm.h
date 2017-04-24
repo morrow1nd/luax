@@ -4,7 +4,7 @@
 #include "base.h"
 #include "object.h"
 
-#include <setjmp.h> // setjmp, longjmp
+#include <setjmp.h> /* setjmp, longjmp */
 
 
 /* Garbage Collection */
@@ -36,10 +36,6 @@ lx_vm* lx_create_vm();
 **   return: a managed object 
 */
 lx_object* lx_dostring(lx_vm* vm, lx_object_string* str, lx_object_table* env);
-/*
-** todo: lx_delete_vm should do garbage collection
-**
-*/
 void lx_delete_vm(lx_vm* vm);
 void lx_throw_s(lx_vm* vm, const char* str);
 void lx_throw(lx_vm* vm, lx_object* e);
@@ -54,9 +50,11 @@ lx_object_table* lx_create_env_table_with_father_env(lx_vm* vm, lx_object_table*
 lx_object_table* lx_create_env_table_with_inside_function(lx_vm* vm);
 lx_object_string* lx_create_string_t(lx_vm* vm, const char* text, int text_len);
 lx_object_string* lx_create_string_s(lx_vm* vm, const char* str);
+lx_object_string* lx_create_string_t_copy(lx_vm* vm, const char* text, int text_len);
+lx_object_string* lx_create_string_s_copy(lx_vm* vm, const char* str);
 lx_object* lx_create_number(lx_vm* vm, float number);
 lx_object_function* lx_create_function_p(lx_vm* vm, lx_object_function_ptr_handle func_ptr, lx_object_table *env_creator);
-lx_object_function* lx_create_function_ops(lx_vm* vm, const lx_opcode** func_opcodes, int func_opcodes_size, lx_object_table *env_creator);
+lx_object_function* lx_create_function_ops_copy(lx_vm* vm, const lx_opcode** func_opcodes, int func_opcodes_size, lx_object_table *env_creator);
 
 lx_object_table* lx_create_default_meta_table(lx_vm* vm);
 lx_object_table* lx_create_default_env_meta_table(lx_vm* vm);

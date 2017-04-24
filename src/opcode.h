@@ -88,6 +88,7 @@ enum LX_OP_EXTRA_INFO {
 
 typedef struct lx_opcode {
     unsigned char type;
+    int ref_count;
     int extra_info; // stores a LX_OP_EXTRA_INFO, it's used to store extra help info for generate bytecode with good-look comment
 } lx_opcode;
 

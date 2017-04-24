@@ -101,7 +101,7 @@ typedef struct lx_parser
 
 
 /* Interface to generate opcodes */
-lx_parser* lx_gen_opcodes(const char* source_code, const int source_code_length);
+lx_parser* lx_gen_opcodes(char* source_code, const int source_code_length);
 void lx_delete_parser(lx_parser* p);
 
 

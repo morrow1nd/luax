@@ -1,6 +1,7 @@
 #include "base.h"
 #include "mem.h"
 #include "object.h"
+#include "opcode.h"
 
 
 lx_object* create_object(short type)
@@ -35,7 +36,8 @@ lx_object_function* create_object_function_p(lx_object_function_ptr_handle func_
     ret->base.is_singleton = false;
     ret->env_creator = env_creator;
     ret->func_ptr = func_ptr;
-    ret->func_opcodes = NULL;
+    ret->func_opcodes_need_free = false;
+    ret->opcodes_or_ptr = LX_FUNCTION_TYPE_PTR;
     return ret;
 }
 lx_object_function* create_object_function_ops(const lx_opcode** func_opcodes, int func_opcodes_size, lx_object_table* env_creator)
@@ -47,11 +49,26 @@ lx_object_function* create_object_function_ops(const lx_opcode** func_opcodes, i
     ret->env_creator = env_creator;
     ret->func_opcodes = func_opcodes;
     ret->func_opcodes_size = func_opcodes_size;
-    ret->func_ptr = NULL;
+    ret->func_opcodes_need_free = false;
+    ret->opcodes_or_ptr = LX_FUNCTION_TYPE_OPCODE;
     return ret;
 }
 void delete_object_function(lx_object_function* obj_func)
 {
+    obj_func->env_creator = CAST_T LX_OBJECT_nil();
+    if (obj_func->func_opcodes_need_free) {
+        assert(obj_func->opcodes_or_ptr == LX_FUNCTION_TYPE_OPCODE);
+
+        lx_opcode* o;
+        for (int i = 0; i < obj_func->func_opcodes_size; ++i) {
+            o = (lx_opcode*) (*(obj_func->func_opcodes + i));
+            o->ref_count--;
+            if(o->ref_count <= 0)
+                lx_free(o);
+        }
+
+        lx_free((void*)obj_func->func_opcodes);
+    }
     lx_free(obj_func);
 }
 
@@ -253,7 +270,7 @@ lx_object_string* create_object_string_t(const char * text, int text_len)
     str->text_len = text_len;
     return str;
 }
-lx_object_string* create_object_string_s(const char * _str)
+lx_object_string* create_object_string_s_copy(const char * _str)
 {
     int text_len = strlen(_str);
     char * text = (char*)lx_malloc(text_len + 1);
@@ -266,6 +283,21 @@ lx_object_string* create_object_string_s(const char * _str)
     str->base.is_singleton = false;
     str->need_free = true;
     str->text = (const char*)text;
+    str->text_len = text_len;
+    return str;
+}
+lx_object_string* create_object_string_t_copy(const char* text, int text_len)
+{
+    char * _text = (char*)lx_malloc(text_len + 1);
+    memcpy(_text, text, text_len);
+
+    lx_object_string* str = LX_NEW(lx_object_string);
+    str->base.type = LX_OBJECT_STRING;
+    str->base.marked = false;
+    str->base.fnumber = 0.0f;
+    str->base.is_singleton = false;
+    str->need_free = true;
+    str->text = (const char*)_text;
     str->text_len = text_len;
     return str;
 }
