@@ -33,6 +33,16 @@ The C achieve of luax:
  + using subset of c++ and c
  + full-commented
 
+ Here is a list:
+  * dynamic type language (*nil*, *bool*, *number*, *string*, *function*, *table*)
+  * basic statements (*variable-declaration*, *if/while*, *break*, *continue*, *function-define*)
+  * mutli-assign, multi-return  - `a, b = 1, 2;` `function(a, b) return a+b, a-b; end`
+  * *table*  - a container containing several key-values. The type of key or value can be any one of those types listed above.
+  * meta table  - a table defining what would happens when specific action made to a table(such as: get set call), see example: [*read-only table*](https://github.com/morrow1nd/luax/blob/master/doc/luax_reference_manual.md#meta-table) 
+  * function  - first-class citizen, see example: [*link several functions*](https://github.com/morrow1nd/luax/blob/master/doc/luax_reference_manual.md#function) 
+
+
+
 
 # Examples
 
