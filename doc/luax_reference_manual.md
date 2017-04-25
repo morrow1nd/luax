@@ -59,7 +59,9 @@ tab[true] = 'using a bool as a key';
  + "_call"  - called when call a table. `tab[tab]._call = function(tab, arg1, arg2) ... end; tab(arg1, ang2);`
  + "_delete"  - called when GC collects this table
 
- When a table is created, it has a default meta table, the meta functions in default meta table are achieved by C code. You can define a function to override it. Meta function can be achieved by luax code or C code. Let's show how to create a read-only table.
+ When a table is created, it has a default meta table, the meta functions in default meta table are achieved by C code. You can define a function to override it. Meta function can be achieved by luax code or C code. 
+
+ Let's show how to create a **read-only table**.
 
 ```lua
 local rtab = {};
@@ -79,7 +81,7 @@ print(rtab.name); -- new name
 
  In luax, function is first-class citizen. Luax provides only one way to create a function, which is expression `function(...) end`. Function achieved by luax code or C code are both the type **function**, which means you can't know whether a function is achieved by C code in luax code. Luax's function provides a variable named `arguments`. `arguments` holds all the real arguments as a array. The number of arguments is stored in `arguments.size`. `arguments` is useful when transport variable parameters.
 
- Examples: *simple closure*, *link several functions*
+ Examples: **simple closure**, **link several functions**
 ```lua
 -- define a function
 local show_array = function(tab)

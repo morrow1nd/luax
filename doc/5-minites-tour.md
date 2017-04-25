@@ -4,19 +4,19 @@
 # Basic Concepts
 
 + *everything is an object* - a function, a string, a number ...
-+ *every object has a **type**
-+ variable must be declared before using  `local a;` `local b = 1;`
-+ *table* - a container containing several key-values, key and value can be any type
++ every object has a **type**
++ variable must be declared before using.  `local a;` `local b = 1;`
++ *table* - a container containing several *key-value*s, *key* and *value* can be any type
 
 
 # type
 
   there are six kinds of types in luax.
 
- + **nil**  only has one value `nil`. It's something you can use as a Java's `null`
+ + **nil**  only has one value `nil`. It's something like Java's `null`
  + **bool**  `true` or `false`
  + **number**  real number in math
- + **string**  `'this is a string'`  `"this is another 'one'"`
+ + **string**  `'this is a string'`  `"this is another 'one'"`  supports escape character `\n\t\r\\`
  + **function**  `function(...)  ... end`
  + **table**  `{}`  `{"key" : 123}`
 
@@ -28,7 +28,7 @@
     - `tab.name = 'this is my name';`
     - `tab["name"] = 'I change my name';`
     - `tab[false] = 'anything can be a key';`
-    - `tab[nil] = tab;` *anything can be a value*
+    - `tab[nil] = tab;` *Anything can be a value.*
  + read key-value from table
     - `print(tab.name); print(tab[false]);`
     - `print(tab.no_exist);` would print `nil`
