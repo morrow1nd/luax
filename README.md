@@ -38,8 +38,8 @@ The C achieve of luax:
   * basic statements (*variable-declaration*, *if/while*, *break*, *continue*, *function-define*)
   * mutli-assign, multi-return  - `a, b = 1, 2;` `function(a, b) return a+b, a-b; end`
   * *table*  - a container containing several key-values. The type of key or value can be any one of those types listed above.
-  * meta table  - a table defining what would happens when specific action made to a table(such as: get set call), see example: [*read-only table*](https://github.com/morrow1nd/luax/blob/master/doc/luax_reference_manual.md#meta-table) 
-  * function  - first-class citizen, see example: [*link several functions*](https://github.com/morrow1nd/luax/blob/master/doc/luax_reference_manual.md#function) 
+  * meta table  - a table defining what would happens when specific action made to a table(such as: get set call), example: [*read-only table*](https://github.com/morrow1nd/luax/blob/master/doc/luax_reference_manual.md#meta-table) 
+  * function  - first-class citizen, example: [*link several functions*](https://github.com/morrow1nd/luax/blob/master/doc/luax_reference_manual.md#function) 
 
 
 
@@ -67,7 +67,7 @@ tab.a, tab.b = func(1, 2); -- return 3, -1
 print(func(1, 2), 2);   -- 3, -1, 2
 print((func(1, 2)), 2); -- 3, 2
 
-local func_va = function(a, b)
+local func_sum = function(a, b)
     local i, sum = 0, 0;
     while i < arguments.size then  -- every function has a variable named arguments
         sum += arguments[i];
@@ -75,8 +75,8 @@ local func_va = function(a, b)
     end
     return sum;
 end
-print(func_va(1, 2, 3)); -- 6
-print(func_va(1)); -- 1, argument b equals to nil now
+print(func_sum(1, 2, 3)); -- 6
+print(func_sum(1)); -- 1, argument b equals to nil now
 --[[ 
   See more examples about function from doc/luax_reference_manual.md#function
 ]]

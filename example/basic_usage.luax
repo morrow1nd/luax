@@ -1,18 +1,11 @@
 --[[ 
     This file shows basic usage.
 
-inside functions:
- + table_get(tab, key)  - raw get, don't use the "_get" function of tab's meta table
- + table_set(tab, key, value)  - raw set
+    print(obj)  - show one obj to standard output. For a table, show it's every key-values
 
-template debug functions:
- + print(obj)  - show one obj to standard output
-
- see more inside function from Luax Reference Manual.
-
+    see more inside function from Luax Reference Manual.
 ]]
 
-[TODO]
 
 --[[
     basic type
@@ -21,7 +14,7 @@ print(nil);
 print(true); -- boolean: true, false
 print(3.1415); -- real number
 print('hello, world!'); -- string
-print({}); -- table(something like Javascript's Object)
+print({}); -- table
 print(print); -- function achieved in luax or C
 
 --[[
@@ -35,33 +28,33 @@ local a, b, c = 1, 2; -- c equals to nil
     table
 ]]
 local tab = {};
-tab.name = 'Tom';
-tab["key 1"] = 123;
+tab.name = 'this is my name';
+tab["name"] = "I change my name";
 tab[1] = "number";
 tab.subtab = {};
-tab.subtab.a = a;
-tab.subtab.b = b;
 print(tab); -- show every key-value of tab to standard output
 local meta_tab = tab[tab]; -- get the mata table of `tab`
+meta_tab = meta_table(tab); -- or using inside function meta_table
 
 
 --[[
     function
 ]]
-table_set(meta_tab, "_get", function(tab, key) return key; end);
-print(tab["this is a key"]);
-table_set(meta_tab, "_set", function(tab, key, value) print("this table is readonly"); end);
-tab.name = "new name";
+local func = function(a, b) return a+b, a-b; end;  -- function can return several values
+print(func(2, 1)); -- 3, 1
 
-local a, b, c = 1, 2;
-local func = function(a, b) return a + b, a, b; end;
-a, b, c = func(a, b);
-print(a, b, c); -- 3, 1, 2
+a, b, c = func(2, 1, 3);  -- multi-assign
+print(a, b, c); -- 3, 1, nil
 
-local func1 = function(a, b, c) print('function arguments:', a, b, c); return c, b, a; end;
-print(func1(1, 2));
-print(func1(1, 2, 3, 4));
-print(func1(1, 2, 3));
+local func_sum = function()
+    local i, sum = 0, 0;
+    while i < arguments.size then  -- every function has a variable named arguments
+        sum += arguments[i];
+        i += 1;
+    end
+    return sum;
+end;
+print(func_sum(1, 2, 3)); -- 6
 
 
 --[[
@@ -84,7 +77,7 @@ print(init_number); -- 5
 
 
 --[[
-    throw exception
+    inside function: pcall and throw
 ]]
 local pcall_func = function(t, a, b)
     if t then throw('error'); end
@@ -99,46 +92,11 @@ end;
 print(pcall(pcall_func_div_by_zero)); -- div by 0 error
 
 
---[[
-    if-else, while statement
-]]
-a = 3;
-print('=== if-else, while ===');
-if true then
-    print(true);
-end
-if a == 3 then
-    print(true);
-else
-    print('error');
-end
-if a == 2 then
-    print('error1');
-else
-    if a == 3 then
-        print(true);
-    else
-        print('error2');
-    end
-end
-
-local numbers = {};
-numbers[0] = 20;
-numbers[1] = 15;
-numbers[2] = 50;
-numbers[3] = 3;
-
-a = 0;
-while a < 4 then
-    print(numbers[a]);
-    a = a + 1;
-end
-
 
 --[[
     _E: you can access the current environment by variable _E.
-        local a = 123; <==> _E.a = 123;
         By the way, _E["_E"] == _E
 ]]
 print('=== show variable _E');
+-- dump _E to standard output to see what it contains.
 print(_E); -- notice the <SELF> node. it means this table has a key-value points to itself.

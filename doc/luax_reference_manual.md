@@ -12,7 +12,7 @@
 
 ### value and type
 
- There are six kinds of values in luax. **nil**, **bool**, **number**, **string**, **function**, **table**. Type **nil** only has one value `nil`. Type **number** means the value is a number, there is no *int number* in luax. **string** is real-only string. As for **table**, it's a container containing several key-values. The key of key-values can be any kind of types list above, so does it's value. **function** can be achieved by luax code or C code.
+ There are six kinds of values in luax. **nil**, **bool**, **number**, **string**, **function**, **table**. Type **nil** only has one value `nil`. Type **number** means the value is a real number, there is no *int number* in luax. **string** is real-only string. As for **table**, it's a container containing several key-values. The key of key-values can be any kind of types list above, so does the value. **function** can be achieved by luax code or C code.
 
 ### variable
 
@@ -79,7 +79,7 @@ print(rtab.name); -- new name
 
  In luax, function is first-class citizen. Luax provides only one way to create a function, which is expression `function(...) end`. Function achieved by luax code or C code are both the type **function**, which means you can't know whether a function is achieved by C code in luax code. Luax's function provides a variable named `arguments`. `arguments` holds all the real arguments as a array. The number of arguments is stored in `arguments.size`. `arguments` is useful when transport variable parameters.
 
- Examples:
+ Examples: *simple closure*, *link several functions*
 ```lua
 -- define a function
 local show_array = function(tab)
@@ -385,7 +385,7 @@ print(_E._E == _E); -- true
 
 
 template debug functions:
- + print(obj)  - show one obj to standard output
+ + print(obj)  - show one obj to standard output. For a table, show it's every key-values
  + dump_stack()  - dump runtime stack to standard output
  + emit_VS_breakpoint()  - emit visual studio breakpoint, so we can use visual studio's debug tool begin from here!
  + show_gc_info()  - show gc info to stdout
