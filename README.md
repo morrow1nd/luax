@@ -14,7 +14,7 @@
 ## For Language User
 
  + [Get Started](./doc/get-started.md) - Setup a working environment.
- + [5-minites-tour](./doc/5-minites-tour.md) (Coming soon!)
+ + [5-minites-tour](./doc/5-minites-tour.md)
  + [Luax Reference Manual](./doc/luax_reference_manual.md)
 
 ## For Language Hacker
