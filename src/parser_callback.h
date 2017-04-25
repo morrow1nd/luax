@@ -24,7 +24,6 @@ typedef struct lx_syntax_node
 {
     const lx_token * token;
     struct lx_syntax_node * next;
-    enum lx_syntax_node_tag tag;
     struct opcode_list * opcodes;
 } lx_syntax_node;
 

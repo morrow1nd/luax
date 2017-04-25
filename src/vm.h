@@ -16,15 +16,15 @@ typedef struct lx_gc_info {
 
 lx_gc_info* lx_create_gc_info();
 void lx_delete_gc_info(lx_gc_info* gc);
-lx_object* managed_with_gc(lx_gc_info* gc, lx_object* obj); /* manage `obj` in GC */
-void lx_gc_collect(lx_vm* vm);
+lx_object* managed_with_gc(lx_gc_info* gc, lx_object* obj); /* manage the lifecycle of this object in GC */
+void lx_gc_collect(lx_vm* vm); /* collect garbage */
 
 
 typedef struct lx_vm {
     lx_object_stack* stack; /* runtime stack */
+    lx_object_stack* call_stack; /* environment changing stack */
     jmp_buf* curr_jmp_buf; /* needed by longjmp */
     lx_gc_info* gc;
-    lx_object_stack* call_stack; /* environment changing stack */
 } lx_vm;
 
 
@@ -33,12 +33,12 @@ lx_vm* lx_create_vm();
 ** run luax code gived by a luax string `str` in VM
 **   str: managed luax string
 **   env: the environment table. After finish, you can get useful info from this table
-**   return: a managed object 
+**   return: a managed object. Returning a nil means success
 */
 lx_object* lx_dostring(lx_vm* vm, lx_object_string* str, lx_object_table* env);
 void lx_delete_vm(lx_vm* vm);
-void lx_throw_s(lx_vm* vm, const char* str);
-void lx_throw(lx_vm* vm, lx_object* e);
+void lx_throw_s(lx_vm* vm, const char* str); /* throw a string object as a exception */
+void lx_throw(lx_vm* vm, lx_object* e); /* throw a exception */
 
 
 /* managed object operations */

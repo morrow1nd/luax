@@ -1,0 +1,233 @@
+luax VM test begin
+nil
+true
+false
+1.0
+0.0
+-1.0
+0.0
+string
+
+next line	 \'hello'\
+'hi'
+nil
+true
+false
+123.456001
+string
+123.0
+a string
+false
+nil
+call func_ret_true
+true
+call func_ret_true
+true
+hello
+aa
+1.0
+2.0
+1.0
+3.0
+2.0
+1.0
+0.0
+-1.0
+-2.0
+-1.0
+0.0
+-1.0
+-2.0
+5.0
+3.0
+1.0
+-1.0
+0.0
+-2.0
+-1.0
+2.0
+0.0
+-2.0
+-1.0
+1.0
+-1.0
+0.0
+-2.0
+-1.0
+4.0
+2.0
+0.0
+-2.0
+-1.0
+1.0
+-1.0
+0.0
+-2.0
+-1.0
+3.0
+1.0
+-1.0
+0.0
+-2.0
+-1.0
+2.0
+0.0
+-2.0
+-1.0
+1.0
+-1.0
+0.0
+-2.0
+-1.0
+1.0
+2.0
+arguments.size:
+4.0
+1.0
+2.0
+3.0
+4.0
+10.0
+1.0
+nil
+arguments.size:
+1.0
+1.0
+1.0
+1.0
+2.0
+6.0
+7.0
+5.0
+123.0
+456
+call func1
+123.0
+456
+call func2
+1.0
+2.0
+4.0
+1.0
+1.4550
+false
+3.0
+3.0
+number3.000000
+33.000000number
+aa, bb
+34.0
+33.0
+aa1.000000
+34.0
+123 hi3.000000
+-1.0
+1.0
+1.0
+-1.0
+3.0
+6.0
+2.0
+4.0
+8.0
+4.0
+4.0000004 hi
+1.0
+1.0
+nil
+1.0
+1.0
+2.0
+1.0
+1.0
+123.0
+aaa
+aaab
+1.0
+pcall_func return
+nil
+3.0
+error
+error
+t<=1
+pcall_func2 return
+nil
+1.0
+---
+pcall_func return
+nil
+3.0
+t>=2
+pcall_func2 return
+nil
+1.0
+---
+error
+t<=1
+1 error
+nil
+1.0
+2.0
+3.0
+2.0
+1.0
+0.0
+-1.0
+0.0
+1.0
+0.0
+-1.0
+1.0
+2.0
+3.0
+5.0
+7.0
+8.0
+9.0
+10.0
+key, value:
+name
+I'm a table
+key, value:
+key
+this is a key
+key, value:
+2.0
+2
+key, value:
+1.0
+1.0
+key, value:
+lastone
+lastone value
+key, value:
+lastone
+lastone value
+key, value:
+1.0
+1.0
+key, value:
+2.0
+2
+key, value:
+key
+this is a key
+key, value:
+name
+I'm a table
+true
+true
+false
+1.0
+0.0
+error
+nil
+1.0
+nil
+hello
+a name
+nil
+Tom
+xiao min
+da wei
+This is a test function.

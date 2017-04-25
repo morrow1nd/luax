@@ -47,7 +47,7 @@ typedef struct lx_object_function {
     lx_object base; /* simulate class inheritance */
 
     lx_object_table* env_creator; /* the environment table when this function was created */
-    char func_opcodes_need_free;
+    char opcodes_need_free;
     char opcodes_or_ptr;
     union {
         lx_object_function_ptr_handle func_ptr; /* achieved in C */
@@ -61,7 +61,7 @@ lx_object_function* create_object_function_ops(const lx_opcode** func_opcodes, i
 void delete_object_function(lx_object_function* obj_func);
 
 
-/* [inner use]: table's key and value pair */
+/* [inner use]: table's key-value pair */
 typedef struct _object_table_kv {
     char * hash_key;
     lx_object* key;
@@ -85,7 +85,7 @@ void delete_object_table(lx_object_table* tab);
 _object_table_kv* table_find(lx_object_table* tab, lx_object* k); /* return NULL when didn't find */
 _object_table_kv* table_find_t(lx_object_table* tab, const char* text, int text_len);
 _object_table_kv* table_always_found(lx_object_table* tab, lx_object* k); /* return a new key_to_nil when didn't find */
-lx_object* table_replace(lx_object_table* tab, lx_object* k, lx_object* v);
+lx_object* table_replace(lx_object_table* tab, lx_object* k, lx_object* new_value); /* return the old value */
 lx_object* table_next(lx_object_table* tab, lx_object* k);
 lx_object* table_prev(lx_object_table* tab, lx_object* k);
 

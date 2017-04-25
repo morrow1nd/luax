@@ -390,7 +390,11 @@ void _op_call(lx_vm* vm, lx_object* obj)
         return;
     }
 
-    lx_throw_s(vm, "error: _op_call: obj is not callable");
+    char e[1024];
+    lx_object_to_string(obj, e);
+    const char str[] = " is not callable";
+    strcpy(e + strlen(e), str);
+    lx_throw_s(vm, e);
 }
 
 
@@ -662,7 +666,47 @@ void _dostring(lx_vm* vm, lx_object* _called_obj)
 }
 void _dofile(lx_vm* vm, lx_object* _called_obj)
 {
-    assert(false && "dofile has not been achieved");
+    lx_object_string* filepath = CAST_S lx_object_stack_pop(vm->stack);
+    if (filepath->base.type == LX_OBJECT_TAG)
+        lx_throw_s(vm, "dofile need a string");
+    lx_object_table* env = CAST_T lx_object_stack_pop(vm->stack);
+    if (env->base.type != LX_OBJECT_TAG)
+        _op_pop_to_tag(vm);
+    else
+        env = lx_create_env_table_with_inside_function(vm);
+    /* open and read file */
+    char * str = (char*)lx_malloc(filepath->text_len + 1);
+    memcpy(str, filepath->text, filepath->text_len);
+    str[filepath->text_len] = '\0';
+    FILE* fp = fopen(str, "rb");
+    if (!fp){
+        printf("dofile fail: can't open file %s\n", str);
+        lx_free(str);
+        lx_object_stack_push(vm->stack, CAST_O lx_create_string_s(vm, "dofile fail: can't open file"));
+        return;
+    }
+    fseek(fp, 0, SEEK_END);
+    int filelength = ftell(fp);
+    char* data = (char*)lx_malloc(filelength + 1);
+    fseek(fp, 0, SEEK_SET);
+    if ((filelength = fread(data, 1, filelength, fp)) <= 0) {
+        printf("dofile fail: can't read file:%s\n", str);
+        fclose(fp);
+        lx_free(str);
+        lx_object_stack_push(vm->stack, CAST_O lx_create_string_s(vm, "dofile read file fail"));
+        return;
+    }
+    *(data + filelength) = '\0';
+    fclose(fp);
+    lx_free(str);
+
+    lx_object_string* _code = lx_create_string_s(vm, data);
+    _code->need_free = true; /* reuse data */
+
+    lx_object* exception = lx_dostring(vm, _code, env);
+    lx_object_stack_push(vm->stack, exception);
+
+    lx_object_stack_push(vm->gc->always_in_mem, CAST_O _code);
 }
 /*
 ** print(tab)
@@ -1675,6 +1719,7 @@ lx_object* lx_dostring(lx_vm* vm, lx_object_string* str, lx_object_table* env)
     int ret = -1;
     int i_env, i_func_obj;
     lx_object* exception = LX_OBJECT_nil();
+    jmp_buf* backup_jmp_buf = vm->curr_jmp_buf;
     jmp_buf _jmp;
     int res = setjmp(_jmp);
     if (res == 0) {
@@ -1690,6 +1735,7 @@ lx_object* lx_dostring(lx_vm* vm, lx_object_string* str, lx_object_table* env)
     } else {
         exception = lx_object_stack_pop(vm->stack);
     }
+    vm->curr_jmp_buf = backup_jmp_buf;
     lx_object_stack_remove(vm->gc->always_in_mem, i_func_obj);
     lx_object_stack_remove(vm->call_stack, i_env);
 
@@ -1712,8 +1758,8 @@ void lx_delete_vm (lx_vm* vm)
     vm->gc->always_in_mem->curr = -1;
     lx_gc_collect(vm);
 
-    lx_delete_object_stack(vm->stack);
     lx_delete_gc_info(vm->gc);
+    lx_delete_object_stack(vm->stack);
     lx_delete_object_stack(vm->call_stack);
     lx_free(vm);
 }
@@ -1840,7 +1886,7 @@ lx_object_function* lx_create_function_ops_copy(lx_vm* vm, const lx_opcode** fun
     for (int i = 0; i < func_opcodes_size; ++i)
         (*(_opcodes + i))->ref_count++;
     lx_object_function* func = CAST_F managed_with_gc(vm->gc, CAST_O create_object_function_ops(_opcodes, func_opcodes_size, env_creator));
-    func->func_opcodes_need_free = true;
+    func->opcodes_need_free = true;
     return func;
 }
 lx_object_table* lx_create_default_meta_table(lx_vm* vm)

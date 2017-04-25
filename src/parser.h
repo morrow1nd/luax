@@ -62,9 +62,7 @@ typedef struct
 {
     int token_number;
     lx_token **tokens;
-
     int curr; /* point to current token */
-
     int tokens_capacity;
 
     int raw_source_code_length;

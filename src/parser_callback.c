@@ -15,7 +15,6 @@ void lx_syntax_node_init(lx_syntax_node* n)
 {
     n->token = NULL;
     n->next = NULL;
-    n->tag = -1;
     n->opcodes = NULL;
 }
 

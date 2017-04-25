@@ -36,7 +36,7 @@ lx_object_function* create_object_function_p(lx_object_function_ptr_handle func_
     ret->base.is_singleton = false;
     ret->env_creator = env_creator;
     ret->func_ptr = func_ptr;
-    ret->func_opcodes_need_free = false;
+    ret->opcodes_need_free = false;
     ret->opcodes_or_ptr = LX_FUNCTION_TYPE_PTR;
     return ret;
 }
@@ -49,14 +49,14 @@ lx_object_function* create_object_function_ops(const lx_opcode** func_opcodes, i
     ret->env_creator = env_creator;
     ret->func_opcodes = func_opcodes;
     ret->func_opcodes_size = func_opcodes_size;
-    ret->func_opcodes_need_free = false;
+    ret->opcodes_need_free = false;
     ret->opcodes_or_ptr = LX_FUNCTION_TYPE_OPCODE;
     return ret;
 }
 void delete_object_function(lx_object_function* obj_func)
 {
     obj_func->env_creator = CAST_T LX_OBJECT_nil();
-    if (obj_func->func_opcodes_need_free) {
+    if (obj_func->opcodes_need_free) {
         assert(obj_func->opcodes_or_ptr == LX_FUNCTION_TYPE_OPCODE);
 
         lx_opcode* o;

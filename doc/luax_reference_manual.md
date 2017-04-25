@@ -368,9 +368,18 @@ print(_E._E == _E); -- true
     print(dostring('throw("error");')); -- error
 
     -- run code in a provided environment
-    local env = { 'exports' : {} };
-    dostring(" exports.name = 'hello'; local username = 'a name'; ", env);
-    print(env.exports.name, env.username); -- 'hello', 'a name'
+    local env = {};
+    local e = dostring(" print(1); ", env);
+    print(e); -- luax exception: nil is not callable
+    -- reason: env.print is nil
+
+    -- the right way
+    if true then
+        local exports = {};
+        local e = dostring(" print(1); exports.name = 'hello'; local username = 'a name'; ", _E);
+        print(e); -- nil, success
+        print(_E.exports.name, _E.username); -- 'hello', 'a name'
+    end
     ```
  + dofile(filepath)  - run luax code in a file in protected mode
 
