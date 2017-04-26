@@ -596,6 +596,7 @@ void _collectgarbage(lx_vm* vm, lx_object* _called_obj)
     while(o && o->type != LX_OBJECT_NIL)
         o = lx_object_stack_pop(vm->stack);
     /* we haven't achieved other functions */
+    assert(false && "collectgarbage is not finished. we only support call collectgarbage with no arguments now.");
 }
 void _require(lx_vm* vm, lx_object* _called_obj)
 {
@@ -1620,12 +1621,14 @@ lx_gc_info* lx_create_gc_info()
 {
     lx_gc_info* gc = LX_NEW(lx_gc_info);
     gc->arr = lx_create_object_stack(32);
+    gc->_marked = lx_create_object_stack(32);
     gc->always_in_mem = lx_create_object_stack(8);
     return gc;
 }
 void lx_delete_gc_info(lx_gc_info* gc)
 {
     lx_delete_object_stack(gc->arr);
+    lx_delete_object_stack(gc->_marked);
     lx_delete_object_stack(gc->always_in_mem);
     lx_free(gc);
 }
@@ -1664,18 +1667,19 @@ void lx_gc_collect(lx_vm* vm)
     for (int i = 0; i <= vm->gc->always_in_mem->curr; ++i)
         mark_object(vm->gc->always_in_mem->arr[i]);
     /* sweep */
-    lx_object_stack* new_objs = lx_create_object_stack(32);
+    lx_object_stack* marked_objs = vm->gc->_marked;
+    marked_objs->curr = -1; /* clean it */
     lx_object_stack* objs = vm->gc->arr;
     for (int i = 0; i <= objs->curr; ++i) {
         if (objs->arr[i]->marked) {
             objs->arr[i]->marked = false; /* clean for next garbage collection */
-            lx_object_stack_push(new_objs, objs->arr[i]);
+            lx_object_stack_push(marked_objs, objs->arr[i]);
         } else {
             delete_object_by_type(objs->arr[i]);
         }
     }
-    vm->gc->arr = new_objs;
-    lx_delete_object_stack(objs);
+    vm->gc->_marked = vm->gc->arr;
+    vm->gc->arr = marked_objs;
 }
 
 lx_vm* lx_create_vm ()

@@ -34,12 +34,12 @@ The C achieve of luax:
  + full-commented
 
  Here is a list:
-  * dynamic type language (*nil*, *bool*, *number*, *string*, *function*, *table*)
-  * basic statements (*variable-declaration*, *if/while*, *break*, *continue*, *function-define*)
-  * mutli-assign, multi-return  - `a, b = 1, 2;` `function(a, b) return a+b, a-b; end`
-  * *table*  - a container containing several key-values. The type of key or value can be any one of those types listed above.
-  * meta table  - a table defining what would happens when specific action made to a table(such as: get set call), example: [*read-only table*](https://github.com/morrow1nd/luax/blob/master/doc/luax_reference_manual.md#meta-table) 
-  * function  - first-class citizen, example: [*link several functions*](https://github.com/morrow1nd/luax/blob/master/doc/luax_reference_manual.md#function) 
+  + **dynamic type language** (*nil*, *bool*, *number*, *string*, *function*, *table*)
+  + **basic statements** (*variable-declaration*, *if/while*, *break*, *continue*, *function-define*)
+  + **mutli-assign, multi-return**  - `a, b = 1, 2;` `function(a, b) return a+b, a-b; end`
+  + **table**  - a container containing several key-values. The type of key or value can be any one of those types listed above.
+  + **meta table**  - a table defining what would happens when specific action made to a table(such as: get set call), example: [*read-only table*](https://github.com/morrow1nd/luax/blob/master/doc/luax_reference_manual.md#meta-table) 
+  + **function**  - first-class citizen, example: [*link several functions*](https://github.com/morrow1nd/luax/blob/master/doc/luax_reference_manual.md#function) 
 
 
 
@@ -53,9 +53,6 @@ tab.name = "I'm a table";
 tab["func"] = function() return "I can hold a function"; end; -- tab["func"] equals to tab.func
 tab[true] = "the type of my key can be a boolean";
 tab[another_table] = "or a table";
---[[
-  luax has six kinds of type: nil, bool, number, string, table, function. Table's key-value can be any kind of these types.
-]]
 
 
 -- function

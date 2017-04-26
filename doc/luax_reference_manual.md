@@ -168,6 +168,7 @@ call func2
 print('abcdef' + 123);
 local str = '2.1';
 print(str * 5); -- 10.5
+print("not a number" * 5); -- throw a error
 ```
 
 ### expression
@@ -211,7 +212,7 @@ print(function(a, b)
 end(2, 1)); -- true
 ```
 
-#### \(\) expression
+#### \( expression \) 
 
  `func_return_multi_values()` is not equal to `(func_return_multi_values())`. Example:
 ```lua
@@ -239,7 +240,7 @@ local str = 'John';
 local s1, s2, s3 = 'hi', 123; -- s3 -> nil
 
 var_undeclared = 123;  -- error in luax. Lua treats it as a new global 
-                      -- variable declaration and exposures it to everywhere. 
+                       -- variable declaration and exposures it to everywhere. 
 ```
 
 #### expression statement
@@ -333,7 +334,7 @@ print(_E._E == _E); -- true
 
     local i = nil;
     while i = table_next(tab, i) then
-        if i == tab then continue; end
+        if i == tab then continue; end  -- skip it's meta table
         print('key: ' + i + ' value: ' + tab[i]);
     end
     ```
@@ -345,16 +346,17 @@ print(_E._E == _E); -- true
         if t then throw('error'); end
         return a + b;
     end;
-    local e, result = pcall(pcall_func, false, 1, 2); -- nil 3.0
+    local e, result = pcall(pcall_func, false, 1, 2); -- nil 3.0, when e equals to nil, it's success
     e, result = pcall(pcall_func, true, 1, 2); -- error nil
     ```
  + throw(exception)  - throw a exception
  + collectgarbage([opt [, arg]])  - see: <http://www.lua.org/manual/5.3/manual.html#pdf-collectgarbage>
- + require()  - load a standard library or a luax code file, example:
+ + require(str)  - load a standard library or a luax code file, example:
     ```lua
-    local math = require('math');
+    local math = require('math');  -- standard library is not finished. Only 'math' now.
     print(math.abs(-123)); -- 123.0
     print(math.int(1.5)); -- 1.0
+
     local user = require("data/users.luax");
     print(user); -- see test/require_test_users.luax
     ```
@@ -383,7 +385,7 @@ print(_E._E == _E); -- true
         print(_E.exports.name, _E.username); -- 'hello', 'a name'
     end
     ```
- + dofile(filepath)  - run luax code in a file in protected mode
+ + dofile(filepath [, env])  - run luax code in a file in protected mode
 
 
 template debug functions:

@@ -10,6 +10,7 @@
 /* Garbage Collection */
 typedef struct lx_gc_info {
     lx_object_stack* arr; /* used to store the pointers of all managed objects */
+    lx_object_stack* _marked; /* used when collect garbage */
 
     lx_object_stack* always_in_mem; /* a continer used to store these objects which will never be collected by GC */
 } lx_gc_info;

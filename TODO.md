@@ -1,4 +1,4 @@
- + [ ]  [doc] README.md, example/basic_usage.luax, more example
+ + [X]  [doc] README.md, example/basic_usage.luax, more example
  + [ ]  [bug] after `dostring(str);` str is changed
  + [ ]  require only once
  + [X]  [bug] `local i = 0; local i = nil;`
