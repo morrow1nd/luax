@@ -45,11 +45,15 @@ int main(int argc, char * argv[])
     *(data + ret) = '\0';
     fclose(fp);
 
-    lx_parser * p = lx_gen_opcodes(data, ret);
+    parser_error_info err;
+    err.str = NULL;
+    lx_parser * p = lx_gen_opcodes(data, ret, &err);
     lx_helper_dump_opcode(p->opcodes, stdout);
     lx_free(data);
     if (p != NULL) {
         printf("success\n");
+    } else {
+        return -1;
     }
     lx_delete_parser(p);
 

@@ -48,6 +48,12 @@ enum lx_token_type
                      // but now, lx_token_next(scanner) would return LX_TOKEN_NO_MORE when next one is out of range.
 };
 
+typedef struct parser_error_info {
+    const char* str;
+    int need_free;
+} parser_error_info;
+
+
 typedef struct
 {
     int type;
@@ -64,9 +70,6 @@ typedef struct
     lx_token **tokens;
     int curr; /* point to current token */
     int tokens_capacity;
-
-    int raw_source_code_length;
-    char *raw_source_code;
 } lx_token_scanner;
 
 typedef struct lx_parser
@@ -76,6 +79,7 @@ typedef struct lx_parser
     lx_stack_allocator * stack_allocator;
 #endif
     lx_opcodes* opcodes;
+    parser_error_info* error_info;
 } lx_parser;
 
 
@@ -97,9 +101,8 @@ typedef struct lx_parser
 #endif
 
 
-
 /* Interface to generate opcodes */
-lx_parser* lx_gen_opcodes(char* source_code, const int source_code_length);
+lx_parser* lx_gen_opcodes(char* source_code, const int source_code_length, parser_error_info* err);
 void lx_delete_parser(lx_parser* p);
 
 

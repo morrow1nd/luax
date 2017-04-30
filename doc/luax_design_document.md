@@ -1,4 +1,4 @@
-# luax design document
+# Luax Design Document
 
  - [opcode explanation](./opcode.md)
  - [luax syntax BNF](./BNF.txt)
@@ -7,11 +7,19 @@
     + [opcode generator test](../test/generate_bytecode_test.luax)
     + [Virtual Machine test](../test/vm_run_test.luax)
 
-[TODO]
 
 ## syntax parser
+ 
+ - [Luax syntax BNF](./BNF.txt)
+
+ Luax uses a simple token scanner and recursive descent parser. These codes are located at [parser.c](../src/parser.c). These functions of every nonterminal symbols are named the same as [BNF.txt](./BNF.txt), which makes it easy to view the whole code. When parser find one rule, it would call the callback function of this rule. These callback functions are located at [parser_callback.c](../src/parser_callback.c).
+
 
 ## opcode explanation and opcode generator
+
+ - [opcode explanation](./opcode.md)
+
+
 
 ## VM
 
@@ -23,45 +31,6 @@
 
 
 
-
-
-
-## value
-
- - nil
- - bool
- - number - real number in math
- - string - read only string
- - table
- - function
- - user define data ?
-
-
-## meta table
-
-meta functions:
- + "_get"  - function(tab, key)
- + "_set"  - function(tab, key, new_value)
- + "_call"  - tab[tab]._call = function(tab, arg1, arg2) ... end; tab(arg1, ang2);
- + "_delete" - function(tab)
-
-meta elements in environment table:
- + "_father_env"  - point to this env_table's father env_table
-
-
-Every table has a meta table, you can access the meta table by `tab[tab]` or `meta_table(tab)`. A table's meta table is assigned to a default meta table. This default meta table has no meta table, this means if you want to change value of this table, you can't use normal way, you must use `table_set` and `table_get`. For example:
-
-```lua
-local tab = {};
-local meta_tab = meta_table(tab); -- or: local meta_tab = tab[tab];
-meta_tab["_get"] = function(tab, key) ... end; -- error
---[[ meta_tab has no meta table, but `meta_tab["_get"]` means 
-calling the "_get" function of it's meta table. So, if you want to modify 
-meta_tab, you only can use `table_set` and `table_get`.
-]]
-table_set(meta_tab, "_set", function(tab, key, value) print('this table is read-only'); end);
-tab["name"] = "new name"; -- output 'this table is read-only'
-```
 
 
 ## run-time environment

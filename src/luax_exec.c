@@ -136,7 +136,9 @@ int main(int argc, char * argv[])
             if(data == NULL)
                 continue;
 
-            lx_parser * p = lx_gen_opcodes(data, file_len);
+            parser_error_info err;
+            err.str = NULL;
+            lx_parser * p = lx_gen_opcodes(data, file_len, &err);
             lx_free(data); // lx_gen_opcodes has copied data
             if (p == NULL) {
                 printf("Error: syntax error\n");

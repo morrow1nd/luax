@@ -1699,9 +1699,15 @@ lx_object* lx_dostring(lx_vm* vm, lx_object_string* str, lx_object_table* env)
 #endif
     lx_object_stack_push(vm->gc->always_in_mem, CAST_O str);
     int backup_str_index = vm->gc->always_in_mem->curr;
-    lx_parser* p = lx_gen_opcodes((char*)(str->text), str->text_len);
+    parser_error_info error_info;
+    error_info.str = NULL;
+    error_info.need_free = false;
+    lx_parser* p = lx_gen_opcodes((char*)(str->text), str->text_len, &error_info);
     if (!p) {
-        return CAST_O lx_create_string_t(vm, "parser: syntax error", 20);
+        lx_object* ret = CAST_O lx_create_string_s_copy(vm, error_info.str);
+        if(error_info.need_free)
+            lx_free((void*) error_info.str);
+        return ret;
     }
 #if LX_VM_OPCODE_SHOW
     lx_helper_dump_opcode(p->opcodes, stdout);
@@ -1771,7 +1777,7 @@ void lx_delete_vm (lx_vm* vm)
 void lx_throw_s(lx_vm* vm, const char* str)
 {
 #if LX_DEBUG && LX_VM_DEBUG
-    assert(false);
+    assert(false && "lx_throw_s");
 #endif
     char* e = (char*) lx_malloc(strlen(str) + strlen("luax exception: ") + 1);
     strcpy(e, "luax exception: ");
@@ -1878,11 +1884,6 @@ lx_object_function* lx_create_function_p(lx_vm* vm, lx_object_function_ptr_handl
     lx_object_function* fun = create_object_function_p(func_ptr, env_creator);
     return CAST_F managed_with_gc(vm->gc, CAST_O fun);
 }
-//lx_object_function* lx_create_function_ops(lx_vm* vm, const lx_opcode** func_opcodes, int func_opcodes_size, lx_object_table *env_creator)
-//{
-//    lx_object_function* fun = create_object_function_ops(func_opcodes, func_opcodes_size, env_creator);
-//    return CAST_F managed_with_gc(vm->gc, CAST_O fun);
-//}
 lx_object_function* lx_create_function_ops_copy(lx_vm* vm, const lx_opcode** func_opcodes, int func_opcodes_size, lx_object_table *env_creator)
 {
     lx_opcode** _opcodes = (lx_opcode**)lx_malloc(sizeof(const lx_opcode*) * (func_opcodes_size));

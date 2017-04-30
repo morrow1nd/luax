@@ -54,12 +54,11 @@ static lx_token* add_one_token(lx_token_scanner *s, int token_type, char *ptr, i
 
 static lx_token* token_error(lx_token_scanner *s, char *ptr, int linenum)
 {
-    return add_one_token(s, LX_TOKEN_ERROR, ptr, 1, linenum);
+    return add_one_token(s, LX_TOKEN_ERROR, ptr, strlen(ptr), linenum);
 }
 
 void lx_delete_token_scanner(lx_token_scanner * s)
 {
-    // if(s->raw_source_code) lx_free(s->raw_source_code);
     for (int i = 0; i < s->token_number; ++i) {
         lx_free(s->tokens[i]);
     }
@@ -77,10 +76,10 @@ static bool _is_connected(const char* p) {
 lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
 {
     lx_token_scanner * s = LX_NEW(lx_token_scanner);
-    if(!s)
+    if(!s){
+        fprintf(stderr, "LX_NEW fail\n");
         return NULL;
-    s->raw_source_code = source_code;
-    s->raw_source_code_length = (int)source_code_length;
+    }
     s->tokens_capacity = 0;
     s->token_number = 0;
     s->tokens = NULL;
@@ -95,12 +94,11 @@ lx_token_scanner* lx_scan_token(char *source_code, const int source_code_length)
     char *p = source_code;
 
     int linenum = 1;
-    //char vartem[LX_CONFIG_IDENTIFIER_MAX_LENGTH];
     while(p - source_code < source_code_length){
         // find one token
         if (*p == '\0') {
-            assert(false);
-            return NULL;
+            token_error(s, "find one byte equals to \\0", linenum);
+            return s;
         }
         if (memcmp(p, "--[[", 4) == 0) {
             int i = 0;
@@ -347,7 +345,7 @@ _next_: p;
                 char * pp = p;
                 double data = strtod(p, &pp);
                 if ((pp - p) == 0) {
-                    token_error(s, p, linenum);
+                    token_error(s, "strtod fail", linenum);
                     return s;
                 }
                 add_one_token(s, LX_TOKEN_NUMBER_IMMEDIATE, p, pp - p, linenum);
@@ -366,7 +364,7 @@ _next_: p;
                 char * curr = p + 1;
                 while(*curr != '"'){
                     if(*curr == '\\'){
-                        // we need to zhuanyi <-todo
+                        // escape character
                         ++curr;
                         switch(*curr){
                         case 'n':
@@ -385,8 +383,7 @@ _next_: p;
                             *changed = '"';
                             break;
                         default:
-                            // todo: add error info: ...
-                            token_error(s, curr - 1, linenum);
+                            token_error(s, "only support \\\\ \\n \\t \\r \\\"", linenum);
                             return s;
                         }
                     }else{
@@ -404,7 +401,7 @@ _next_: p;
                 char * curr = p + 1;
                 while(*curr != '\''){
                     if(*curr == '\\'){
-                        // we need to zhuanyi <-todo
+                        // escape character
                         ++curr;
                         switch(*curr){
                         case 'n':
@@ -423,8 +420,7 @@ _next_: p;
                             *changed = '\'';
                             break;
                         default:
-                            // todo: add error info: ...
-                            token_error(s, curr - 1, linenum);
+                            token_error(s, "only support \\\\ \\n \\t \\r \\'", linenum);
                             return s;
                         }
                     }else{
@@ -546,14 +542,26 @@ static int lx_parser_begin(lx_parser * p, lx_parser *parser)
     /* todo: current enter point is compile_unit */
 }
 
-lx_parser* lx_gen_opcodes(char* _source_code, const int source_code_length)
+lx_parser* lx_gen_opcodes(char* _source_code, const int source_code_length, parser_error_info* err_info)
 {
     lx_token_scanner* scanner = lx_scan_token(_source_code, source_code_length);
     if(scanner == NULL){
         printf("lx_scan_token return NULL\n");
         return NULL;
     }
+    if(scanner->tokens[scanner->token_number - 1]->type == LX_TOKEN_ERROR){
+        lx_token* t = scanner->tokens[scanner->token_number - 1];
+        char * err = (char*)lx_malloc(128 + t->text_len);
+        sprintf(err, "Token Scanner Error: %s at line:%d\n", t->text, t->linenum);
+        err_info->str = err;
+        err_info->need_free = true;
+        lx_delete_token_scanner(scanner);
+        return NULL;
+    }
     lx_parser* p = LX_NEW(lx_parser);
+    p->error_info = err_info;
+    p->error_info->str = NULL;
+    p->error_info->need_free = false;
     p->opcodes = NULL;
 #if(LX_USING_STACK_ALLOCATOR_IN_PARSER)
     p->stack_allocator = lx_create_stack_allocator(1024 * 4);
@@ -567,7 +575,21 @@ lx_parser* lx_gen_opcodes(char* _source_code, const int source_code_length)
     }
     if(ret != 0){
         lx_token* curr = lx_token_nextN(p->scanner, 1);
-        printf("Parsr Error: parser failed at L%d: text_len:%d type:%d %s\n", curr->linenum, curr->text_len, curr->type, curr->text);
+        int err_len = 128 + curr->text_len;
+        if(p->error_info->str)
+            err_len += strlen(p->error_info->str);
+        char * err = (char*)lx_malloc(err_len);
+        char backup = *(curr->text + curr->text_len);
+        *(curr->text + curr->text_len) = '\0';
+        if(p->error_info->str)
+            sprintf(err, "Parsr Error: failed at line:%d type:%d %s\n%s\n", curr->linenum, curr->type, curr->text, p->error_info->str);
+        else
+            sprintf(err, "Parsr Error: failed at line:%d type:%d %s\n", curr->linenum, curr->type, curr->text);
+        *(curr->text + curr->text_len) = backup;
+        if(p->error_info->str && p->error_info->need_free)
+            lx_free((void*) p->error_info->str);
+        err_info->str = err;
+        err_info->need_free = true;
         FREE_SYNTAX_NODE(compile_unit_node);
         lx_delete_parser(p);
         return NULL;
@@ -594,6 +616,13 @@ static void _free_list_node(par list_node)
         FREE_SYNTAX_NODE(node_i);
         node_i = next;
     }
+}
+
+static void set_error(lx_parser *p, const char* err)
+{
+    if(p->error_info->need_free)
+        lx_free((void*) p->error_info->str);
+    p->error_info->str = err;
 }
 
 static int compile_unit(lx_parser *p, lx_syntax_node *self)
@@ -674,7 +703,8 @@ static int stmt(lx_parser *p, lx_syntax_node *self)
             LX_CALLBACK_CALL2(stmt, BREAK, EOS,
                 self, break_node, eos_node);
             return 0;
-        }
+        }else
+            set_error(p, "lost a ; after break");
         FREE_SYNTAX_NODE(break_node);
         lx_token_scanner_recover_state(p->scanner, backup_state);
         return -1; // no need to continue
@@ -688,7 +718,8 @@ static int stmt(lx_parser *p, lx_syntax_node *self)
             LX_CALLBACK_CALL2(stmt, CONTINUE, EOS,
                 self, continue_node, eos_node);
             return 0;
-        }
+        } else
+            set_error(p, "lost a ; after continue");
         FREE_SYNTAX_NODE(continue_node);
         lx_token_scanner_recover_state(p->scanner, backup_state);
         return -1; // no need to continue
@@ -711,7 +742,8 @@ static int stmt(lx_parser *p, lx_syntax_node *self)
                 LX_CALLBACK_CALL3(stmt, RETURN, expr_list, EOS,
                     self, return_node, expr_list_node, eos_node);
                 return 0;
-            }
+            } else
+                set_error(p, "lost a ; after return");
         }
         FREE_SYNTAX_NODE(expr_list_node);
         FREE_SYNTAX_NODE(return_node);
@@ -739,11 +771,14 @@ static int stmt(lx_parser *p, lx_syntax_node *self)
                         LX_CALLBACK_CALL5(stmt, LOCAL, identifier_list, EQL, expr_list, EOS,
                             self, local_node, identifier_list_node, eql_node, expr_list_node, eos_node);
                         return 0;
-                    }
+                    }else
+                        set_error(p, "lost a ; after local");
+                    lx_token_scanner_recover_state(p->scanner, backup_state);
                 }
                 FREE_SYNTAX_NODE(expr_list_node);
                 FREE_SYNTAX_NODE(eql_node);
-            }
+            } else
+                set_error(p, "local statement wrong: only support `local <identifier_list>;` or `local <identifier_list> = <expr_list>;`");
         }
         FREE_SYNTAX_NODE(identifier_list_node);
         FREE_SYNTAX_NODE(local_node);
@@ -793,15 +828,26 @@ static int if_stmt(lx_parser *p, lx_syntax_node *self)
                                 LX_CALLBACK_CALL7(if_stmt, IF, expr, THEN, stmt_sequence, ELSE, stmt_sequence, END,
                                     self, if_node, expr_node, then_node, stmt_sequence_node, else_node, stmt_sequence_node2, end_node);
                                 return 0;
+                            } else{
+                                char* err = (char*) lx_malloc(128);
+                                sprintf(err, "lost keyword end. The corresponding if is at line:%d", if_node->token->linenum);
+                                set_error(p, err);
+                                p->error_info->need_free = true;
                             }
                         }
                         FREE_SYNTAX_NODE(stmt_sequence_node2);
                         FREE_SYNTAX_NODE(else_node);
+                    } else {
+                        char* err = (char*)lx_malloc(128);
+                        sprintf(err, "lost keyword end. The corresponding if is at line:%d", if_node->token->linenum);
+                        set_error(p, err);
+                        p->error_info->need_free = true;
                     }
                 }
                 FREE_SYNTAX_NODE(stmt_sequence_node);
                 FREE_SYNTAX_NODE(then_node);
-            }
+            } else
+                set_error(p, "lost keyword: then. `if <expr> then <statement_list> [else <statement_list>] end`");
         }
         FREE_SYNTAX_NODE(expr_node);
         FREE_SYNTAX_NODE(if_node);
@@ -831,11 +877,17 @@ static int while_stmt(lx_parser *p, lx_syntax_node *self)
                         LX_CALLBACK_CALL5(while_stmt, WHILE, expr, THEN, stmt_sequence, END,
                             self, while_node, expr_node, then_node, stmt_sequence_node, end_node);
                         return 0;
+                    } else {
+                        char* err = (char*)lx_malloc(128);
+                        sprintf(err, "lost keyword end of while statemnt. The corresponding while is at line:%d", while_node->token->linenum);
+                        set_error(p, err);
+                        p->error_info->need_free = true;
                     }
                 }
                 FREE_SYNTAX_NODE(stmt_sequence_node);
                 FREE_SYNTAX_NODE(then_node);
-            }
+            }else
+                set_error(p, "lost keyword then of while statement");
         }
         FREE_SYNTAX_NODE(expr_node);
         FREE_SYNTAX_NODE(while_node);
@@ -845,7 +897,7 @@ static int while_stmt(lx_parser *p, lx_syntax_node *self)
     return -1;
 }
 
-static int for_stmt(lx_parser *p, lx_syntax_node *self)
+static int for_stmt(lx_parser *p, lx_syntax_node *self) /* todo: add error info */
 {
     int backup_state = lx_token_scanner_get_curr_state(p->scanner);
 
@@ -908,7 +960,8 @@ static int expr_stmt(lx_parser *p, lx_syntax_node *self)
             LX_CALLBACK_CALL2(expr_stmt, expr, EOS,
                 self, expr_node, eos_node);
             return 0;
-        }
+        }else
+            set_error(p, "lost a ;. expression statement: `<expr> ;`. You can't write something like this: `1 2;`. You should add a ; after 1.");
     }
     lx_token_scanner_recover_state(p->scanner, backup_state);
     FREE_SYNTAX_NODE(expr_node);
@@ -1197,6 +1250,11 @@ static int single_expr(lx_parser *p, lx_syntax_node *self)
                 LX_CALLBACK_CALL3(single_expr, SL, expr, SR,
                     self, sl_node, expr_node, sr_node);
                 return 0;
+            } else {
+                char* err = (char*)lx_malloc(128);
+                sprintf(err, "lost ). The corresponding ( is at line:%d", sl_node->token->linenum);
+                set_error(p, err);
+                p->error_info->need_free = true;
             }
         }
         FREE_SYNTAX_NODE(expr_node);
@@ -1279,6 +1337,11 @@ static int suffix_op(lx_parser *p, lx_syntax_node *self)
                 LX_CALLBACK_CALL3(suffix_op, SL, expr_list, SR,
                     self, sl_node, expr_list_node, sr_node);
                 return 0;
+            } else {
+                char* err = (char*)lx_malloc(128);
+                sprintf(err, "lost ). The corresponding ( is at line:%d", sl_node->token->linenum);
+                set_error(p, err);
+                p->error_info->need_free = true;
             }
         }
         // actually, we don't need this, for the reason that there are only three situation((, [, .), when we came
@@ -1305,6 +1368,11 @@ static int suffix_op(lx_parser *p, lx_syntax_node *self)
                 LX_CALLBACK_CALL3(suffix_op, ML, expr, MR,
                     self, ml_node, expr_node, mr_node);
                 return 0;
+            } else {
+                char* err = (char*)lx_malloc(128);
+                sprintf(err, "lost ]. The corresponding [ is at line:%d", ml_node->token->linenum);
+                set_error(p, err);
+                p->error_info->need_free = true;
             }
         }
         FREE_SYNTAX_NODE(expr_node);
@@ -1387,6 +1455,11 @@ static int object_immediate(lx_parser *p, lx_syntax_node *self)
                 LX_CALLBACK_CALL3(object_immediate, BL, object_immediate_item_list, BR,
                     self, bl_node, object_immediate_item_list_node, br_node);
                 return 0;
+            } else {
+                char* err = (char*)lx_malloc(128);
+                sprintf(err, "lost }. The corresponding { is at line:%d", bl_node->token->linenum);
+                set_error(p, err);
+                p->error_info->need_free = true;
             }
         }
         FREE_SYNTAX_NODE(object_immediate_item_list_node);
@@ -1428,6 +1501,10 @@ static int object_immediate_item(lx_parser *p, lx_syntax_node *self)
     int backup_state = lx_token_scanner_get_curr_state(p->scanner);
 
     if (NEXT_TYPE_EQUAL(p, LX_TOKEN_IDENTIFIER)) {
+        // !!! we don't support this now.
+        set_error(p, "the keys of table init statement only support number, string now.");
+        return -1;
+
         GOTO_NEXT(p);
         NEW_SYNTAX_NODE_T(identifier_node, CURR(p));
         if (NEXT_TYPE_EQUAL(p, ':')) {
@@ -1441,7 +1518,8 @@ static int object_immediate_item(lx_parser *p, lx_syntax_node *self)
             }
             FREE_SYNTAX_NODE(object_immediate_item_value_node);
             FREE_SYNTAX_NODE(colon_node);
-        }
+        }else
+            set_error(p, "lost a :. table init example: { 'key' : 'value', 1 : 3.14 }");
         FREE_SYNTAX_NODE(identifier_node);
     }
     lx_token_scanner_recover_state(p->scanner, backup_state);
@@ -1459,7 +1537,8 @@ static int object_immediate_item(lx_parser *p, lx_syntax_node *self)
            }
             FREE_SYNTAX_NODE(object_immediate_item_value_node);
             FREE_SYNTAX_NODE(colon_node);
-        }
+        } else
+            set_error(p, "lost a :. table init example: { 'key' : 'value', 1 : 3.14 }");
         FREE_SYNTAX_NODE(string_immediate_node);
     }
     lx_token_scanner_recover_state(p->scanner, backup_state);
@@ -1477,9 +1556,11 @@ static int object_immediate_item(lx_parser *p, lx_syntax_node *self)
             }
             FREE_SYNTAX_NODE(object_immediate_item_value_node);
             FREE_SYNTAX_NODE(colon_node);
-        }
+        } else
+            set_error(p, "lost a :. table init example: { 'key' : 'value', 1 : 3.14 }");
         FREE_SYNTAX_NODE(number_immediate_node);
-    }
+    }else
+        set_error(p, "the keys of table init statement only support number, string now.");
 
     lx_token_scanner_recover_state(p->scanner, backup_state);
     return -1;
@@ -1491,7 +1572,8 @@ static int object_immediate_item_value(lx_parser *p, lx_syntax_node *self)
         LX_CALLBACK_CALL1(object_immediate_item_value, immediate,
             self, immediate_node);
         return 0;
-    }
+    }else
+        set_error(p, "the values of table init statement only support number, string, function and table init.");
     FREE_SYNTAX_NODE(immediate_node);
     return -1;
 }
@@ -1517,6 +1599,11 @@ static int function_define(lx_parser *p, lx_syntax_node *self)
                         LX_CALLBACK_CALL5(function_define, FUNCTION, SL, SR, stmt_sequence, END,
                             self, function_node, sl_node, sr_node, stmt_sequence_node, end_node);
                         return 0;
+                    } else {
+                        char* err = (char*)lx_malloc(128);
+                        sprintf(err, "lost keyword end of function define statement. The corresponding function is at line:%d", function_node->token->linenum);
+                        set_error(p, err);
+                        p->error_info->need_free = true;
                     }
                 }
                 FREE_SYNTAX_NODE(stmt_sequence_node);
@@ -1536,14 +1623,29 @@ static int function_define(lx_parser *p, lx_syntax_node *self)
                             LX_CALLBACK_CALL6(function_define, FUNCTION, SL, identifier_list, SR, stmt_sequence, END,
                                 self, function_node, sl_node, identifier_list_node, sr_node, stmt_sequence_node, end_node);
                             return 0;
+                        } else {
+                            char* err = (char*)lx_malloc(128);
+                            sprintf(err, "lost keyword end of function define statement. The corresponding function is at line:%d", function_node->token->linenum);
+                            set_error(p, err);
+                            p->error_info->need_free = true;
                         }
                     }
                     FREE_SYNTAX_NODE(stmt_sequence_node);
                     FREE_SYNTAX_NODE(sr_node);
+                } else {
+                    char* err = (char*)lx_malloc(128);
+                    sprintf(err, "lost ). The corresponding ( is at line:%d", sl_node->token->linenum);
+                    set_error(p, err);
+                    p->error_info->need_free = true;
                 }
             }
             FREE_SYNTAX_NODE(identifier_list_node);
             FREE_SYNTAX_NODE(sl_node);
+        } else {
+            char* err = (char*)lx_malloc(128);
+            sprintf(err, "lost (...) of function define statement. The corresponding function is at line:%d", function_node->token->linenum);
+            set_error(p, err);
+            p->error_info->need_free = true;
         }
         FREE_SYNTAX_NODE(function_node);
     }
