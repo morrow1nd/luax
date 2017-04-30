@@ -623,6 +623,7 @@ static void set_error(lx_parser *p, const char* err)
     if(p->error_info->need_free)
         lx_free((void*) p->error_info->str);
     p->error_info->str = err;
+    p->error_info->need_free = false;
 }
 
 static int compile_unit(lx_parser *p, lx_syntax_node *self)
