@@ -2,7 +2,7 @@
 
 # What is Luax?
 
- Luax is a easy-to-learn, concise and powerful programming language. ([Chinese Page](./doc/doc-zh/README.md))
+ Luax is a easy-to-learn, concise and powerful programming language. ([Chinese Page](./doc/doc-zh/))
 
  Luax provides full documentation(from the language itself to internal design), making it a perfect project for beginner to learn how to make a *interpreter*.
 

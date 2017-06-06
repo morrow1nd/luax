@@ -42,8 +42,8 @@ Luax的C实现：
  + **基本语句** (*变量声明语句*, *if/while*, *break*, *continue*, *函数定义*)
  + **赋值多个值，返回多个值** - `a, b = 1, 2;` `function(a, b) return a+b, a-b; end`
  + **table** - 一个盛装多个键值对的容器，键或值的类型可以是任意上面提到的类型。
- + **meta table**  - a table defining what would happens when specific action made to a table(such as: get set call), example: [*read-only table*](https://github.com/morrow1nd/luax/blob/master/doc/luax_reference_manual.md#meta-table) 
-  + **function**  - first-class citizen, example: [*link several functions*](https://github.com/morrow1nd/luax/blob/master/doc/luax_reference_manual.md#function) 
+ + **meta table**  - 一个meta table可以控制一个表做读操作、写操作、调用操作时的行为，例子: [*创建一个只读表*](https://github.com/morrow1nd/luax/blob/master/doc/luax_reference_manual.md#meta-table) 
+ + **function**  - 一等值 ( first-class value ) , example: [*link several functions*](https://github.com/morrow1nd/luax/blob/master/doc/luax_reference_manual.md#function) 
 
 
 

@@ -66,7 +66,7 @@ tab[true] = 'using a bool as a key';
 ```lua
 local rtab = {};
 local meta_tab = rtab[rtab]; -- get rtab's meta table
--- here, we use a inside function table_set to assign a new key-value to a table
+-- here, we use a inside function table_set to modify this table
 table_set(meta_tab, '_set', function(tab, key, new_value) print('this table is readonly'); end);
 rtab.name = 'name';
 print(rtab.name); -- nil
@@ -79,7 +79,7 @@ print(rtab.name); -- new name
 
 #### function
 
- In luax, function is first-class citizen. Luax provides only one way to create a function, which is expression `function(...) end`. Function achieved by luax code or C code are both the type **function**, which means you can't know whether a function is achieved by C code in luax code. Luax's function provides a variable named `arguments`. `arguments` holds all the real arguments as a array. The number of arguments is stored in `arguments.size`. `arguments` is useful when transport variable parameters.
+ In luax, function is first-class citizen. Luax provides only one way to create a function, which is expression `function(...) ... end`. Function achieved by luax code or C code are both the type **function**, which means you can't know whether a function is achieved by C code in luax code. Luax's function provides a variable named `arguments`. `arguments` holds all the real arguments as a array. The number of arguments is stored in `arguments.size`. `arguments` is useful when transport variable parameters.
 
  Examples: **simple closure**, **link several functions**
 ```lua
@@ -150,7 +150,7 @@ call func2
 
  + **nil**  - has only one value `nil`
  + **bool**  - has two values `true` and `false`
- + **number**  - store real number(in math)
+ + **number**  - store real number
  + **string**  - read-only string
     - `'this is a string'`
     - `"this is another string"`
@@ -398,6 +398,9 @@ template debug functions:
 ### luax standard libraries
 
  see [Luax Standard Libraries](./luax_standard_library.md)
+
+
+
 
 
 ## Luax API
